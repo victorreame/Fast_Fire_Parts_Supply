@@ -17,11 +17,10 @@ const LoginPage = () => {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/auth/login", { username, password });
+      const response = await apiRequest("POST", "/api/auth/login", { username, password });
+      return response.json();
     },
-    onSuccess: async (response) => {
-      const data = await response.json();
-      
+    onSuccess: (data) => {
       if (data.role === "supplier") {
         navigate("/supplier/dashboard");
       } else {
