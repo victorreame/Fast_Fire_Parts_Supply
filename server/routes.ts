@@ -245,9 +245,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use either authenticated user ID or guest user ID
       let userId = req.session.userId || req.session.guestUserId;
       
-      // If no user ID of any type, return empty cart
+      // Handle the case where no user has been established yet
       if (!userId) {
-        return res.json([]);
+        // Create a new guest user when none exists
+        const guestUser = await storage.createUser({
+          username: `guest_${Date.now()}`,
+          password: Math.random().toString(36).substring(2, 15),
+          role: "guest",
+          firstName: "Guest",
+          lastName: "User",
+          email: `guest_${Date.now()}@example.com`
+        });
+        
+        // Store the guest user ID in the session and save the session
+        req.session.guestUserId = guestUser.id;
+        await new Promise<void>((resolve) => {
+          req.session.save(() => {
+            resolve();
+          });
+        });
+        
+        userId = guestUser.id;
+        console.log("Created new guest user with ID:", userId);
       }
       
       const cartItems = await storage.getCartItems(userId);
@@ -270,35 +289,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.post("/cart", async (req: Request, res: Response) => {
     try {
       // Handle guest users - create a guest user if not authenticated
-      let userId = req.session.userId;
+      let userId = req.session.userId || req.session.guestUserId;
       
       if (!userId) {
-        // Check if we already created a guest user for this session
-        if (!req.session.guestUserId) {
-          // Create a new guest user
-          const guestUser = await storage.createUser({
-            username: `guest_${Date.now()}`,
-            password: Math.random().toString(36).substring(2, 15),
-            role: "guest",
-            firstName: "Guest",
-            lastName: "User",
-            email: `guest_${Date.now()}@example.com`
+        // Create a new guest user when none exists
+        const guestUser = await storage.createUser({
+          username: `guest_${Date.now()}`,
+          password: Math.random().toString(36).substring(2, 15),
+          role: "guest",
+          firstName: "Guest",
+          lastName: "User",
+          email: `guest_${Date.now()}@example.com`
+        });
+        
+        // Store the guest user ID in the session and save the session
+        req.session.guestUserId = guestUser.id;
+        await new Promise<void>((resolve) => {
+          req.session.save(() => {
+            resolve();
           });
-          
-          // Store the guest user ID in the session
-          req.session.guestUserId = guestUser.id;
-          userId = guestUser.id;
-        } else {
-          userId = req.session.guestUserId;
-        }
+        });
+        
+        userId = guestUser.id;
+        console.log("Created new guest user with ID for cart:", userId);
       }
       
+      // Make sure userId gets passed in the cart item data
       const cartItemData = insertCartItemSchema.parse({
         ...req.body,
         userId: userId
       });
       
+      // Add the item to the cart
       const cartItem = await storage.addCartItem(cartItemData);
+      
+      // Get part details to return with the response
       const part = await storage.getPart(cartItem.partId);
       
       res.status(201).json({ ...cartItem, part });
