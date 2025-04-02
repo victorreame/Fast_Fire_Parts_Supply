@@ -28,12 +28,24 @@ import LoginPage from "@/pages/login";
 // Not found
 import NotFound from "@/pages/not-found";
 
+// Define User type outside the component
+interface User {
+  id: number;
+  username: string;
+  role: string;
+  businessId?: number;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+}
+
 function App() {
   const isMobile = useMobile();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   
   // Check auth status
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
   });
 
@@ -45,8 +57,6 @@ function App() {
       </div>
     );
   }
-
-  const [_, navigate] = useLocation();
   
   // Check if user is not authenticated and not on login page
   if (!user && location !== '/login') {
