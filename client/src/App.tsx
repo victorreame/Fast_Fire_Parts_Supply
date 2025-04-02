@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { useQuery } from "@tanstack/react-query";
@@ -47,10 +48,15 @@ function App() {
   // Check auth status
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
+    // Don't redirect on mobile as it doesn't need login
+    retry: isMobile ? 0 : 3
   });
 
+  // Is this a supplier route?
+  const isSupplierRoute = location.startsWith('/supplier');
+  
   // Handle loading state
-  if (isLoading && location !== '/login') {
+  if (isLoading && isSupplierRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -58,19 +64,31 @@ function App() {
     );
   }
   
-  // Check if user is not authenticated and not on login page
-  if (!user && location !== '/login') {
-    navigate('/login');
-    return null;
+  // For supplier routes, authentication is required
+  if (isSupplierRoute) {
+    // If not authenticated and trying to access supplier routes, redirect to login
+    if (!user && location !== '/login') {
+      // We need to use useEffect to avoid React warnings about updates during render
+      useEffect(() => {
+        navigate('/login');
+      }, [navigate]);
+      return null;
+    }
+    
+    // If authenticated but not a supplier, show not found
+    if (user && user.role !== 'supplier') {
+      return <NotFound />;
+    }
   }
 
   // Route to appropriate dashboard based on user role
-  if (user && location === '/') {
-    if (user.role === 'supplier') {
-      navigate('/supplier/dashboard');
-      return null;
+  useEffect(() => {
+    if (user && location === '/') {
+      if (user.role === 'supplier') {
+        navigate('/supplier/dashboard');
+      }
     }
-  }
+  }, [user, location, navigate]);
 
   return (
     <>
