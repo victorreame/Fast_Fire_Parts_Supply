@@ -38,29 +38,44 @@ const MobileHome = () => {
         </form>
 
         <div className="grid grid-cols-1 gap-4">
-          <Button
-            onClick={() => navigate("/jobs")}
-            className="bg-primary-700 hover:bg-primary-800 text-white rounded-lg p-6 flex flex-col items-center justify-center transition duration-200 shadow-md h-24"
-          >
-            <FaBriefcase className="text-3xl mb-2" />
-            <span className="text-lg font-semibold">Job Search</span>
-          </Button>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <Button
+              onClick={() => navigate("/jobs")}
+              className="bg-primary-700 hover:bg-primary-800 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition duration-200 w-full h-24"
+            >
+              <FaBriefcase className="text-3xl mb-2" />
+              <span className="text-lg font-semibold">Job Search</span>
+            </Button>
+            <div className="p-3 text-sm text-gray-600">
+              Search for active jobs by job number or name. Add parts to jobs for more organized ordering.
+            </div>
+          </div>
 
-          <Button
-            onClick={() => navigate("/parts/popular")}
-            className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg p-6 flex flex-col items-center justify-center transition duration-200 shadow-md h-24"
-          >
-            <FaStar className="text-3xl mb-2" />
-            <span className="text-lg font-semibold">Top 50 Parts</span>
-          </Button>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <Button
+              onClick={() => navigate("/parts/popular")}
+              className="bg-primary-600 hover:bg-primary-700 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition duration-200 w-full h-24"
+            >
+              <FaStar className="text-3xl mb-2" />
+              <span className="text-lg font-semibold">Top 50 Parts</span>
+            </Button>
+            <div className="p-3 text-sm text-gray-600">
+              Browse our most popular parts used in fire sprinkler systems. Quick access to commonly ordered items.
+            </div>
+          </div>
 
-          <Button
-            onClick={() => navigate("/parts")}
-            className="bg-primary-500 hover:bg-primary-600 text-white rounded-lg p-6 flex flex-col items-center justify-center transition duration-200 shadow-md h-24"
-          >
-            <FaList className="text-3xl mb-2" />
-            <span className="text-lg font-semibold">Full Parts List</span>
-          </Button>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <Button
+              onClick={() => navigate("/parts")}
+              className="bg-primary-500 hover:bg-primary-600 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition duration-200 w-full h-24"
+            >
+              <FaList className="text-3xl mb-2" />
+              <span className="text-lg font-semibold">Full Parts List</span>
+            </Button>
+            <div className="p-3 text-sm text-gray-600">
+              View our complete catalog of fire sprinkler system parts with detailed specifications and availability.
+            </div>
+          </div>
         </div>
       </div>
     </MobileLayout>

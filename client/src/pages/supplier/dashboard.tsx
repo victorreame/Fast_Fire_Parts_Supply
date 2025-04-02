@@ -107,10 +107,8 @@ const SupplierDashboard = () => {
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold text-neutral-800">Recent Orders</h3>
-          <Link href="/supplier/orders">
-            <a className="text-primary hover:text-primary-700 text-sm font-medium">
+          <Link href="/supplier/orders" className="text-primary hover:text-primary-700 text-sm font-medium">
               View All Orders
-            </a>
           </Link>
         </div>
         
