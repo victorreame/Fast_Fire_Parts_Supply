@@ -46,7 +46,7 @@ const SearchPage = () => {
             : false; // Only show results if there's a search query
           
           // Filter by type
-          const matchesType = filterType ? part.type === filterType : true;
+          const matchesType = filterType && filterType !== 'all_types' ? part.type === filterType : true;
           
           return matchesSearch && matchesType;
         })
@@ -92,7 +92,7 @@ const SearchPage = () => {
               <SelectValue placeholder="Filter by Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Types</SelectItem>
+              <SelectItem value="all_types">All Types</SelectItem>
               {partTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
