@@ -148,20 +148,31 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
                   </Button>
                 </div>
                 
-                <Button 
-                  className="w-full mt-3 bg-secondary hover:bg-secondary-600"
-                  onClick={handleAddWithQuantity}
-                  disabled={addToCartMutation.isPending}
-                >
-                  {addToCartMutation.isPending ? (
-                    "Adding..."
-                  ) : (
-                    <>
-                      <FaCheck className="mr-1 h-3 w-3" />
-                      Add to Cart
-                    </>
-                  )}
-                </Button>
+                <div className="flex mt-3 space-x-2">
+                  <Button 
+                    className="flex-1 bg-primary hover:bg-primary-600"
+                    onClick={() => {
+                      setIsPopoverOpen(false);
+                    }}
+                  >
+                    OK
+                  </Button>
+                  
+                  <Button 
+                    className="flex-1 bg-secondary hover:bg-secondary-600"
+                    onClick={handleAddWithQuantity}
+                    disabled={addToCartMutation.isPending}
+                  >
+                    {addToCartMutation.isPending ? (
+                      "Adding..."
+                    ) : (
+                      <>
+                        <FaCheck className="mr-1 h-3 w-3" />
+                        Add
+                      </>
+                    )}
+                  </Button>
+                </div>
               </PopoverContent>
             </Popover>
           </div>
