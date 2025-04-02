@@ -8,6 +8,7 @@ import { useSearch } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Part } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import { FaSearch, FaFilter, FaSortAmountDown, FaThList, FaExclamationTriangle } from "react-icons/fa";
 
 const SearchPage = () => {
   const search = useSearch();
@@ -74,44 +75,89 @@ const SearchPage = () => {
 
   return (
     <MobileLayout title="Search Results" showBackButton={true}>
-      <div className="p-4 bg-neutral-100 border-b border-neutral-200">
-        <form onSubmit={handleSearch} className="relative mb-2">
-          <Input
-            type="text"
-            placeholder="Search parts..."
-            className="w-full p-3 pl-10 rounded-md"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <i className="fas fa-search absolute left-3 top-3.5 text-primary-500"></i>
-          <Button type="submit" className="sr-only">Search</Button>
+      <div className="p-4 bg-gradient-to-b from-neutral-50 to-neutral-100 border-b border-neutral-200 shadow-sm">
+        <form onSubmit={handleSearch} className="relative mb-3">
+          <div className="relative flex items-center">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-500">
+              <FaSearch size={18} />
+            </div>
+            <Input
+              type="text"
+              placeholder="Search parts..."
+              className="w-full py-3 pl-10 pr-20 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-300"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <Button 
+              type="submit" 
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-9 px-4 bg-primary-500 hover:bg-primary-600 rounded-md flex items-center justify-center"
+              disabled={!searchQuery.trim()}
+            >
+              <FaSearch className="mr-1" size={14} />
+              <span className="text-sm">Search</span>
+            </Button>
+          </div>
         </form>
-        <div className="mt-2 flex">
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="mr-2 flex-1">
-              <SelectValue placeholder="Filter by Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all_types">All Types</SelectItem>
-              {partTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center px-1 text-sm font-medium text-gray-600">
+            <FaFilter className="mr-2 text-primary-500" />
+            <span>Filter & Sort Options</span>
+          </div>
           
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="itemCode">Sort by Item Code</SelectItem>
-              <SelectItem value="description">Sort by Description</SelectItem>
-              <SelectItem value="type">Sort by Type</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white rounded-md shadow-sm border border-gray-200">
+              <div className="px-2 py-1 bg-primary-50 border-b border-gray-200 flex items-center">
+                <FaFilter size={12} className="mr-1 text-primary-500" />
+                <span className="text-xs font-medium">Filter Type</span>
+              </div>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="border-0 shadow-none bg-transparent text-sm h-9 py-0">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all_types">All Types</SelectItem>
+                  {partTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="bg-white rounded-md shadow-sm border border-gray-200">
+              <div className="px-2 py-1 bg-primary-50 border-b border-gray-200 flex items-center">
+                <FaSortAmountDown size={12} className="mr-1 text-primary-500" />
+                <span className="text-xs font-medium">Sort By</span>
+              </div>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="border-0 shadow-none bg-transparent text-sm h-9 py-0">
+                  <SelectValue placeholder="Sort by..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="itemCode">Item Code</SelectItem>
+                  <SelectItem value="description">Description</SelectItem>
+                  <SelectItem value="type">Type</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
+        
+        {filteredAndSortedParts.length > 0 && (
+          <div className="mt-3 px-2 py-1 bg-white rounded-md border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <FaThList className="mr-2 text-primary-500" />
+                <span className="text-sm font-medium">{filteredAndSortedParts.length} Results</span>
+              </div>
+              <span className="text-xs text-gray-500">
+                {filterType && filterType !== 'all_types' ? `Filtered by: ${filterType}` : ''}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="overflow-y-auto">
@@ -137,11 +183,24 @@ const SearchPage = () => {
         ) : filteredAndSortedParts.length > 0 ? (
           filteredAndSortedParts.map((part) => <PartCard key={part.id} part={part} />)
         ) : (
-          <div className="p-8 text-center">
-            <p className="text-neutral-500">
+          <div className="p-8 flex flex-col items-center justify-center">
+            <div className="bg-neutral-50 rounded-full p-6 mb-4 text-primary-400">
               {searchQuery 
-                ? "No parts found matching your search criteria."
-                : "Enter a search term to find parts."}
+                ? <FaExclamationTriangle size={48} />
+                : <FaSearch size={48} />
+              }
+            </div>
+            <h3 className="text-lg font-medium text-gray-700 mb-2">
+              {searchQuery 
+                ? "No Results Found"
+                : "Search for Parts"
+              }
+            </h3>
+            <p className="text-neutral-500 max-w-xs text-center">
+              {searchQuery 
+                ? "No parts match your current search and filter criteria. Try adjusting your search terms or filters."
+                : "Enter keywords, item codes, or part descriptions to find what you're looking for."
+              }
             </p>
           </div>
         )}
