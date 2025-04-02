@@ -6,12 +6,14 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { 
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+  SheetDescription,
+  SheetClose,
+} from "@/components/ui/sheet";
 import { FaCartPlus, FaMinus, FaPlus, FaCheck } from "react-icons/fa";
 
 interface PartCardProps {
@@ -21,7 +23,7 @@ interface PartCardProps {
 
 const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   const [quantity, setQuantity] = useState(1);
-  const [showDialog, setShowDialog] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -39,7 +41,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
         title: "Added to cart",
         description: `${part.description} has been added to your cart.`,
       });
-      setShowDialog(false);
+      setSheetOpen(false);
       // Reset quantity to 1 after adding to cart for next time
       setQuantity(1);
     },
@@ -107,59 +109,64 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
               <FaCartPlus className="text-lg" />
             </Button>
 
-            <Dialog open={showDialog} onOpenChange={setShowDialog}>
-              <DialogTrigger asChild>
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+              <SheetTrigger asChild>
                 <Button
-                  variant="outline" 
+                  variant="outline"
                   size="sm"
                   className="px-2 py-1 h-auto text-primary border-primary hover:bg-primary-50"
                 >
                   <FaPlus className="mr-1 text-xs" />
                   <span className="text-xs">Add</span>
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[300px] p-4">
-                <DialogTitle className="text-base font-medium">Set quantity</DialogTitle>
-                <div className="mt-3">
-                  <div className="flex items-center space-x-2 justify-center">
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-auto pb-8 pt-6">
+                <SheetTitle className="mb-4 text-center">Set quantity</SheetTitle>
+                <SheetDescription className="sr-only">
+                  Adjust the quantity and add to cart.
+                </SheetDescription>
+                
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex items-center space-x-3 justify-center">
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-9 w-9"
+                      className="h-10 w-10"
                       onClick={handleDecrement}
                       disabled={quantity <= 1}
                     >
-                      <FaMinus className="h-3 w-3" />
+                      <FaMinus className="h-4 w-4" />
                     </Button>
                     
                     <Input
                       type="text"
                       value={quantity}
                       onChange={handleInputChange}
-                      className="h-9 w-16 text-center"
+                      className="h-10 w-20 text-center text-lg"
                       min={1}
                     />
                     
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-9 w-9"
+                      className="h-10 w-10"
                       onClick={handleIncrement}
                     >
-                      <FaPlus className="h-3 w-3" />
+                      <FaPlus className="h-4 w-4" />
                     </Button>
                   </div>
                   
-                  <div className="flex mt-4 gap-2">
-                    <Button 
-                      className="flex-1 bg-primary hover:bg-primary-600"
-                      onClick={() => setShowDialog(false)}
-                    >
-                      OK
-                    </Button>
+                  <div className="flex w-full max-w-xs mt-6 gap-3">
+                    <SheetClose asChild>
+                      <Button 
+                        className="flex-1 bg-primary hover:bg-primary-600 py-3 text-base"
+                      >
+                        OK
+                      </Button>
+                    </SheetClose>
                     
                     <Button 
-                      className="flex-1 bg-secondary hover:bg-secondary-600"
+                      className="flex-1 bg-secondary hover:bg-secondary-600 py-3 text-base"
                       onClick={handleAddWithQuantity}
                       disabled={addToCartMutation.isPending}
                     >
@@ -167,15 +174,15 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
                         "Adding..."
                       ) : (
                         <>
-                          <FaCheck className="mr-1 h-3 w-3" />
-                          Add
+                          <FaCheck className="mr-2 h-4 w-4" />
+                          Add to Cart
                         </>
                       )}
                     </Button>
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
