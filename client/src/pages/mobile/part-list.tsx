@@ -68,7 +68,7 @@ const PartListPage = () => {
             value={localSearchQuery}
             onChange={(e) => setLocalSearchQuery(e.target.value)}
           />
-          <i className="fas fa-search absolute left-3 top-3.5 text-neutral-400"></i>
+          <i className="fas fa-search absolute left-3 top-3.5 text-primary-500"></i>
         </div>
         <div className="mt-2 flex">
           <Select value={filterType} onValueChange={setFilterType}>

@@ -89,10 +89,12 @@ const LoginPage = () => {
         </form>
       </Card>
       
-      <div className="fixed bottom-4 left-0 right-0 text-center text-sm text-gray-500">
-        <p>Demo Credentials:</p>
-        <p>Contractor: john.doe / password123</p>
-        <p>Supplier: admin / admin123</p>
+      <div className="fixed bottom-4 left-0 right-0 text-center text-sm">
+        <p className="font-medium text-primary-600 mb-1">Demo Credentials</p>
+        <div className="bg-white p-2 rounded-md shadow-sm inline-block">
+          <p className="mb-1"><span className="font-semibold">Contractor:</span> john.doe / password123</p>
+          <p><span className="font-semibold">Supplier:</span> admin / admin123</p>
+        </div>
       </div>
     </div>
   );
