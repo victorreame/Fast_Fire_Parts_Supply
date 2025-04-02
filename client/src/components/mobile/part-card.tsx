@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { Part } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,10 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { FaCartPlus, FaMinus, FaPlus, FaCheck } from "react-icons/fa";
 
 interface PartCardProps {
@@ -20,32 +21,9 @@ interface PartCardProps {
 
 const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   const [quantity, setQuantity] = useState(1);
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const popoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showDialog, setShowDialog] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-
-  // Clear any existing timeout when component unmounts
-  React.useEffect(() => {
-    return () => {
-      if (popoverTimeoutRef.current) {
-        clearTimeout(popoverTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Safely close popover with a slight delay to prevent flickering
-  const closePopover = () => {
-    // Clear any existing timeout
-    if (popoverTimeoutRef.current) {
-      clearTimeout(popoverTimeoutRef.current);
-    }
-    
-    // Set new timeout to close popover
-    popoverTimeoutRef.current = setTimeout(() => {
-      setIsPopoverOpen(false);
-    }, 100);
-  };
 
   const addToCartMutation = useMutation({
     mutationFn: async (qty: number) => {
@@ -61,7 +39,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
         title: "Added to cart",
         description: `${part.description} has been added to your cart.`,
       });
-      closePopover();
+      setShowDialog(false);
       // Reset quantity to 1 after adding to cart for next time
       setQuantity(1);
     },
@@ -101,20 +79,6 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
     }
   };
 
-  const handlePopoverOpenChange = (open: boolean) => {
-    // If opening, clear any closing timeouts and open immediately
-    if (open) {
-      if (popoverTimeoutRef.current) {
-        clearTimeout(popoverTimeoutRef.current);
-        popoverTimeoutRef.current = null;
-      }
-      setIsPopoverOpen(true);
-    } else {
-      // If closing, use the delayed close
-      closePopover();
-    }
-  };
-
   return (
     <div className="p-4 border-b border-neutral-200">
       <div className="flex justify-between">
@@ -143,73 +107,75 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
               <FaCartPlus className="text-lg" />
             </Button>
 
-            <Popover open={isPopoverOpen} onOpenChange={handlePopoverOpenChange}>
-              <PopoverTrigger asChild>
+            <Dialog open={showDialog} onOpenChange={setShowDialog}>
+              <DialogTrigger asChild>
                 <Button
-                  variant="outline"
+                  variant="outline" 
                   size="sm"
                   className="px-2 py-1 h-auto text-primary border-primary hover:bg-primary-50"
                 >
                   <FaPlus className="mr-1 text-xs" />
                   <span className="text-xs">Add</span>
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56 p-3" align="end" sideOffset={5}>
-                <h4 className="font-medium text-sm mb-2">Set quantity:</h4>
-                <div className="flex items-center space-x-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleDecrement}
-                    disabled={quantity <= 1}
-                  >
-                    <FaMinus className="h-3 w-3" />
-                  </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[300px] p-4">
+                <DialogTitle className="text-base font-medium">Set quantity</DialogTitle>
+                <div className="mt-3">
+                  <div className="flex items-center space-x-2 justify-center">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9"
+                      onClick={handleDecrement}
+                      disabled={quantity <= 1}
+                    >
+                      <FaMinus className="h-3 w-3" />
+                    </Button>
+                    
+                    <Input
+                      type="text"
+                      value={quantity}
+                      onChange={handleInputChange}
+                      className="h-9 w-16 text-center"
+                      min={1}
+                    />
+                    
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9"
+                      onClick={handleIncrement}
+                    >
+                      <FaPlus className="h-3 w-3" />
+                    </Button>
+                  </div>
                   
-                  <Input
-                    type="text"
-                    value={quantity}
-                    onChange={handleInputChange}
-                    className="h-8 w-16 text-center"
-                    min={1}
-                  />
-                  
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleIncrement}
-                  >
-                    <FaPlus className="h-3 w-3" />
-                  </Button>
+                  <div className="flex mt-4 gap-2">
+                    <Button 
+                      className="flex-1 bg-primary hover:bg-primary-600"
+                      onClick={() => setShowDialog(false)}
+                    >
+                      OK
+                    </Button>
+                    
+                    <Button 
+                      className="flex-1 bg-secondary hover:bg-secondary-600"
+                      onClick={handleAddWithQuantity}
+                      disabled={addToCartMutation.isPending}
+                    >
+                      {addToCartMutation.isPending ? (
+                        "Adding..."
+                      ) : (
+                        <>
+                          <FaCheck className="mr-1 h-3 w-3" />
+                          Add
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-                
-                <div className="flex mt-3 space-x-2">
-                  <Button 
-                    className="flex-1 bg-primary hover:bg-primary-600"
-                    onClick={closePopover}
-                  >
-                    OK
-                  </Button>
-                  
-                  <Button 
-                    className="flex-1 bg-secondary hover:bg-secondary-600"
-                    onClick={handleAddWithQuantity}
-                    disabled={addToCartMutation.isPending}
-                  >
-                    {addToCartMutation.isPending ? (
-                      "Adding..."
-                    ) : (
-                      <>
-                        <FaCheck className="mr-1 h-3 w-3" />
-                        Add
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
