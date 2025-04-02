@@ -60,7 +60,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
       <header className="bg-primary text-white p-4 flex items-center justify-between shadow-md">
         <div className="flex items-center">
           {showBackButton ? (
-            <button onClick={() => navigate(-1)} className="mr-2">
+            <button onClick={() => window.history.back()} className="mr-2">
               <i className="fas fa-arrow-left"></i>
             </button>
           ) : (
@@ -72,18 +72,21 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
         </div>
         <div className="flex items-center">
           {showCart && (
-            <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative">
-                <i className="fas fa-shopping-cart"></i>
-                {cartItems.length > 0 && (
-                  <Badge 
-                    className="absolute -top-1 -right-1 bg-secondary text-white h-5 w-5 flex items-center justify-center p-0"
-                  >
-                    {cartItems.length}
-                  </Badge>
-                )}
-              </Button>
-            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              onClick={() => navigate('/cart')}
+            >
+              <i className="fas fa-shopping-cart"></i>
+              {cartItems.length > 0 && (
+                <Badge 
+                  className="absolute -top-1 -right-1 bg-secondary text-white h-5 w-5 flex items-center justify-center p-0"
+                >
+                  {cartItems.length}
+                </Badge>
+              )}
+            </Button>
           )}
 
           <Sheet open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
@@ -138,37 +141,29 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
       {/* Bottom Navigation */}
       <nav className="bg-white border-t border-neutral-200 sticky bottom-0">
         <div className="flex justify-around">
-          <Link href="/">
-            <a className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
-              location === '/' ? 'text-primary-700' : 'text-neutral-500'
-            }`}>
-              <FaHome className="text-lg mb-1" />
-              <span>Home</span>
-            </a>
+          <Link href="/" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
+            location === '/' ? 'text-primary-700' : 'text-neutral-500'
+          }`}>
+            <FaHome className="text-lg mb-1" />
+            <span>Home</span>
           </Link>
-          <Link href="/orders">
-            <a className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
-              location === '/orders' ? 'text-primary-700' : 'text-neutral-500'
-            }`}>
-              <FaClipboardList className="text-lg mb-1" />
-              <span>Orders</span>
-            </a>
+          <Link href="/orders" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
+            location === '/orders' ? 'text-primary-700' : 'text-neutral-500'
+          }`}>
+            <FaClipboardList className="text-lg mb-1" />
+            <span>Orders</span>
           </Link>
-          <Link href="/favorites">
-            <a className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
-              location === '/favorites' ? 'text-primary-700' : 'text-neutral-500'
-            }`}>
-              <FaStar className="text-lg mb-1" />
-              <span>Favorites</span>
-            </a>
+          <Link href="/favorites" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
+            location === '/favorites' ? 'text-primary-700' : 'text-neutral-500'
+          }`}>
+            <FaStar className="text-lg mb-1" />
+            <span>Favorites</span>
           </Link>
-          <Link href="/account">
-            <a className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
-              location === '/account' ? 'text-primary-700' : 'text-neutral-500'
-            }`}>
-              <FaUser className="text-lg mb-1" />
-              <span>Account</span>
-            </a>
+          <Link href="/account" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
+            location === '/account' ? 'text-primary-700' : 'text-neutral-500'
+          }`}>
+            <FaUser className="text-lg mb-1" />
+            <span>Account</span>
           </Link>
         </div>
       </nav>

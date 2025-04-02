@@ -55,6 +55,21 @@ function App() {
   // Is this a supplier route?
   const isSupplierRoute = location.startsWith('/supplier');
   
+  // For authentication redirects
+  useEffect(() => {
+    // If trying to access supplier routes without auth, redirect to login
+    if (isSupplierRoute && !isLoading && !user && location !== '/login') {
+      navigate('/login');
+    }
+    
+    // Route to appropriate dashboard based on user role
+    if (user && location === '/') {
+      if (user.role === 'supplier') {
+        navigate('/supplier/dashboard');
+      }
+    }
+  }, [user, isLoading, location, navigate, isSupplierRoute]);
+  
   // Handle loading state
   if (isLoading && isSupplierRoute) {
     return (
@@ -64,31 +79,10 @@ function App() {
     );
   }
   
-  // For supplier routes, authentication is required
-  if (isSupplierRoute) {
-    // If not authenticated and trying to access supplier routes, redirect to login
-    if (!user && location !== '/login') {
-      // We need to use useEffect to avoid React warnings about updates during render
-      useEffect(() => {
-        navigate('/login');
-      }, [navigate]);
-      return null;
-    }
-    
-    // If authenticated but not a supplier, show not found
-    if (user && user.role !== 'supplier') {
-      return <NotFound />;
-    }
+  // If authenticated but not a supplier, show not found for supplier routes
+  if (isSupplierRoute && user && user.role !== 'supplier' && location !== '/login') {
+    return <NotFound />;
   }
-
-  // Route to appropriate dashboard based on user role
-  useEffect(() => {
-    if (user && location === '/') {
-      if (user.role === 'supplier') {
-        navigate('/supplier/dashboard');
-      }
-    }
-  }, [user, location, navigate]);
 
   return (
     <>
