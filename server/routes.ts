@@ -241,12 +241,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Cart routes
   apiRouter.get("/cart", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
     try {
-      const cartItems = await storage.getCartItems(req.session.userId);
+      // Use either authenticated user ID or guest user ID
+      let userId = req.session.userId || req.session.guestUserId;
+      
+      // If no user ID of any type, return empty cart
+      if (!userId) {
+        return res.json([]);
+      }
+      
+      const cartItems = await storage.getCartItems(userId);
       
       // Get part details for each cart item
       const cartWithDetails = await Promise.all(
@@ -258,19 +262,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(cartWithDetails);
     } catch (error) {
+      console.error("Error getting cart:", error);
       res.status(500).json({ message: "Failed to get cart items" });
     }
   });
 
   apiRouter.post("/cart", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
     try {
+      // Handle guest users - create a guest user if not authenticated
+      let userId = req.session.userId;
+      
+      if (!userId) {
+        // Check if we already created a guest user for this session
+        if (!req.session.guestUserId) {
+          // Create a new guest user
+          const guestUser = await storage.createUser({
+            username: `guest_${Date.now()}`,
+            password: Math.random().toString(36).substring(2, 15),
+            role: "guest",
+            firstName: "Guest",
+            lastName: "User",
+            email: `guest_${Date.now()}@example.com`
+          });
+          
+          // Store the guest user ID in the session
+          req.session.guestUserId = guestUser.id;
+          userId = guestUser.id;
+        } else {
+          userId = req.session.guestUserId;
+        }
+      }
+      
       const cartItemData = insertCartItemSchema.parse({
         ...req.body,
-        userId: req.session.userId
+        userId: userId
       });
       
       const cartItem = await storage.addCartItem(cartItemData);
@@ -278,6 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json({ ...cartItem, part });
     } catch (error) {
+      console.error("Error adding to cart:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid cart item data", errors: error.errors });
       }
@@ -286,11 +312,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   apiRouter.put("/cart/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
     try {
+      // Use either authenticated user ID or guest user ID
+      const userId = req.session.userId || req.session.guestUserId;
+      
+      // If no user ID of any type, return unauthorized
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
       
@@ -308,16 +338,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ ...cartItem, part });
     } catch (error) {
+      console.error("Error updating cart item:", error);
       res.status(500).json({ message: "Failed to update cart item" });
     }
   });
 
   apiRouter.delete("/cart/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
     try {
+      // Use either authenticated user ID or guest user ID
+      const userId = req.session.userId || req.session.guestUserId;
+      
+      // If no user ID of any type, return unauthorized
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
       const id = parseInt(req.params.id);
       const success = await storage.removeCartItem(id);
       
@@ -327,6 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ message: "Cart item removed successfully" });
     } catch (error) {
+      console.error("Error removing cart item:", error);
       res.status(500).json({ message: "Failed to remove cart item" });
     }
   });
