@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Part } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,8 +21,31 @@ interface PartCardProps {
 const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   const [quantity, setQuantity] = useState(1);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const popoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Clear any existing timeout when component unmounts
+  React.useEffect(() => {
+    return () => {
+      if (popoverTimeoutRef.current) {
+        clearTimeout(popoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Safely close popover with a slight delay to prevent flickering
+  const closePopover = () => {
+    // Clear any existing timeout
+    if (popoverTimeoutRef.current) {
+      clearTimeout(popoverTimeoutRef.current);
+    }
+    
+    // Set new timeout to close popover
+    popoverTimeoutRef.current = setTimeout(() => {
+      setIsPopoverOpen(false);
+    }, 100);
+  };
 
   const addToCartMutation = useMutation({
     mutationFn: async (qty: number) => {
@@ -38,7 +61,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
         title: "Added to cart",
         description: `${part.description} has been added to your cart.`,
       });
-      setIsPopoverOpen(false);
+      closePopover();
       // Reset quantity to 1 after adding to cart for next time
       setQuantity(1);
     },
@@ -78,6 +101,20 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
     }
   };
 
+  const handlePopoverOpenChange = (open: boolean) => {
+    // If opening, clear any closing timeouts and open immediately
+    if (open) {
+      if (popoverTimeoutRef.current) {
+        clearTimeout(popoverTimeoutRef.current);
+        popoverTimeoutRef.current = null;
+      }
+      setIsPopoverOpen(true);
+    } else {
+      // If closing, use the delayed close
+      closePopover();
+    }
+  };
+
   return (
     <div className="p-4 border-b border-neutral-200">
       <div className="flex justify-between">
@@ -106,7 +143,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
               <FaCartPlus className="text-lg" />
             </Button>
 
-            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+            <Popover open={isPopoverOpen} onOpenChange={handlePopoverOpenChange}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -117,7 +154,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
                   <span className="text-xs">Add</span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-56 p-3" align="end">
+              <PopoverContent className="w-56 p-3" align="end" sideOffset={5}>
                 <h4 className="font-medium text-sm mb-2">Set quantity:</h4>
                 <div className="flex items-center space-x-1">
                   <Button
@@ -151,9 +188,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
                 <div className="flex mt-3 space-x-2">
                   <Button 
                     className="flex-1 bg-primary hover:bg-primary-600"
-                    onClick={() => {
-                      setIsPopoverOpen(false);
-                    }}
+                    onClick={closePopover}
                   >
                     OK
                   </Button>
