@@ -36,7 +36,7 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
   const handleLogout = async () => {
     try {
       // Send logout request to server - skip error handling for logout requests
-      const response = await apiRequest('POST', '/api/logout', {}, true);
+      await apiRequest('POST', '/api/logout', {}, true);
       
       // Clear all application cache to ensure no user data remains
       queryClient.clear();
@@ -48,14 +48,14 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
       
-      // Redirect to the home/login page
-      navigate('/');
-      
       // Notify user
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
+      
+      // Redirect to the login page explicitly
+      window.location.href = "/login";
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -123,8 +123,13 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
               <span className="ml-2 text-sm font-medium text-white">
                 {user ? `${user.firstName} ${user.lastName}` : "Loading..."}
               </span>
-              <Button variant="ghost" size="icon" className="ml-1 h-4 w-4 text-xs text-neutral-300" onClick={handleLogout}>
-                <i className="fas fa-chevron-down"></i>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-4 text-xs bg-red-600 hover:bg-red-700 text-white border-none" 
+                onClick={handleLogout}
+              >
+                Logout
               </Button>
             </div>
           </div>

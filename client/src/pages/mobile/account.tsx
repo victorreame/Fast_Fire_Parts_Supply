@@ -32,11 +32,20 @@ const AccountPage = () => {
     try {
       setIsLoggingOut(true);
       await apiRequest('POST', '/api/logout', {});
-      navigate('/login');
+      
+      // Clear all application cache to ensure no user data remains
+      import("@/lib/queryClient").then(({ queryClient }) => {
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+      });
+      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
+      
+      // Redirect to the login page explicitly
+      window.location.href = "/login";
     } catch (error) {
       toast({
         title: "Error",

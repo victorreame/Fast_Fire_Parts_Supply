@@ -28,18 +28,15 @@ const LoginPage = () => {
       });
       
       // Force refresh the user query to ensure App.tsx picks up the logged-in state
-      // This will trigger the redirect logic in the App component
       import("@/lib/queryClient").then(({ queryClient }) => {
         queryClient.invalidateQueries({ queryKey: ['/api/user'] });
         
-        // Direct navigation as a backup mechanism
-        setTimeout(() => {
-          if (data.role === "supplier" || data.role === "admin") {
-            navigate("/supplier/dashboard");
-          } else {
-            navigate("/mobile");
-          }
-        }, 100);
+        // Use direct navigation for more reliable redirection
+        if (data.role === "supplier" || data.role === "admin") {
+          window.location.href = "/supplier/dashboard";
+        } else {
+          window.location.href = "/mobile";
+        }
       });
     },
     onError: () => {
