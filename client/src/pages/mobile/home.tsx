@@ -4,7 +4,7 @@ import MobileLayout from "@/components/mobile/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { FaBriefcase, FaStar, FaList, FaSearch, FaTools, FaFireExtinguisher, FaListAlt } from "react-icons/fa";
+import { FaStar, FaList, FaSearch, FaHardHat, FaFireExtinguisher, FaListAlt, FaTint } from "react-icons/fa";
 
 const MobileHome = () => {
   const [_, navigate] = useLocation();
@@ -29,14 +29,14 @@ const MobileHome = () => {
             <Input
               type="text"
               placeholder="Search parts..."
-              className="w-full p-3 pl-10 rounded-md shadow-sm border-gray-300 focus:border-primary-500 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+              className="w-full p-3 pl-10 rounded-md shadow-sm border-gray-300 focus:border-red-500 focus:ring focus:ring-red-200 focus:ring-opacity-50"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <FaSearch className="absolute left-3 top-3.5 text-primary-500" />
+            <FaSearch className="absolute left-3 top-3.5 text-red-600" />
             <Button 
               type="submit" 
-              className="absolute right-1 top-1 h-8 px-3 bg-primary-500 hover:bg-primary-600"
+              className="absolute right-1 top-1 h-8 px-3 bg-red-600 hover:bg-red-700 text-white"
               disabled={!searchQuery.trim()}
             >
               <FaSearch className="mr-1" />
@@ -52,12 +52,12 @@ const MobileHome = () => {
               className="bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition-all duration-300 w-full h-28"
             >
               <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/15 mb-3">
-                <FaTools className="text-3xl text-white" />
+                <FaHardHat className="text-3xl text-white" />
               </div>
-              <span className="text-xl font-semibold">Job Search</span>
+              <span className="text-xl font-semibold">Search Parts by Job Number</span>
             </Button>
             <div className="p-4 text-sm text-gray-600">
-              Search for active jobs by job number or name. Add parts to jobs for more organized ordering.
+              Click to see all parts used on a particular job.
             </div>
           </div>
 

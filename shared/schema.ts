@@ -79,6 +79,8 @@ export const orders = pgTable("orders", {
   businessId: integer("business_id").references(() => businesses.id).notNull(),
   jobId: integer("job_id").references(() => jobs.id),
   status: text("status").notNull().default("new"), // new, processing, shipped, completed
+  customerName: text("customer_name"), // Name of person placing the order
+  orderNumber: text("order_number"), // Client reference number/PO number
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

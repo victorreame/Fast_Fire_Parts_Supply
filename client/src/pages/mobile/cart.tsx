@@ -2,15 +2,19 @@ import { useState } from "react";
 import MobileLayout from "@/components/mobile/layout";
 import CartItem from "@/components/mobile/cart-item";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
+import { Label } from "@/components/ui/label";
 
 const CartPage = () => {
   const [selectedJobId, setSelectedJobId] = useState<string>("none");
+  const [orderNumber, setOrderNumber] = useState<string>("");
+  const [customerName, setCustomerName] = useState<string>("");
   const [_, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -23,10 +27,16 @@ const CartPage = () => {
     queryKey: ['/api/jobs'],
   });
 
+  const { data: user } = useQuery({
+    queryKey: ['/api/user'],
+  });
+
   const createOrderMutation = useMutation({
     mutationFn: async () => {
       return apiRequest("POST", "/api/orders", {
         jobId: selectedJobId && selectedJobId !== "none" ? parseInt(selectedJobId) : null,
+        customerName: customerName.trim() || "Guest User",
+        orderNumber: orderNumber.trim() || null
       });
     },
     onSuccess: () => {
@@ -34,7 +44,7 @@ const CartPage = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
       toast({
         title: "Order submitted",
-        description: "Your order has been successfully submitted.",
+        description: "Your order has been successfully submitted to the supplier.",
       });
       navigate("/orders");
     },
@@ -48,10 +58,19 @@ const CartPage = () => {
   });
 
   const handleSubmitOrder = () => {
-    if (cartItems.length === 0) {
+    if (!cartItems || (cartItems as any[]).length === 0) {
       toast({
         title: "Empty cart",
         description: "Your cart is empty. Add items before submitting an order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!customerName.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter your name to continue with the order.",
         variant: "destructive",
       });
       return;
@@ -85,9 +104,9 @@ const CartPage = () => {
               </div>
             ))}
         </div>
-      ) : cartItems.length > 0 ? (
-        <div className="overflow-y-auto max-h-[calc(100vh-170px)]">
-          {cartItems.map((item) => (
+      ) : cartItems && (cartItems as any[]).length > 0 ? (
+        <div className="overflow-y-auto max-h-[calc(100vh-260px)]">
+          {(cartItems as any[]).map((item: any) => (
             <CartItem key={item.id} item={item} />
           ))}
         </div>
@@ -96,40 +115,70 @@ const CartPage = () => {
           <div className="text-center">
             <i className="fas fa-shopping-cart text-4xl text-neutral-300 mb-4"></i>
             <p className="text-neutral-500 mb-4">Your cart is empty</p>
-            <Button onClick={() => navigate("/parts")} variant="outline">
+            <Button onClick={() => navigate("/parts")} className="bg-red-600 hover:bg-red-700 text-white">
               Browse Parts
             </Button>
           </div>
         </div>
       )}
 
-      {cartItems.length > 0 && (
+      {cartItems && (cartItems as any[]).length > 0 && (
         <div className="p-4 bg-white border-t border-neutral-200 sticky bottom-14">
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-neutral-700 mb-1">
-              Assign to Job (Optional)
-            </label>
-            <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a job" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No job selected</SelectItem>
-                {jobs.map((job) => (
-                  <SelectItem key={job.id} value={job.id.toString()}>
-                    {job.name} ({job.jobNumber})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="customerName" className="text-sm font-medium text-neutral-700">
+                Your Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="customerName"
+                placeholder="Enter your name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="mt-1"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="orderNumber" className="text-sm font-medium text-neutral-700">
+                Order/PO Number (Optional)
+              </Label>
+              <Input
+                id="orderNumber"
+                placeholder="Enter order or PO number"
+                value={orderNumber}
+                onChange={(e) => setOrderNumber(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label className="block text-sm font-medium text-neutral-700">
+                Assign to Job (Optional)
+              </Label>
+              <Select value={selectedJobId} onValueChange={setSelectedJobId}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select a job" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No job selected</SelectItem>
+                  {jobs.map((job: any) => (
+                    <SelectItem key={job.id} value={job.id.toString()}>
+                      {job.name} ({job.jobNumber})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button
+              className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium transition mt-2"
+              onClick={handleSubmitOrder}
+              disabled={createOrderMutation.isPending}
+            >
+              {createOrderMutation.isPending ? "Submitting..." : "Submit Order"}
+            </Button>
           </div>
-          <Button
-            className="w-full bg-secondary hover:bg-secondary-600 text-white py-3 rounded-lg font-medium transition"
-            onClick={handleSubmitOrder}
-            disabled={createOrderMutation.isPending}
-          >
-            {createOrderMutation.isPending ? "Submitting..." : "Submit Order"}
-          </Button>
         </div>
       )}
     </MobileLayout>

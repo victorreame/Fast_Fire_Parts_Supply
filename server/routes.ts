@@ -400,23 +400,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   apiRouter.post("/orders", async (req: Request, res: Response) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
     try {
-      const user = req.user;
+      let userId = 0;
+      let businessId = 0;
       
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      if (user.role !== "contractor" || !user.businessId) {
-        return res.status(403).json({ message: "Unauthorized" });
+      // Handle authenticated vs guest users
+      if (req.isAuthenticated() && req.user) {
+        userId = req.user.id;
+        businessId = req.user.businessId || 0;
+        
+        if (req.user.role !== "contractor" && businessId === 0) {
+          // For non-contractors or users without businesses, we'll use a default/guest approach
+          businessId = 1; // Default business for guests
+        }
+      } else {
+        // Guest user - we'll use a default business ID
+        userId = getGuestUserId(req);
+        businessId = 1; // Default business for guests
       }
       
       // Get user's cart items
-      const cartItems = await storage.getCartItems(user.id);
+      const cartItems = await storage.getCartItems(userId);
       
       if (cartItems.length === 0) {
         return res.status(400).json({ message: "Cart is empty" });
@@ -424,13 +428,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create new order
       const order = await storage.createOrder({
-        businessId: user.businessId,
+        businessId: businessId,
         jobId: req.body.jobId || null,
+        customerName: req.body.customerName || "Guest User",
+        orderNumber: req.body.orderNumber || null,
         status: "new"
       });
       
       // Get business price tier
-      const business = await storage.getBusiness(user.businessId);
+      const business = await storage.getBusiness(businessId);
       
       if (!business) {
         return res.status(404).json({ message: "Business not found" });
@@ -456,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Clear user's cart
-      await storage.clearCart(user.id);
+      await storage.clearCart(userId);
       
       // Get order with items
       const items = await storage.getOrderItems(order.id);
