@@ -49,7 +49,7 @@ const MobileHome = () => {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
             <Button
               onClick={() => navigate("/jobs")}
-              className="bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition-all duration-300 w-full h-28"
+              className="bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition-all duration-300 w-full h-28"
             >
               <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/15 mb-3">
                 <FaTools className="text-3xl text-white" />
@@ -64,7 +64,7 @@ const MobileHome = () => {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
             <Button
               onClick={() => navigate("/parts/popular")}
-              className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition-all duration-300 w-full h-28"
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition-all duration-300 w-full h-28"
             >
               <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/15 mb-3">
                 <FaFireExtinguisher className="text-3xl text-white" />
@@ -79,7 +79,7 @@ const MobileHome = () => {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
             <Button
               onClick={() => navigate("/parts")}
-              className="bg-gradient-to-r from-primary-400 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition-all duration-300 w-full h-28"
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition-all duration-300 w-full h-28"
             >
               <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/15 mb-3">
                 <FaListAlt className="text-3xl text-white" />

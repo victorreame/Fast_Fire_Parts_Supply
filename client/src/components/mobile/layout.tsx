@@ -57,7 +57,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-white p-4 flex items-center justify-between shadow-md">
+      <header className="bg-gradient-to-r from-red-700 to-red-800 text-white p-4 flex items-center justify-between shadow-md">
         <div className="flex items-center">
           {showBackButton ? (
             <button onClick={() => window.history.back()} className="mr-2">
@@ -142,25 +142,25 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
       <nav className="bg-white border-t border-neutral-200 sticky bottom-0">
         <div className="flex justify-around">
           <Link href="/" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
-            location === '/' ? 'text-primary-700' : 'text-neutral-500'
+            location === '/' ? 'text-red-600' : 'text-neutral-500'
           }`}>
             <FaHome className="text-lg mb-1" />
             <span>Home</span>
           </Link>
           <Link href="/orders" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
-            location === '/orders' ? 'text-primary-700' : 'text-neutral-500'
+            location === '/orders' ? 'text-red-600' : 'text-neutral-500'
           }`}>
             <FaClipboardList className="text-lg mb-1" />
             <span>Orders</span>
           </Link>
           <Link href="/favorites" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
-            location === '/favorites' ? 'text-primary-700' : 'text-neutral-500'
+            location === '/favorites' ? 'text-red-600' : 'text-neutral-500'
           }`}>
             <FaStar className="text-lg mb-1" />
             <span>Favorites</span>
           </Link>
           <Link href="/account" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
-            location === '/account' ? 'text-primary-700' : 'text-neutral-500'
+            location === '/account' ? 'text-red-600' : 'text-neutral-500'
           }`}>
             <FaUser className="text-lg mb-1" />
             <span>Account</span>
