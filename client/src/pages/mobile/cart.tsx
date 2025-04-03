@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
 
 const CartPage = () => {
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string>("none");
   const [_, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -26,7 +26,7 @@ const CartPage = () => {
   const createOrderMutation = useMutation({
     mutationFn: async () => {
       return apiRequest("POST", "/api/orders", {
-        jobId: selectedJobId ? parseInt(selectedJobId) : null,
+        jobId: selectedJobId && selectedJobId !== "none" ? parseInt(selectedJobId) : null,
       });
     },
     onSuccess: () => {
@@ -109,12 +109,12 @@ const CartPage = () => {
             <label className="block text-sm font-medium text-neutral-700 mb-1">
               Assign to Job (Optional)
             </label>
-            <Select value={selectedJobId || ""} onValueChange={setSelectedJobId}>
+            <Select value={selectedJobId} onValueChange={setSelectedJobId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a job" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No job selected</SelectItem>
+                <SelectItem value="none">No job selected</SelectItem>
                 {jobs.map((job) => (
                   <SelectItem key={job.id} value={job.id.toString()}>
                     {job.name} ({job.jobNumber})
