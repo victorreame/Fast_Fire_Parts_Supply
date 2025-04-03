@@ -7,11 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from "@/components/ui/popover";
-import { FaCartPlus, FaMinus, FaPlus, FaCheck } from "react-icons/fa";
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { FaShoppingCart, FaMinus, FaPlus } from "react-icons/fa";
 
 interface PartCardProps {
   part: Part;
@@ -20,7 +21,7 @@ interface PartCardProps {
 
 const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   const [quantity, setQuantity] = useState(1);
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -38,9 +39,8 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
         title: "Added to cart",
         description: `${part.description} has been added to your cart.`,
       });
-      setIsPopoverOpen(false);
-      // Reset quantity to 1 after adding to cart for next time
-      setQuantity(1);
+      setIsDialogOpen(false);
+      setQuantity(1); // Reset quantity to 1 after adding to cart
     },
     onError: () => {
       toast({
@@ -93,80 +93,90 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
           <h3 className="font-medium mt-1">{part.description}</h3>
           <p className="text-sm text-neutral-500 mt-1">Type: {part.type}</p>
         </div>
-        <div className="flex flex-col items-end justify-start">
-          <div className="flex space-x-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="px-2 py-1 h-auto text-secondary hover:text-secondary-700 hover:bg-secondary-50"
-              onClick={handleQuickAdd}
-              disabled={addToCartMutation.isPending}
-              title="Quick Add (Qty: 1)"
-            >
-              <FaCartPlus className="text-lg" />
-            </Button>
-
-            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="px-2 py-1 h-auto text-primary border-primary hover:bg-primary-50"
-                >
-                  <FaPlus className="mr-1 text-xs" />
-                  <span className="text-xs">Add</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56 p-3" align="end">
-                <h4 className="font-medium text-sm mb-2">Set quantity:</h4>
-                <div className="flex items-center space-x-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleDecrement}
-                    disabled={quantity <= 1}
-                  >
-                    <FaMinus className="h-3 w-3" />
-                  </Button>
-                  
-                  <Input
-                    type="text"
-                    value={quantity}
-                    onChange={handleInputChange}
-                    className="h-8 w-16 text-center"
-                    min={1}
-                  />
-                  
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleIncrement}
-                  >
-                    <FaPlus className="h-3 w-3" />
-                  </Button>
-                </div>
-                
-                <Button 
-                  className="w-full mt-3 bg-secondary hover:bg-secondary-600"
-                  onClick={handleAddWithQuantity}
-                  disabled={addToCartMutation.isPending}
-                >
-                  {addToCartMutation.isPending ? (
-                    "Adding..."
-                  ) : (
-                    <>
-                      <FaCheck className="mr-1 h-3 w-3" />
-                      Add to Cart
-                    </>
-                  )}
-                </Button>
-              </PopoverContent>
-            </Popover>
-          </div>
+        <div className="flex items-center">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="px-3 py-2 text-white"
+            onClick={() => setIsDialogOpen(true)}
+          >
+            <FaShoppingCart className="mr-1" />
+            <span>Add</span>
+          </Button>
         </div>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md" aria-describedby="add-to-cart-description">
+          <DialogTitle>Add to Cart</DialogTitle>
+          <p id="add-to-cart-description" className="sr-only">Select quantity and add items to your cart</p>
+          <div className="py-4">
+            <h3 className="font-medium mb-3">{part.description}</h3>
+            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+              <div>
+                <p className="text-sm font-medium">Item Code: {part.itemCode}</p>
+                <p className="text-sm text-neutral-500">Type: {part.type}</p>
+              </div>
+              <Badge variant="secondary" className="bg-primary-100 text-primary-800">
+                {part.pipeSize}
+              </Badge>
+            </div>
+            
+            <div className="mt-4">
+              <label className="block text-sm font-medium mb-2">Quantity:</label>
+              <div className="flex items-center">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 rounded-r-none"
+                  onClick={handleDecrement}
+                  disabled={quantity <= 1}
+                >
+                  <FaMinus className="h-3 w-3" />
+                </Button>
+                <Input
+                  type="text"
+                  value={quantity}
+                  onChange={handleInputChange}
+                  className="h-10 w-20 rounded-none text-center border-x-0"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 rounded-l-none"
+                  onClick={handleIncrement}
+                >
+                  <FaPlus className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex justify-between">
+            <Button
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleAddWithQuantity}
+              disabled={addToCartMutation.isPending}
+            >
+              {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick add button (hidden) */}
+      <Button 
+        className="hidden" 
+        onClick={handleQuickAdd}
+        disabled={addToCartMutation.isPending}
+      >
+        Quick Add
+      </Button>
     </div>
   );
 };
