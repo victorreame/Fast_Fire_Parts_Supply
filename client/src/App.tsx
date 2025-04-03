@@ -57,15 +57,18 @@ function App() {
   
   // For authentication redirects
   useEffect(() => {
-    // If trying to access supplier routes without auth, redirect to login
-    if (isSupplierRoute && !isLoading && !user && location !== '/login') {
+    // If not authenticated and trying to access protected routes, redirect to login
+    if (!isLoading && !user && location !== '/' && location !== '/login' && !location.startsWith('/mobile')) {
       navigate('/login');
+      return;
     }
     
     // Route to appropriate dashboard based on user role
-    if (user && location === '/') {
+    if (user && (location === '/login' || location === '/')) {
       if (user.role === 'supplier') {
         navigate('/supplier/dashboard');
+      } else {
+        navigate('/mobile');
       }
     }
   }, [user, isLoading, location, navigate, isSupplierRoute]);
@@ -87,11 +90,12 @@ function App() {
   return (
     <>
       <Switch>
-        {/* Auth routes */}
+        {/* Auth routes - make login the default route */}
+        <Route path="/" component={LoginPage} />
         <Route path="/login" component={LoginPage} />
         
         {/* Mobile client routes */}
-        <Route path="/" component={MobileHome} />
+        <Route path="/mobile" component={MobileHome} />
         <Route path="/jobs" component={JobSearchPage} />
         <Route path="/parts" component={PartListPage} />
         <Route path="/parts/popular" component={() => <PartListPage key="popular" />} />

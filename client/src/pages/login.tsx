@@ -24,7 +24,7 @@ const LoginPage = () => {
       if (data.role === "supplier") {
         navigate("/supplier/dashboard");
       } else {
-        navigate("/");
+        navigate("/mobile");
       }
       
       toast({
