@@ -28,18 +28,18 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const { data: user } = useQuery({
-    queryKey: ['/api/auth/me'],
+    queryKey: ['/api/user'],
     staleTime: 300000, // 5 minutes
   });
 
   const { data: cartItems = [] } = useQuery({
     queryKey: ['/api/cart'],
-    enabled: !!user,
+    enabled: true, // Always fetch cart items for mobile
   });
 
   const handleLogout = async () => {
     try {
-      await apiRequest('POST', '/api/auth/logout', {});
+      await apiRequest('POST', '/api/logout', {});
       navigate('/login');
       toast({
         title: "Logged out",

@@ -16,7 +16,7 @@ const AccountPage = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const { data: user, isLoading } = useQuery({
-    queryKey: ['/api/auth/me'],
+    queryKey: ['/api/user'],
   });
 
   const { data: business } = useQuery({
@@ -31,7 +31,7 @@ const AccountPage = () => {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await apiRequest('POST', '/api/auth/logout', {});
+      await apiRequest('POST', '/api/logout', {});
       navigate('/login');
       toast({
         title: "Logged out",

@@ -11,7 +11,7 @@ const MobileHome = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: user } = useQuery({
-    queryKey: ['/api/auth/me'],
+    queryKey: ['/api/user'],
   });
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
