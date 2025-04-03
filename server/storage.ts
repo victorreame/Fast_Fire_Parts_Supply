@@ -9,6 +9,20 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { db } from "./db";
+import { eq, and, desc, asc, gt, lt, like, or, not, isNull } from "drizzle-orm";
+import { pool } from "./db";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 export interface IStorage {
   // Session store
@@ -504,4 +518,486 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  public sessionStore: session.Store;
+  
+  constructor() {
+    const PostgresSessionStore = connectPg(session);
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true
+    });
+    
+    // Seed the database with initial data if it's empty
+    this.seedDataIfNeeded();
+  }
+  
+  private async seedDataIfNeeded() {
+    // Check if any users exist
+    const existingUsers = await db.select().from(users).limit(1);
+    
+    if (existingUsers.length === 0) {
+      console.log("Seeding database with initial data");
+      await this.seedData();
+    }
+  }
+  
+  private async seedData() {
+    try {
+      // Create sample supplier user
+      const adminPassword = await hashPassword("admin123");
+      const supplierUser = await this.createUser({
+        username: "admin",
+        password: adminPassword,
+        firstName: "Admin",
+        lastName: "User",
+        email: "admin@fastfire.com",
+        phone: "555-555-5555",
+        role: "supplier",
+        businessId: null
+      });
+      
+      // Create sample businesses
+      const business1 = await this.createBusiness({
+        name: "AquaFire Systems",
+        address: "123 Main St, Anytown, USA",
+        phone: "555-123-4567",
+        email: "info@aquafire.com",
+        priceTier: "T2"
+      });
+      
+      const business2 = await this.createBusiness({
+        name: "SafeGuard Fire Protection",
+        address: "456 Oak Ave, Somewhere, USA",
+        phone: "555-987-6543",
+        email: "contact@safeguardfire.com",
+        priceTier: "T1"
+      });
+      
+      const business3 = await this.createBusiness({
+        name: "Metro Building Services",
+        address: "789 Pine Blvd, Elsewhere, USA",
+        phone: "555-456-7890",
+        email: "service@metrobuilding.com",
+        priceTier: "T3"
+      });
+      
+      // Create contractor users for each business
+      const password = await hashPassword("password123");
+      
+      await this.createUser({
+        username: "john.doe",
+        password: password,
+        firstName: "John",
+        lastName: "Doe",
+        email: "john.doe@aquafire.com",
+        phone: "555-111-2222",
+        role: "contractor",
+        businessId: business1.id
+      });
+      
+      await this.createUser({
+        username: "jane.smith",
+        password: password,
+        firstName: "Jane",
+        lastName: "Smith",
+        email: "jane.smith@safeguardfire.com",
+        phone: "555-333-4444",
+        role: "contractor",
+        businessId: business2.id
+      });
+      
+      // Create sample parts
+      await this.createPart({
+        itemCode: "VLV-243",
+        pipeSize: "2\"",
+        description: "Butterfly Valve - Fire Protection",
+        type: "Valve",
+        priceT1: 68.50,
+        priceT2: 65.25,
+        priceT3: 62.00,
+        inStock: 36,
+        isPopular: true,
+        image: null
+      });
+      
+      await this.createPart({
+        itemCode: "SPK-108",
+        pipeSize: "1/2\"",
+        description: "Standard Sprinkler Head - K5.6",
+        type: "Sprinkler",
+        priceT1: 12.99,
+        priceT2: 11.75,
+        priceT3: 10.50,
+        inStock: 122,
+        isPopular: true,
+        image: null
+      });
+      
+      await this.createPart({
+        itemCode: "FIT-432",
+        pipeSize: "1\"",
+        description: "Threaded Elbow - 90°",
+        type: "Fitting",
+        priceT1: 3.75,
+        priceT2: 3.50,
+        priceT3: 3.25,
+        inStock: 245,
+        isPopular: true,
+        image: null
+      });
+      
+      await this.createPart({
+        itemCode: "PIP-101",
+        pipeSize: "1\"",
+        description: "Schedule 40 Steel Pipe - 10ft",
+        type: "Pipe",
+        priceT1: 28.50,
+        priceT2: 27.25,
+        priceT3: 26.00,
+        inStock: 85,
+        isPopular: true,
+        image: null
+      });
+      
+      await this.createPart({
+        itemCode: "FIT-211",
+        pipeSize: "3/4\"",
+        description: "Threaded Tee",
+        type: "Fitting",
+        priceT1: 4.25,
+        priceT2: 4.00,
+        priceT3: 3.75,
+        inStock: 180,
+        isPopular: true,
+        image: null
+      });
+      
+      // Create Jobs
+      const job1 = await this.createJob({
+        name: "Office Building Retrofit",
+        jobNumber: "JB-2023-142",
+        businessId: business1.id,
+        status: "active",
+        location: "123 Business Ave, Cityville",
+        isPublic: true,
+        createdBy: 2, // john.doe
+        description: "Complete sprinkler system retrofit for office building"
+      });
+      
+      const job2 = await this.createJob({
+        name: "Hotel Construction Project",
+        jobNumber: "JB-2023-118",
+        businessId: business2.id,
+        status: "pending",
+        location: "456 Hotel Way, Townshire",
+        isPublic: false,
+        createdBy: 3, // jane.smith
+        description: "New installation for hotel construction"
+      });
+      
+      // Create Orders
+      const order1 = await this.createOrder({
+        businessId: business1.id,
+        status: "shipped",
+        jobId: job1.id,
+        customerName: "John Doe",
+        orderNumber: "ORD-2023-001"
+      });
+      
+      const order2 = await this.createOrder({
+        businessId: business2.id,
+        status: "processing",
+        jobId: job2.id,
+        customerName: "Jane Smith",
+        orderNumber: "ORD-2023-002"
+      });
+      
+      const order3 = await this.createOrder({
+        businessId: business3.id,
+        status: "new",
+        jobId: null,
+        customerName: "Alex Johnson",
+        orderNumber: "ORD-2023-003"
+      });
+      
+      // Get parts for order items
+      const part1 = await this.getPartByItemCode("VLV-243");
+      const part2 = await this.getPartByItemCode("SPK-108");
+      const part3 = await this.getPartByItemCode("FIT-432");
+      
+      // Create order items
+      if (part1 && order1) {
+        await this.createOrderItem({
+          orderId: order1.id,
+          partId: part1.id,
+          quantity: 2,
+          priceAtOrder: part1.priceT2
+        });
+      }
+      
+      if (part2 && order1) {
+        await this.createOrderItem({
+          orderId: order1.id,
+          partId: part2.id,
+          quantity: 10,
+          priceAtOrder: part2.priceT2
+        });
+      }
+      
+      if (part3 && order2) {
+        await this.createOrderItem({
+          orderId: order2.id,
+          partId: part3.id,
+          quantity: 8,
+          priceAtOrder: part3.priceT1
+        });
+      }
+      
+      console.log("Database successfully seeded with initial data");
+    } catch (error) {
+      console.error("Error seeding database:", error);
+    }
+  }
+  
+  // User Methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+  
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+  
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values(user).returning();
+    return newUser;
+  }
+  
+  // Business Methods
+  async getBusiness(id: number): Promise<Business | undefined> {
+    const [business] = await db.select().from(businesses).where(eq(businesses.id, id));
+    return business;
+  }
+  
+  async getAllBusinesses(): Promise<Business[]> {
+    return await db.select().from(businesses);
+  }
+  
+  async createBusiness(business: InsertBusiness): Promise<Business> {
+    const [newBusiness] = await db.insert(businesses).values(business).returning();
+    return newBusiness;
+  }
+  
+  async updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business | undefined> {
+    const [updatedBusiness] = await db
+      .update(businesses)
+      .set(business)
+      .where(eq(businesses.id, id))
+      .returning();
+    return updatedBusiness;
+  }
+  
+  // Part Methods
+  async getPart(id: number): Promise<Part | undefined> {
+    const [part] = await db.select().from(parts).where(eq(parts.id, id));
+    return part;
+  }
+  
+  async getPartByItemCode(itemCode: string): Promise<Part | undefined> {
+    const [part] = await db.select().from(parts).where(eq(parts.itemCode, itemCode));
+    return part;
+  }
+  
+  async getAllParts(): Promise<Part[]> {
+    return await db.select().from(parts);
+  }
+  
+  async getPartsByType(type: string): Promise<Part[]> {
+    return await db.select().from(parts).where(eq(parts.type, type));
+  }
+  
+  async getPopularParts(limit: number): Promise<Part[]> {
+    return await db
+      .select()
+      .from(parts)
+      .where(eq(parts.isPopular, true))
+      .limit(limit);
+  }
+  
+  async createPart(part: InsertPart): Promise<Part> {
+    const [newPart] = await db.insert(parts).values(part).returning();
+    return newPart;
+  }
+  
+  async updatePart(id: number, part: Partial<InsertPart>): Promise<Part | undefined> {
+    const [updatedPart] = await db
+      .update(parts)
+      .set(part)
+      .where(eq(parts.id, id))
+      .returning();
+    return updatedPart;
+  }
+  
+  async deletePart(id: number): Promise<boolean> {
+    await db.delete(parts).where(eq(parts.id, id));
+    return true;
+  }
+  
+  // Job Methods
+  async getJob(id: number): Promise<Job | undefined> {
+    const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
+    return job;
+  }
+  
+  async getJobsByBusiness(businessId: number): Promise<Job[]> {
+    return await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.businessId, businessId));
+  }
+  
+  async getPublicJobs(): Promise<Job[]> {
+    return await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.isPublic, true));
+  }
+  
+  async getJobsByCreator(userId: number): Promise<Job[]> {
+    return await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.createdBy, userId));
+  }
+  
+  async createJob(job: InsertJob): Promise<Job> {
+    const [newJob] = await db.insert(jobs).values(job).returning();
+    return newJob;
+  }
+  
+  async updateJob(id: number, job: Partial<InsertJob>): Promise<Job | undefined> {
+    const [updatedJob] = await db
+      .update(jobs)
+      .set(job)
+      .where(eq(jobs.id, id))
+      .returning();
+    return updatedJob;
+  }
+  
+  // Order Methods
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
+  
+  async getOrdersByBusiness(businessId: number): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.businessId, businessId))
+      .orderBy(desc(orders.createdAt));
+  }
+  
+  async getRecentOrders(limit: number): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .orderBy(desc(orders.createdAt))
+      .limit(limit);
+  }
+  
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const [newOrder] = await db.insert(orders).values(order).returning();
+    return newOrder;
+  }
+  
+  async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({ 
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    return updatedOrder;
+  }
+  
+  // Order Item Methods
+  async getOrderItems(orderId: number): Promise<OrderItem[]> {
+    return await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+  }
+  
+  async createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
+    const [newOrderItem] = await db
+      .insert(orderItems)
+      .values(orderItem)
+      .returning();
+    return newOrderItem;
+  }
+  
+  // Cart Item Methods
+  async getCartItems(userId: number): Promise<CartItem[]> {
+    return await db
+      .select()
+      .from(cartItems)
+      .where(eq(cartItems.userId, userId));
+  }
+  
+  async addCartItem(cartItem: InsertCartItem): Promise<CartItem> {
+    // Check if the user already has this part in their cart
+    const [existingCartItem] = await db
+      .select()
+      .from(cartItems)
+      .where(
+        and(
+          eq(cartItems.userId, cartItem.userId),
+          eq(cartItems.partId, cartItem.partId),
+          cartItem.jobId ? eq(cartItems.jobId, cartItem.jobId) : isNull(cartItems.jobId)
+        )
+      );
+    
+    if (existingCartItem) {
+      // Update quantity instead of adding a new item
+      const newQuantity = existingCartItem.quantity + (cartItem.quantity || 1);
+      return await this.updateCartItemQuantity(existingCartItem.id, newQuantity);
+    }
+    
+    const [newCartItem] = await db
+      .insert(cartItems)
+      .values({
+        ...cartItem,
+        quantity: cartItem.quantity || 1
+      })
+      .returning();
+    return newCartItem;
+  }
+  
+  async updateCartItemQuantity(id: number, quantity: number): Promise<CartItem | undefined> {
+    const [updatedCartItem] = await db
+      .update(cartItems)
+      .set({ quantity })
+      .where(eq(cartItems.id, id))
+      .returning();
+    return updatedCartItem;
+  }
+  
+  async removeCartItem(id: number): Promise<boolean> {
+    await db.delete(cartItems).where(eq(cartItems.id, id));
+    return true;
+  }
+  
+  async clearCart(userId: number): Promise<boolean> {
+    await db.delete(cartItems).where(eq(cartItems.userId, userId));
+    return true;
+  }
+}
+
+// Use DatabaseStorage for production
+export const storage = new DatabaseStorage();
