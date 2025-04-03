@@ -386,6 +386,14 @@ export class MemStorage implements IStorage {
   async getJobsByBusiness(businessId: number): Promise<Job[]> {
     return Array.from(this.jobs.values()).filter(job => job.businessId === businessId);
   }
+  
+  async getPublicJobs(): Promise<Job[]> {
+    return Array.from(this.jobs.values()).filter(job => job.isPublic === true);
+  }
+  
+  async getJobsByCreator(userId: number): Promise<Job[]> {
+    return Array.from(this.jobs.values()).filter(job => job.createdBy === userId);
+  }
 
   async createJob(job: InsertJob): Promise<Job> {
     const id = this.jobIdCounter++;

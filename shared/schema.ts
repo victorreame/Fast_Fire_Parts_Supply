@@ -45,6 +45,7 @@ export const parts = pgTable("parts", {
   priceT3: doublePrecision("price_t3").notNull(),
   inStock: integer("in_stock").default(0),
   isPopular: boolean("is_popular").default(false),
+  image: text("image"), // URL to the image of the part
 });
 
 export const insertPartSchema = createInsertSchema(parts).omit({
@@ -60,6 +61,10 @@ export const jobs = pgTable("jobs", {
   status: text("status").notNull().default("active"), // active, pending, completed
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  isPublic: boolean("is_public").default(false), // Whether the job is visible to all contractors
+  createdBy: integer("created_by").references(() => users.id), // User who created the job (supplier)
+  location: text("location"), // Location of the job
+  description: text("description"), // Detailed description of the job
 });
 
 export const insertJobSchema = createInsertSchema(jobs).omit({

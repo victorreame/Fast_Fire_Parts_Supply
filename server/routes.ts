@@ -133,36 +133,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Jobs routes
   apiRouter.get("/jobs", async (req: Request, res: Response) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
     try {
-      const user = req.user;
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
+      // Check if user is authenticated
+      const userId = req.isAuthenticated() ? req.user.id : getGuestUserId(req);
+      const isAuthenticated = req.isAuthenticated();
       
       let jobs: any[] = [];
       
-      if (user.role === "contractor" && user.businessId) {
-        jobs = await storage.getJobsByBusiness(user.businessId);
-      } else if (user.role === "supplier") {
-        // Suppliers can see all jobs
-        const businesses = await storage.getAllBusinesses();
-        jobs = await Promise.all(
-          businesses.map(async business => {
+      // Public jobs are available to all users, authenticated or not
+      const publicJobs = await storage.getPublicJobs();
+      jobs = [...publicJobs];
+      
+      // If user is authenticated, add their specific jobs
+      if (isAuthenticated) {
+        const user = req.user;
+        
+        if (user.role === "contractor" && user.businessId) {
+          // Contractors see their business's jobs
+          const businessJobs = await storage.getJobsByBusiness(user.businessId);
+          jobs = [...jobs, ...businessJobs];
+        } else if (user.role === "supplier") {
+          // Suppliers see all jobs they've created and all business jobs
+          const createdJobs = await storage.getJobsByCreator(user.id);
+          jobs = [...jobs, ...createdJobs];
+          
+          const businesses = await storage.getAllBusinesses();
+          
+          // Get all jobs with business details
+          for (const business of businesses) {
             const businessJobs = await storage.getJobsByBusiness(business.id);
-            return businessJobs;
-          })
-        );
-        jobs = jobs.flat();
+            
+            jobs = [
+              ...jobs,
+              ...businessJobs.map(job => ({
+                ...job,
+                businessName: business.name
+              }))
+            ];
+          }
+        }
       }
       
-      res.json(jobs);
+      // Remove duplicates
+      const uniqueJobs = Array.from(new Map(jobs.map(job => [job.id, job])).values());
+      
+      res.json(uniqueJobs);
     } catch (error) {
+      console.error("Error getting jobs:", error);
       res.status(500).json({ message: "Failed to get jobs" });
+    }
+  });
+  
+  // Get public jobs only (no authentication required)
+  apiRouter.get("/jobs/public", async (_req: Request, res: Response) => {
+    try {
+      const publicJobs = await storage.getPublicJobs();
+      res.json(publicJobs);
+    } catch (error) {
+      console.error("Error getting public jobs:", error);
+      res.status(500).json({ message: "Failed to get public jobs" });
     }
   });
 
@@ -178,14 +207,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      if (user.role !== "contractor" || !user.businessId) {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
-      
       const jobData = insertJobSchema.parse(req.body);
       
-      // Set business ID from the logged-in user
-      jobData.businessId = user.businessId;
+      // Set the creator ID
+      jobData.createdBy = user.id;
+      
+      if (user.role === "contractor") {
+        // Contractors can only create jobs for their own business
+        if (!user.businessId) {
+          return res.status(403).json({ message: "Contractor must be associated with a business" });
+        }
+        
+        // Set business ID from the logged-in user
+        jobData.businessId = user.businessId;
+        
+        // Contractors cannot create public jobs (for now)
+        jobData.isPublic = false;
+      } else if (user.role === "supplier") {
+        // Suppliers can create public jobs without associating with a business
+        // If a business ID is provided, validate that it exists
+        if (jobData.businessId) {
+          const business = await storage.getBusiness(jobData.businessId);
+          if (!business) {
+            return res.status(400).json({ message: "Invalid business ID" });
+          }
+        }
+        
+        // Allow public jobs for suppliers (default remains false unless explicitly set)
+        // No change needed as jobData.isPublic comes from the request
+      } else {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
       
       const job = await storage.createJob(jobData);
       res.status(201).json(job);
@@ -193,6 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid job data", errors: error.errors });
       }
+      console.error("Error creating job:", error);
       res.status(500).json({ message: "Failed to create job" });
     }
   });
