@@ -12,13 +12,12 @@ app.use(express.urlencoded({ extended: false }));
 const MemoryStoreSession = MemoryStore(session);
 app.use(session({
   secret: "fastfire-secret-key",
-  resave: true, // Ensure session is saved on each request
-  saveUninitialized: true, // Allow session to be saved even when uninitialized
+  resave: true, // Changed to true to ensure session is saved
+  saveUninitialized: true, // Changed to true to allow session to be saved even when uninitialized
   cookie: {
     maxAge: 86400000, // 24 hours
     secure: false, // set to true if using https
-    httpOnly: true,
-    sameSite: 'lax' // Allows cookies to be sent in cross-site requests
+    httpOnly: true
   },
   store: new MemoryStoreSession({
     checkPeriod: 86400000 // prune expired entries every 24h
