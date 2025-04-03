@@ -1,4 +1,4 @@
-import express, { type Express, Request, Response } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import './types'; // Import session types
@@ -12,83 +12,28 @@ import {
   insertCartItemSchema
 } from "@shared/schema";
 import { z } from "zod";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication and session management
+  setupAuth(app);
+  
   // API routes
   const apiRouter = express.Router();
   app.use("/api", apiRouter);
   
   // Helper to get or create a guest user ID for cart functionality
   const getGuestUserId = (req: Request): number => {
-    // If already authenticated, use that user ID
-    if (req.session.userId) {
-      return req.session.userId;
+    // If already authenticated with passport, use that user ID
+    if (req.isAuthenticated() && req.user) {
+      return req.user.id;
     }
     
     // For guest users in mobile interface, use ID 1 (for simplicity in demo)
     return 1;
   };
 
-  // Auth routes
-  apiRouter.post("/auth/login", async (req: Request, res: Response) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-      
-      const user = await storage.getUserByUsername(username);
-      
-      if (!user || user.password !== password) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      
-      // Store user info in session
-      req.session.userId = user.id;
-      req.session.role = user.role;
-      
-      // Save the session explicitly to ensure it's stored
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.status(500).json({ message: "Session error" });
-        }
-        
-        // Return user without password
-        const { password: _, ...userWithoutPassword } = user;
-        res.json(userWithoutPassword);
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  apiRouter.post("/auth/logout", (req: Request, res: Response) => {
-    req.session.destroy(err => {
-      if (err) {
-        return res.status(500).json({ message: "Failed to logout" });
-      }
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-
-  apiRouter.get("/auth/me", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
-    const user = await storage.getUser(req.session.userId);
-    
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
-  });
+  // Auth routes are handled by setupAuth
 
   // Parts routes
   apiRouter.get("/parts", async (_req: Request, res: Response) => {
@@ -126,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   apiRouter.post("/parts", async (req: Request, res: Response) => {
-    if (req.session.role !== "supplier") {
+    if (!req.isAuthenticated() || req.user.role !== "supplier") {
       return res.status(403).json({ message: "Unauthorized" });
     }
     
@@ -143,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   apiRouter.put("/parts/:id", async (req: Request, res: Response) => {
-    if (req.session.role !== "supplier") {
+    if (!req.isAuthenticated() || req.user.role !== "supplier") {
       return res.status(403).json({ message: "Unauthorized" });
     }
     
@@ -166,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   apiRouter.delete("/parts/:id", async (req: Request, res: Response) => {
-    if (req.session.role !== "supplier") {
+    if (!req.isAuthenticated() || req.user.role !== "supplier") {
       return res.status(403).json({ message: "Unauthorized" });
     }
     
@@ -186,18 +131,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Jobs routes
   apiRouter.get("/jobs", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = req.user;
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      let jobs = [];
+      let jobs: any[] = [];
       
       if (user.role === "contractor" && user.businessId) {
         jobs = await storage.getJobsByBusiness(user.businessId);
@@ -220,12 +165,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   apiRouter.post("/jobs", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = req.user;
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -256,11 +201,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
       
-      // Set the userId in session for consistency
-      if (!req.session.userId) {
-        req.session.userId = userId;
-      }
-      
       const cartItems = await storage.getCartItems(userId);
       
       // Get part details for each cart item
@@ -282,11 +222,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
-      
-      // Set the userId in session for consistency
-      if (!req.session.userId) {
-        req.session.userId = userId;
-      }
       
       const cartItemData = insertCartItemSchema.parse({
         ...req.body,
@@ -310,11 +245,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
-      
-      // Set the userId in session for consistency
-      if (!req.session.userId) {
-        req.session.userId = userId;
-      }
       
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
@@ -353,11 +283,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
       
-      // Set the userId in session for consistency
-      if (!req.session.userId) {
-        req.session.userId = userId;
-      }
-      
       const id = parseInt(req.params.id);
       const success = await storage.removeCartItem(id);
       
@@ -374,18 +299,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Orders routes
   apiRouter.get("/orders", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = req.user;
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      let orders = [];
+      let orders: any[] = [];
       
       if (user.role === "contractor" && user.businessId) {
         orders = await storage.getOrdersByBusiness(user.businessId);
@@ -420,12 +345,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   apiRouter.post("/orders", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = req.user;
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -496,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   apiRouter.put("/orders/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.role !== "supplier") {
+    if (!req.isAuthenticated() || req.user.role !== "supplier") {
       return res.status(403).json({ message: "Unauthorized" });
     }
     
@@ -533,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Businesses routes (for supplier dashboard)
   apiRouter.get("/businesses", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.role !== "supplier") {
+    if (!req.isAuthenticated() || req.user.role !== "supplier") {
       return res.status(403).json({ message: "Unauthorized" });
     }
     
@@ -546,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   apiRouter.post("/businesses", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.role !== "supplier") {
+    if (!req.isAuthenticated() || req.user.role !== "supplier") {
       return res.status(403).json({ message: "Unauthorized" });
     }
     
@@ -563,7 +488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   apiRouter.put("/businesses/:id", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.role !== "supplier") {
+    if (!req.isAuthenticated() || req.user.role !== "supplier") {
       return res.status(403).json({ message: "Unauthorized" });
     }
     
@@ -587,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Users routes (for supplier dashboard)
   apiRouter.post("/users", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.role !== "supplier") {
+    if (!req.isAuthenticated() || req.user.role !== "supplier") {
       return res.status(403).json({ message: "Unauthorized" });
     }
     
@@ -608,7 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Stats route for supplier dashboard
   apiRouter.get("/stats", async (req: Request, res: Response) => {
-    if (!req.session.userId || req.session.role !== "supplier") {
+    if (!req.isAuthenticated() || req.user.role !== "supplier") {
       return res.status(403).json({ message: "Unauthorized" });
     }
     
@@ -625,7 +550,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeBusinesses = businesses.length;
       
       // Count low stock items (< 10)
-      const lowStockItems = parts.filter(part => part.inStock < 10).length;
+      const lowStockItems = parts.filter(part => {
+        return part.inStock === null ? true : part.inStock < 10;
+      }).length;
       
       res.json({
         newOrders,

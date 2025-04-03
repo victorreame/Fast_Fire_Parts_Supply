@@ -7,8 +7,12 @@ import {
   orderItems, type OrderItem, type InsertOrderItem,
   cartItems, type CartItem, type InsertCartItem
 } from "@shared/schema";
+import session from "express-session";
+import createMemoryStore from "memorystore";
 
 export interface IStorage {
+  // Session store
+  sessionStore: session.Store;
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -64,6 +68,9 @@ export class MemStorage implements IStorage {
   private orderItems: Map<number, OrderItem>;
   private cartItems: Map<number, CartItem>;
   
+  // Session store for authentication
+  public sessionStore: session.Store;
+  
   private userIdCounter: number = 1;
   private businessIdCounter: number = 1;
   private partIdCounter: number = 1;
@@ -80,6 +87,12 @@ export class MemStorage implements IStorage {
     this.orders = new Map();
     this.orderItems = new Map();
     this.cartItems = new Map();
+    
+    // Initialize memory store for sessions
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    });
     
     // Add initial data
     this.seedData();

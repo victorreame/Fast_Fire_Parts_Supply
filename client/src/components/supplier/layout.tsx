@@ -1,30 +1,45 @@
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { useLocation, Link } from "wouter";
 import Logo from "../ui/logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+
+// Define user type
+interface User {
+  id: number;
+  username: string;
+  role: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  businessId?: number;
+}
 
 interface SupplierLayoutProps {
   children: ReactNode;
 }
 
 const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
 
-  const { data: user } = useQuery({
-    queryKey: ['/api/auth/me'],
+  const { data: user } = useQuery<User>({
+    queryKey: ['/api/user'],
     staleTime: 300000, // 5 minutes
   });
 
   const handleLogout = async () => {
     try {
-      await apiRequest('POST', '/api/auth/logout', {});
-      window.location.href = '/login';
+      await apiRequest('POST', '/api/logout', {});
+      // Invalidate auth query cache
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      // Use wouter navigation to avoid full page reload
+      navigate('/login');
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
@@ -48,41 +63,33 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
           <h1 className="text-xl font-bold">FastFire Parts Supply Dashboard</h1>
           
           <nav className="ml-12 hidden md:flex space-x-8">
-            <Link href="/supplier/dashboard">
-              <a className={`px-3 py-2 text-sm font-medium ${
+            <Link href="/supplier/dashboard" className={`px-3 py-2 text-sm font-medium ${
                 location === '/supplier/dashboard' 
                   ? 'text-white border-b-2 border-secondary' 
                   : 'text-neutral-300 hover:text-white'
               }`}>
                 Dashboard
-              </a>
             </Link>
-            <Link href="/supplier/orders">
-              <a className={`px-3 py-2 text-sm font-medium ${
+            <Link href="/supplier/orders" className={`px-3 py-2 text-sm font-medium ${
                 location === '/supplier/orders' 
                   ? 'text-white border-b-2 border-secondary' 
                   : 'text-neutral-300 hover:text-white'
               }`}>
                 Orders
-              </a>
             </Link>
-            <Link href="/supplier/customers">
-              <a className={`px-3 py-2 text-sm font-medium ${
+            <Link href="/supplier/customers" className={`px-3 py-2 text-sm font-medium ${
                 location === '/supplier/customers' 
                   ? 'text-white border-b-2 border-secondary' 
                   : 'text-neutral-300 hover:text-white'
               }`}>
                 Customers
-              </a>
             </Link>
-            <Link href="/supplier/parts">
-              <a className={`px-3 py-2 text-sm font-medium ${
+            <Link href="/supplier/parts" className={`px-3 py-2 text-sm font-medium ${
                 location === '/supplier/parts' 
                   ? 'text-white border-b-2 border-secondary' 
                   : 'text-neutral-300 hover:text-white'
               }`}>
                 Parts
-              </a>
             </Link>
           </nav>
           

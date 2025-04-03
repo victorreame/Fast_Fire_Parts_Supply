@@ -47,7 +47,7 @@ function App() {
   
   // Check auth status
   const { data: user, isLoading } = useQuery<User | null>({
-    queryKey: ['/api/auth/me'],
+    queryKey: ['/api/user'],
     // Don't redirect on mobile as it doesn't need login
     retry: isMobile ? 0 : 3
   });

@@ -17,7 +17,7 @@ const LoginPage = () => {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/auth/login", { username, password });
+      const response = await apiRequest("POST", "/api/login", { username, password });
       return response.json();
     },
     onSuccess: (data) => {
