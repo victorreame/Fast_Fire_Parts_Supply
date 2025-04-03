@@ -1,18 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Part } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { 
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogFooter
-} from "@/components/ui/dialog";
-import { FaShoppingCart, FaMinus, FaPlus } from "react-icons/fa";
+import { FaMinus, FaPlus } from "react-icons/fa";
 
 interface PartCardProps {
   part: Part;
@@ -20,29 +14,59 @@ interface PartCardProps {
 }
 
 const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
-  const [quantity, setQuantity] = useState(1);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [quantity, setQuantity] = useState(0);
+  const [cartItemId, setCartItemId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Get cart items to check if this part is already in cart
+  const { data: cartItems } = useQuery({ 
+    queryKey: ['/api/cart'],
+    enabled: true
+  });
+
+  // Find this part in the cart (if it exists)
+  useEffect(() => {
+    if (cartItems && Array.isArray(cartItems)) {
+      const cartItem = cartItems.find((item: any) => item.partId === part.id);
+      if (cartItem) {
+        setQuantity(cartItem.quantity);
+        setCartItemId(cartItem.id);
+      } else {
+        setQuantity(0);
+        setCartItemId(null);
+      }
+    }
+  }, [cartItems, part.id]);
+
+  // Add to cart mutation
   const addToCartMutation = useMutation({
-    mutationFn: async (qty: number) => {
-      return apiRequest("POST", "/api/cart", {
+    mutationFn: async (newQuantity: number) => {
+      const response = await apiRequest("POST", "/api/cart", {
         partId: part.id,
         jobId: jobId || null,
-        quantity: qty,
+        quantity: newQuantity,
       });
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+      if (data && data.id) {
+        setCartItemId(data.id);
+      }
       toast({
         title: "Added to cart",
         description: `${part.description} has been added to your cart.`,
       });
-      setIsDialogOpen(false);
-      setQuantity(1); // Reset quantity to 1 after adding to cart
     },
     onError: () => {
+      // Reset to previous quantity on error
+      if (cartItems && Array.isArray(cartItems)) {
+        const prevItem = cartItems.find((item: any) => item.partId === part.id);
+        setQuantity(prevItem ? prevItem.quantity : 0);
+      } else {
+        setQuantity(0);
+      }
       toast({
         title: "Error",
         description: "Failed to add item to cart. Please try again.",
@@ -51,32 +75,115 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
     },
   });
 
-  const handleQuickAdd = () => {
-    // Quick add with quantity = 1
-    addToCartMutation.mutate(1);
-  };
+  // Update cart item quantity mutation
+  const updateQuantityMutation = useMutation({
+    mutationFn: async (params: { id: number, newQuantity: number }) => {
+      return apiRequest("PUT", `/api/cart/${params.id}`, { 
+        quantity: params.newQuantity 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+    },
+    onError: () => {
+      // Reset to previous quantity on error
+      if (cartItems && Array.isArray(cartItems)) {
+        const prevItem = cartItems.find((item: any) => item.partId === part.id);
+        setQuantity(prevItem ? prevItem.quantity : 0);
+      } else {
+        setQuantity(0);
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update quantity. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const handleAddWithQuantity = () => {
-    // Add with selected quantity
-    addToCartMutation.mutate(quantity);
-  };
+  // Remove from cart mutation
+  const removeItemMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest("DELETE", `/api/cart/${id}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+      setCartItemId(null);
+      setQuantity(0);
+      toast({
+        title: "Item removed",
+        description: "Item has been removed from your cart.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove item. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleIncrement = () => {
-    setQuantity(prev => prev + 1);
+    const newQuantity = quantity + 1;
+    setQuantity(newQuantity);
+    
+    if (cartItemId) {
+      // Update existing cart item
+      updateQuantityMutation.mutate({ id: cartItemId, newQuantity });
+    } else {
+      // Add new cart item
+      addToCartMutation.mutate(newQuantity);
+    }
   };
 
   const handleDecrement = () => {
-    if (quantity > 1) {
-      setQuantity(prev => prev - 1);
+    if (quantity <= 0) return;
+    
+    const newQuantity = quantity - 1;
+    setQuantity(newQuantity);
+    
+    if (cartItemId) {
+      if (newQuantity === 0) {
+        // Remove item if quantity becomes zero
+        removeItemMutation.mutate(cartItemId);
+      } else {
+        // Update quantity
+        updateQuantityMutation.mutate({ id: cartItemId, newQuantity });
+      }
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value) && value > 0) {
-      setQuantity(value);
+    let newValue = parseInt(e.target.value);
+    
+    // Ensure value is not NaN and is at least 0
+    if (isNaN(newValue)) {
+      newValue = 0;
+    }
+    
+    // Ensure quantity is never negative
+    newValue = Math.max(0, newValue);
+    
+    setQuantity(newValue);
+  };
+
+  const handleInputBlur = () => {
+    if (cartItemId && quantity === 0) {
+      // Remove item if quantity is zero
+      removeItemMutation.mutate(cartItemId);
+    } else if (cartItemId && quantity > 0) {
+      // Update existing quantity
+      updateQuantityMutation.mutate({ id: cartItemId, newQuantity: quantity });
+    } else if (!cartItemId && quantity > 0) {
+      // Add new item
+      addToCartMutation.mutate(quantity);
     }
   };
+
+  const isPending = addToCartMutation.isPending || 
+                   updateQuantityMutation.isPending || 
+                   removeItemMutation.isPending;
 
   return (
     <div className="p-4 border-b border-neutral-200">
@@ -93,90 +200,47 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
           <h3 className="font-medium mt-1">{part.description}</h3>
           <p className="text-sm text-neutral-500 mt-1">Type: {part.type}</p>
         </div>
+
         <div className="flex items-center">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="px-3 py-2 text-white"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <FaShoppingCart className="mr-1" />
-            <span>Add</span>
-          </Button>
+          <div className={`flex items-center relative ${isPending ? 'opacity-70' : ''}`}>
+            {isPending && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-30 z-10 rounded-md">
+                <div className="h-4 w-4 border-2 border-secondary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            <Button
+              variant={quantity > 0 ? "secondary" : "outline"}
+              size="icon"
+              className={`h-8 w-8 rounded-r-none border-r-0 ${quantity > 0 ? "text-white" : ""}`}
+              onClick={handleDecrement}
+              disabled={isPending || quantity <= 0}
+            >
+              <FaMinus className="h-3 w-3" />
+            </Button>
+            
+            <Input
+              type="text"
+              value={quantity}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              className={`h-8 w-12 rounded-none text-center border-x-0 p-0 transition-colors ${
+                quantity > 0 ? "bg-secondary-50 font-medium border-secondary" : ""
+              }`}
+              min={0}
+            />
+            
+            <Button
+              variant={quantity > 0 ? "secondary" : "outline"}
+              size="icon"
+              className={`h-8 w-8 rounded-l-none border-l-0 ${quantity > 0 ? "text-white" : ""}`}
+              onClick={handleIncrement}
+              disabled={isPending}
+            >
+              <FaPlus className="h-3 w-3" />
+            </Button>
+          </div>
         </div>
       </div>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md" aria-describedby="add-to-cart-description">
-          <DialogTitle>Add to Cart</DialogTitle>
-          <p id="add-to-cart-description" className="sr-only">Select quantity and add items to your cart</p>
-          <div className="py-4">
-            <h3 className="font-medium mb-3">{part.description}</h3>
-            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
-              <div>
-                <p className="text-sm font-medium">Item Code: {part.itemCode}</p>
-                <p className="text-sm text-neutral-500">Type: {part.type}</p>
-              </div>
-              <Badge variant="secondary" className="bg-primary-100 text-primary-800">
-                {part.pipeSize}
-              </Badge>
-            </div>
-            
-            <div className="mt-4">
-              <label className="block text-sm font-medium mb-2">Quantity:</label>
-              <div className="flex items-center">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 rounded-r-none"
-                  onClick={handleDecrement}
-                  disabled={quantity <= 1}
-                >
-                  <FaMinus className="h-3 w-3" />
-                </Button>
-                <Input
-                  type="text"
-                  value={quantity}
-                  onChange={handleInputChange}
-                  className="h-10 w-20 rounded-none text-center border-x-0"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 rounded-l-none"
-                  onClick={handleIncrement}
-                >
-                  <FaPlus className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setIsDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={handleAddWithQuantity}
-              disabled={addToCartMutation.isPending}
-            >
-              {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Quick add button (hidden) */}
-      <Button 
-        className="hidden" 
-        onClick={handleQuickAdd}
-        disabled={addToCartMutation.isPending}
-      >
-        Quick Add
-      </Button>
     </div>
   );
 };
