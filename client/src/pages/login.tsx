@@ -21,15 +21,25 @@ const LoginPage = () => {
       return response.json();
     },
     onSuccess: (data) => {
-      if (data.role === "supplier") {
-        navigate("/supplier/dashboard");
-      } else {
-        navigate("/mobile");
-      }
-      
+      // Show success toast
       toast({
         title: "Welcome!",
         description: "You have successfully logged in.",
+      });
+      
+      // Force refresh the user query to ensure App.tsx picks up the logged-in state
+      // This will trigger the redirect logic in the App component
+      import("@/lib/queryClient").then(({ queryClient }) => {
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+        
+        // Direct navigation as a backup mechanism
+        setTimeout(() => {
+          if (data.role === "supplier" || data.role === "admin") {
+            navigate("/supplier/dashboard");
+          } else {
+            navigate("/mobile");
+          }
+        }, 100);
       });
     },
     onError: () => {

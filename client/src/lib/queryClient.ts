@@ -20,8 +20,12 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  // For logout requests, we don't want to throw on 401/403 responses
-  if (!skipErrorHandling && url !== '/api/logout') {
+  // Special handling for auth-related requests
+  const authRelatedUrls = ['/api/login', '/api/logout', '/api/register'];
+  const isAuthRequest = authRelatedUrls.includes(url);
+  
+  // Skip error handling for auth requests or when explicitly requested
+  if (!skipErrorHandling && !isAuthRequest) {
     await throwIfResNotOk(res);
   }
   
@@ -34,16 +38,36 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
-      credentials: "include",
-    });
+    try {
+      const res = await fetch(queryKey[0] as string, {
+        credentials: "include",
+      });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+      // Handle 401 unauthorized based on the requested behavior
+      if (res.status === 401) {
+        if (unauthorizedBehavior === "returnNull") {
+          return null;
+        } else {
+          const text = await res.text();
+          throw new Error(`401: ${text || 'Unauthorized'}`);
+        }
+      }
+
+      // Handle other error responses
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`${res.status}: ${text || res.statusText}`);
+      }
+
+      // Parse the JSON response
+      return await res.json();
+    } catch (err) {
+      // Rethrow all errors but provide better debug info
+      if (err instanceof Error) {
+        console.error(`Query failed for ${queryKey[0]}:`, err.message);
+      }
+      throw err;
     }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
 
 export const queryClient = new QueryClient({
@@ -52,10 +76,15 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      // Use a more reasonable stale time to allow some caching but not too much
+      staleTime: 60000, // 1 minute
       retry: (failureCount, error) => {
-        // Don't retry 401 errors (unauthorized)
+        // Don't retry on unauthorized errors
         if (error instanceof Error && error.message.startsWith('401:')) {
+          return false;
+        }
+        // Don't retry on forbidden errors
+        if (error instanceof Error && error.message.startsWith('403:')) {
           return false;
         }
         // Retry other errors up to 2 times

@@ -45,11 +45,39 @@ function App() {
   const isMobile = useMobile();
   const [location, navigate] = useLocation();
   
-  // Check auth status
+  // Check auth status with a more reliable setup
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ['/api/user'],
-    // Don't redirect on mobile as it doesn't need login
-    retry: isMobile ? 0 : 3
+    // Configure proper retry and stale time values for auth
+    staleTime: 5000, // Only refetch after 5 seconds
+    retry: (failureCount, error) => {
+      // Don't retry 401 errors (unauthorized)
+      if (error instanceof Error && error.message.startsWith('401:')) {
+        return false;
+      }
+      // For other errors, retry up to 2 times
+      return failureCount < 2; 
+    },
+    // Use the properly configured query function for auth
+    queryFn: async ({ queryKey }) => {
+      const res = await fetch(queryKey[0] as string, {
+        credentials: "include",
+      });
+      
+      // Return null for 401 responses
+      if (res.status === 401) {
+        return null;
+      }
+      
+      // Throw error for other failed responses
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`${res.status}: ${text || res.statusText}`);
+      }
+      
+      // Return the authenticated user data
+      return await res.json();
+    }
   });
 
   // Is this a supplier route?
