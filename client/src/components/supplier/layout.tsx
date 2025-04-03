@@ -38,7 +38,7 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
       await apiRequest('POST', '/api/logout', {});
       // Invalidate auth query cache
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-      // Use wouter navigation to avoid full page reload
+      // Always redirect to login page after logout
       navigate('/login');
       toast({
         title: "Logged out",

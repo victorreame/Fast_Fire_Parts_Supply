@@ -71,6 +71,15 @@ function App() {
         navigate('/mobile');
       }
     }
+
+    // Block suppliers from accessing mobile routes and contractors from accessing supplier routes
+    if (user && !isLoading) {
+      if (user.role === 'supplier' && location.startsWith('/mobile')) {
+        navigate('/supplier/dashboard');
+      } else if (user.role !== 'supplier' && user.role !== 'admin' && isSupplierRoute) {
+        navigate('/mobile');
+      }
+    }
   }, [user, isLoading, location, navigate, isSupplierRoute]);
   
   // Handle loading state

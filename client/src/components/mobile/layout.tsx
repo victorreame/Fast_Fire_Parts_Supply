@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -40,7 +40,11 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
   const handleLogout = async () => {
     try {
       await apiRequest('POST', '/api/logout', {});
+      // Invalidate auth query cache
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      // Always redirect to login page after logout
       navigate('/login');
+      setIsUserMenuOpen(false); // Close the user menu after logout
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
