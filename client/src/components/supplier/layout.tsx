@@ -71,7 +71,7 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
       <header className="bg-primary text-white p-4 flex items-center justify-between shadow-md fixed top-0 left-0 right-0 z-10">
         <div className="flex items-center max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mr-3">
-            <Logo color="white" />
+            <Logo color="white" size={60} />
           </div>
           <h1 className="text-xl font-bold">FastFire Parts Supply Dashboard</h1>
           

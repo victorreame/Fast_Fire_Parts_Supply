@@ -6,7 +6,7 @@ interface LogoProps {
   className?: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ size = 40, color = "#E23D28", className = "" }) => {
+const Logo: React.FC<LogoProps> = ({ size = 50, color = "#E23D28", className = "" }) => {
   return (
     <svg
       width={size}
@@ -70,24 +70,20 @@ const Logo: React.FC<LogoProps> = ({ size = 40, color = "#E23D28", className = "
         fill={color}
       />
       
-      {/* Water Drip Base */}
+      {/* Water Drips from Left Valve */}
       <path 
-        d="M50 80C50 80 45 86 45 90C45 94 55 94 55 90C55 86 50 80 50 80Z" 
+        d="M27 58C27 58 24 65 24 70C24 74 30 74 30 70C30 65 27 58 27 58Z" 
         fill="#1E90FF" 
       />
       
-      {/* Water Drops */}
+      {/* Small Water Drops */}
       <path 
-        d="M45 87C45 87 42 90 42 93C42 95 48 95 48 93C48 90 45 87 45 87Z" 
+        d="M22 72C22 72 20 74 20 76C20 78 24 78 24 76C24 74 22 72 22 72Z" 
         fill="#1E90FF" 
       />
       
-      <path 
-        d="M56 90C56 90 54 92 54 94C54 95 58 95 58 94C58 92 56 90 56 90Z" 
-        fill="#1E90FF" 
-      />
-      
-      <circle cx="52" cy="95" r="2" fill="#1E90FF" />
+      <circle cx="26" cy="77" r="1.5" fill="#1E90FF" />
+      <circle cx="30" cy="75" r="1" fill="#1E90FF" />
     </svg>
   );
 };

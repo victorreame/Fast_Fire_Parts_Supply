@@ -73,18 +73,18 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-gradient-to-r from-red-700 to-red-800 text-white p-4 flex items-center justify-between shadow-md">
+      <header className="bg-gradient-to-r from-red-700 to-red-800 text-white py-3 px-4 flex items-center justify-between shadow-md">
         <div className="flex items-center">
           {showBackButton ? (
             <button onClick={() => window.history.back()} className="mr-2">
               <i className="fas fa-arrow-left"></i>
             </button>
           ) : (
-            <div className="mr-2">
-              <Logo color="white" size={32} />
+            <div className="mr-3">
+              <Logo color="white" size={50} />
             </div>
           )}
-          <h1 className="text-xl font-bold">{title || "FastFire Parts"}</h1>
+          <h1 className="text-xl font-bold flex items-center">{title || "FastFire Parts"}</h1>
         </div>
         <div className="flex items-center">
           {showCart && (
