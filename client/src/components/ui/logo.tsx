@@ -11,62 +11,83 @@ const Logo: React.FC<LogoProps> = ({ size = 40, color = "#E23D28", className = "
     <svg
       width={size}
       height={size}
-      viewBox="0 0 40 40"
+      viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Fire Hydrant Body */}
-      <path
-        d="M15 12H25C26.1046 12 27 12.8954 27 14V30C27 31.1046 26.1046 32 25 32H15C13.8954 32 13 31.1046 13 30V14C13 12.8954 13.8954 12 15 12Z"
-        fill={color}
+      {/* Fire Hydrant Top */}
+      <path 
+        d="M50 10C54 10 56 12 56 15C56 17 53 18 50 18C47 18 44 17 44 15C44 12 46 10 50 10Z" 
+        fill={color} 
       />
       
       {/* Hydrant Cap */}
-      <path
-        d="M14 8H26C27.1046 8 28 8.89543 28 10V12C28 12.5523 27.5523 13 27 13H13C12.4477 13 12 12.5523 12 12V10C12 8.89543 12.8954 8 14 8Z"
+      <path 
+        d="M45 18C42.5 19 41 20 41 22.5C41 25 59 25 59 22.5C59 20 57.5 19 55 18"
+        fill={color} 
+      />
+      
+      {/* Hydrant Dome */}
+      <path 
+        d="M42 22.5C39 24 37 26 37 30C37 34 63 34 63 30C63 26 61 24 58 22.5"
         fill={color}
       />
       
-      {/* Hydrant Base */}
-      <path
-        d="M12 29C12 28.4477 12.4477 28 13 28H27C27.5523 28 28 28.4477 28 29V31C28 32.1046 27.1046 33 26 33H14C12.8954 33 12 32.1046 12 31V29Z"
+      {/* Main Body */}
+      <path 
+        d="M39 30L39 70C39 73 43 75 50 75C57 75 61 73 61 70L61 30"
         fill={color}
       />
       
-      {/* Left Outlet Cap */}
-      <circle cx="9" cy="20" r="3" fill={color} />
-      
-      {/* Left Outlet */}
+      {/* Middle Section/Side Ports */}
       <path
-        d="M13 18H10C9.44772 18 9 18.4477 9 19V21C9 21.5523 9.44772 22 10 22H13V18Z"
+        d="M39 43L39 57C39 57 35 56 30 56C25 56 25 50 30 50C35 50 39 49 39 49L39 43Z"
+        fill={color}
+      />
+      <path
+        d="M61 43L61 57C61 57 65 56 70 56C75 56 75 50 70 50C65 50 61 49 61 49L61 43Z"
         fill={color}
       />
       
-      {/* Right Outlet Cap */}
-      <circle cx="31" cy="20" r="3" fill={color} />
+      {/* Valve Connectors Details */}
+      <circle cx="27" cy="53" r="6" fill={color} />
+      <circle cx="73" cy="53" r="6" fill={color} />
       
-      {/* Right Outlet */}
+      {/* Valve Highlights */}
+      <circle cx="27" cy="53" r="2.5" fill="white" />
+      <circle cx="73" cy="53" r="2.5" fill="white" />
+      
+      {/* Base */}
       <path
-        d="M27 18H30C30.5523 18 31 18.4477 31 19V21C31 21.5523 30.5523 22 30 22H27V18Z"
+        d="M39 70C39 70 37 73 37 75C37 77 63 77 63 75C63 73 61 70 61 70"
         fill={color}
       />
       
-      {/* Bolts/Detail */}
-      <circle cx="15" cy="16" r="1" fill="white" />
-      <circle cx="15" cy="24" r="1" fill="white" />
-      <circle cx="25" cy="16" r="1" fill="white" />
-      <circle cx="25" cy="24" r="1" fill="white" />
-      
-      {/* Water Drop */}
+      {/* Bottom Connector */}
       <path
-        d="M20 32C20 32 17 35 17 37.5C17 39.433 18.343 41 20 41C21.657 41 23 39.433 23 37.5C23 35 20 32 20 32Z"
-        fill="#3B82F6" 
+        d="M39 75L39 77C39 80 61 80 61 77L61 75"
+        fill={color}
       />
       
-      {/* Small Drips */}
-      <circle cx="19" cy="42" r="0.5" fill="#3B82F6" />
-      <circle cx="21" cy="43" r="0.7" fill="#3B82F6" />
+      {/* Water Drip Base */}
+      <path 
+        d="M50 80C50 80 45 86 45 90C45 94 55 94 55 90C55 86 50 80 50 80Z" 
+        fill="#1E90FF" 
+      />
+      
+      {/* Water Drops */}
+      <path 
+        d="M45 87C45 87 42 90 42 93C42 95 48 95 48 93C48 90 45 87 45 87Z" 
+        fill="#1E90FF" 
+      />
+      
+      <path 
+        d="M56 90C56 90 54 92 54 94C54 95 58 95 58 94C58 92 56 90 56 90Z" 
+        fill="#1E90FF" 
+      />
+      
+      <circle cx="52" cy="95" r="2" fill="#1E90FF" />
     </svg>
   );
 };
