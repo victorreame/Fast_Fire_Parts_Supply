@@ -57,27 +57,47 @@ function App() {
   
   // For authentication redirects
   useEffect(() => {
-    // If not authenticated and trying to access protected routes, redirect to login
-    if (!isLoading && !user && location !== '/' && location !== '/login' && !location.startsWith('/mobile')) {
+    // Skip during loading to avoid premature redirects
+    if (isLoading) return;
+
+    // For security - redirect unauthenticated supplier route access to login
+    if (!user && isSupplierRoute) {
       navigate('/login');
       return;
     }
     
-    // Route to appropriate dashboard based on user role
-    if (user && (location === '/login' || location === '/')) {
-      if (user.role === 'supplier') {
-        navigate('/supplier/dashboard');
+    // Handle login and home page routing based on authentication status
+    if (location === '/login' || location === '/') {
+      if (user) {
+        // User is authenticated - route to appropriate dashboard
+        if (user.role === 'supplier' || user.role === 'admin') {
+          navigate('/supplier/dashboard');
+        } else {
+          navigate('/mobile');
+        }
       } else {
-        navigate('/mobile');
+        // No authenticated user, go to login
+        if (location === '/') {
+          navigate('/login');
+        }
       }
+      return;
     }
 
-    // Block suppliers from accessing mobile routes and contractors from accessing supplier routes
-    if (user && !isLoading) {
-      if (user.role === 'supplier' && location.startsWith('/mobile')) {
+    // Role-based access control for routes
+    if (user) {
+      const isSupplier = user.role === 'supplier' || user.role === 'admin';
+      
+      // Block suppliers from accessing mobile routes
+      if (isSupplier && location.startsWith('/mobile')) {
         navigate('/supplier/dashboard');
-      } else if (user.role !== 'supplier' && user.role !== 'admin' && isSupplierRoute) {
+        return;
+      }
+      
+      // Block contractors from accessing supplier routes
+      if (!isSupplier && isSupplierRoute) {
         navigate('/mobile');
+        return;
       }
     }
   }, [user, isLoading, location, navigate, isSupplierRoute]);
@@ -99,8 +119,16 @@ function App() {
   return (
     <>
       <Switch>
-        {/* Auth routes - make login the default route */}
-        <Route path="/" component={LoginPage} />
+        {/* Auth routes - default routes for user entry */}
+        <Route path="/">
+          {/* Intelligently redirect based on auth status and role */}
+          {user 
+            ? user.role === 'supplier' || user.role === 'admin'
+              ? <SupplierDashboard />
+              : <MobileHome />
+            : <LoginPage />
+          }
+        </Route>
         <Route path="/login" component={LoginPage} />
         
         {/* Mobile client routes */}
@@ -118,19 +146,19 @@ function App() {
         
         {/* Supplier dashboard routes - only accessible if role is supplier */}
         <Route path="/supplier/dashboard">
-          {user?.role === 'supplier' ? <SupplierDashboard /> : <NotFound />}
+          {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierDashboard /> : <NotFound />}
         </Route>
         <Route path="/supplier/orders">
-          {user?.role === 'supplier' ? <SupplierOrders /> : <NotFound />}
+          {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierOrders /> : <NotFound />}
         </Route>
         <Route path="/supplier/orders/:id">
-          {user?.role === 'supplier' ? <SupplierOrderDetails /> : <NotFound />}
+          {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierOrderDetails /> : <NotFound />}
         </Route>
         <Route path="/supplier/parts">
-          {user?.role === 'supplier' ? <SupplierParts /> : <NotFound />}
+          {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierParts /> : <NotFound />}
         </Route>
         <Route path="/supplier/customers">
-          {user?.role === 'supplier' ? <SupplierCustomers /> : <NotFound />}
+          {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierCustomers /> : <NotFound />}
         </Route>
         
         {/* Fallback to 404 */}

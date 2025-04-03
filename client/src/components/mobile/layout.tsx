@@ -39,17 +39,29 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
 
   const handleLogout = async () => {
     try {
-      await apiRequest('POST', '/api/logout', {});
-      // Invalidate auth query cache
+      // Send logout request to server - skip error handling for logout requests
+      const response = await apiRequest('POST', '/api/logout', {}, true);
+      
+      // Clear all application cache to ensure no user data remains
+      queryClient.clear();
+      
+      // Specifically invalidate auth-related queries
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-      // Always redirect to login page after logout
-      navigate('/login');
-      setIsUserMenuOpen(false); // Close the user menu after logout
+      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+      
+      // Close user menu
+      setIsUserMenuOpen(false);
+      
+      // Redirect to the home/login page
+      navigate('/');
+      
+      // Notify user
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
     } catch (error) {
+      console.error("Logout error:", error);
       toast({
         title: "Error",
         description: "Failed to logout. Please try again.",

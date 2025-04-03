@@ -89,9 +89,21 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/logout", (req, res, next) => {
+    // Log out the user from Passport
     req.logout((err) => {
       if (err) return next(err);
-      res.sendStatus(200);
+      
+      // Destroy the session completely
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session:", err);
+          return res.status(500).json({ error: "Failed to completely logout" });
+        }
+        
+        // Clear the cookie on the client side
+        res.clearCookie('connect.sid');
+        return res.status(200).json({ success: true, message: "Logged out successfully" });
+      });
     });
   });
 

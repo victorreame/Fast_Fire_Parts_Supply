@@ -35,16 +35,29 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
 
   const handleLogout = async () => {
     try {
-      await apiRequest('POST', '/api/logout', {});
-      // Invalidate auth query cache
+      // Send logout request to server - skip error handling for logout requests
+      const response = await apiRequest('POST', '/api/logout', {}, true);
+      
+      // Clear all application cache to ensure no user data remains
+      queryClient.clear();
+      
+      // Specifically invalidate auth-related queries
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-      // Always redirect to login page after logout
-      navigate('/login');
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
+      
+      // Redirect to the home/login page
+      navigate('/');
+      
+      // Notify user
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
     } catch (error) {
+      console.error("Logout error:", error);
       toast({
         title: "Error",
         description: "Failed to logout. Please try again.",

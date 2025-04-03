@@ -11,6 +11,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  skipErrorHandling: boolean = false
 ): Promise<Response> {
   const res = await fetch(url, {
     method,
@@ -19,7 +20,11 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  await throwIfResNotOk(res);
+  // For logout requests, we don't want to throw on 401/403 responses
+  if (!skipErrorHandling && url !== '/api/logout') {
+    await throwIfResNotOk(res);
+  }
+  
   return res;
 }
 
@@ -48,7 +53,14 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: false,
+      retry: (failureCount, error) => {
+        // Don't retry 401 errors (unauthorized)
+        if (error instanceof Error && error.message.startsWith('401:')) {
+          return false;
+        }
+        // Retry other errors up to 2 times
+        return failureCount < 2;
+      },
     },
     mutations: {
       retry: false,
