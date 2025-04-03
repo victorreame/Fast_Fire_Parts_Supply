@@ -26,10 +26,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const getGuestUserId = (req: Request): number => {
     // If already authenticated with passport, use that user ID
     if (req.isAuthenticated() && req.user) {
+      console.log("User is authenticated, using ID:", req.user.id);
       return req.user.id;
     }
     
     // For guest users in mobile interface, use ID 1 (for simplicity in demo)
+    console.log("Using guest user ID: 1");
     return 1;
   };
 
