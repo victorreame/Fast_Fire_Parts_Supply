@@ -5,8 +5,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { FaCartPlus, FaPlus } from "react-icons/fa";
-import QuantityPanel from "./quantity-panel";
+import { Input } from "@/components/ui/input";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover";
+import { FaCartPlus, FaMinus, FaPlus, FaCheck } from "react-icons/fa";
 
 interface PartCardProps {
   part: Part;
@@ -14,7 +19,8 @@ interface PartCardProps {
 }
 
 const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
-  const [showQuantityPanel, setShowQuantityPanel] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -32,6 +38,9 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
         title: "Added to cart",
         description: `${part.description} has been added to your cart.`,
       });
+      setIsPopoverOpen(false);
+      // Reset quantity to 1 after adding to cart for next time
+      setQuantity(1);
     },
     onError: () => {
       toast({
@@ -47,8 +56,26 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
     addToCartMutation.mutate(1);
   };
 
-  const handleAddWithQuantity = (quantity: number) => {
+  const handleAddWithQuantity = () => {
+    // Add with selected quantity
     addToCartMutation.mutate(quantity);
+  };
+
+  const handleIncrement = () => {
+    setQuantity(prev => prev + 1);
+  };
+
+  const handleDecrement = () => {
+    if (quantity > 1) {
+      setQuantity(prev => prev - 1);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (!isNaN(value) && value > 0) {
+      setQuantity(value);
+    }
   };
 
   return (
@@ -79,23 +106,64 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
               <FaCartPlus className="text-lg" />
             </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="px-2 py-1 h-auto text-primary border-primary hover:bg-primary-50"
-              onClick={() => setShowQuantityPanel(true)}
-              disabled={addToCartMutation.isPending}
-            >
-              <FaPlus className="mr-1 text-xs" />
-              <span className="text-xs">Add</span>
-            </Button>
-            
-            <QuantityPanel
-              isOpen={showQuantityPanel}
-              onClose={() => setShowQuantityPanel(false)}
-              onSubmit={handleAddWithQuantity}
-              initialQuantity={1}
-            />
+            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-2 py-1 h-auto text-primary border-primary hover:bg-primary-50"
+                >
+                  <FaPlus className="mr-1 text-xs" />
+                  <span className="text-xs">Add</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-3" align="end">
+                <h4 className="font-medium text-sm mb-2">Set quantity:</h4>
+                <div className="flex items-center space-x-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleDecrement}
+                    disabled={quantity <= 1}
+                  >
+                    <FaMinus className="h-3 w-3" />
+                  </Button>
+                  
+                  <Input
+                    type="text"
+                    value={quantity}
+                    onChange={handleInputChange}
+                    className="h-8 w-16 text-center"
+                    min={1}
+                  />
+                  
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleIncrement}
+                  >
+                    <FaPlus className="h-3 w-3" />
+                  </Button>
+                </div>
+                
+                <Button 
+                  className="w-full mt-3 bg-secondary hover:bg-secondary-600"
+                  onClick={handleAddWithQuantity}
+                  disabled={addToCartMutation.isPending}
+                >
+                  {addToCartMutation.isPending ? (
+                    "Adding..."
+                  ) : (
+                    <>
+                      <FaCheck className="mr-1 h-3 w-3" />
+                      Add to Cart
+                    </>
+                  )}
+                </Button>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>
