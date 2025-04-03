@@ -5,16 +5,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetTrigger,
-  SheetDescription,
-  SheetClose,
-} from "@/components/ui/sheet";
-import { FaCartPlus, FaMinus, FaPlus, FaCheck } from "react-icons/fa";
+import { FaCartPlus, FaPlus } from "react-icons/fa";
+import QuantityPanel from "./quantity-panel";
 
 interface PartCardProps {
   part: Part;
@@ -22,8 +14,7 @@ interface PartCardProps {
 }
 
 const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
-  const [quantity, setQuantity] = useState(1);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [showQuantityPanel, setShowQuantityPanel] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -41,9 +32,6 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
         title: "Added to cart",
         description: `${part.description} has been added to your cart.`,
       });
-      setSheetOpen(false);
-      // Reset quantity to 1 after adding to cart for next time
-      setQuantity(1);
     },
     onError: () => {
       toast({
@@ -59,26 +47,8 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
     addToCartMutation.mutate(1);
   };
 
-  const handleAddWithQuantity = () => {
-    // Add with selected quantity
+  const handleAddWithQuantity = (quantity: number) => {
     addToCartMutation.mutate(quantity);
-  };
-
-  const handleIncrement = () => {
-    setQuantity(prev => prev + 1);
-  };
-
-  const handleDecrement = () => {
-    if (quantity > 1) {
-      setQuantity(prev => prev - 1);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value) && value > 0) {
-      setQuantity(value);
-    }
   };
 
   return (
@@ -109,80 +79,23 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
               <FaCartPlus className="text-lg" />
             </Button>
 
-            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="px-2 py-1 h-auto text-primary border-primary hover:bg-primary-50"
-                >
-                  <FaPlus className="mr-1 text-xs" />
-                  <span className="text-xs">Add</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="h-auto pb-8 pt-6">
-                <SheetTitle className="mb-4 text-center">Set quantity</SheetTitle>
-                <SheetDescription className="sr-only">
-                  Adjust the quantity and add to cart.
-                </SheetDescription>
-                
-                <div className="flex flex-col items-center justify-center">
-                  <div className="flex items-center space-x-3 justify-center">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10"
-                      onClick={handleDecrement}
-                      disabled={quantity <= 1}
-                    >
-                      <FaMinus className="h-4 w-4" />
-                    </Button>
-                    
-                    <Input
-                      type="text"
-                      value={quantity}
-                      onChange={handleInputChange}
-                      className="h-10 w-20 text-center text-lg"
-                      min={1}
-                    />
-                    
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10"
-                      onClick={handleIncrement}
-                    >
-                      <FaPlus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="flex w-full max-w-xs mt-6 gap-3">
-                    <SheetClose asChild>
-                      <Button 
-                        className="flex-1 bg-primary hover:bg-primary-600 py-3 text-base"
-                      >
-                        OK
-                      </Button>
-                    </SheetClose>
-                    
-                    <Button 
-                      className="flex-1 bg-secondary hover:bg-secondary-600 py-3 text-base"
-                      onClick={handleAddWithQuantity}
-                      disabled={addToCartMutation.isPending}
-                    >
-                      {addToCartMutation.isPending ? (
-                        "Adding..."
-                      ) : (
-                        <>
-                          <FaCheck className="mr-2 h-4 w-4" />
-                          Add to Cart
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
+            <Button
+              variant="outline"
+              size="sm"
+              className="px-2 py-1 h-auto text-primary border-primary hover:bg-primary-50"
+              onClick={() => setShowQuantityPanel(true)}
+              disabled={addToCartMutation.isPending}
+            >
+              <FaPlus className="mr-1 text-xs" />
+              <span className="text-xs">Add</span>
+            </Button>
+            
+            <QuantityPanel
+              isOpen={showQuantityPanel}
+              onClose={() => setShowQuantityPanel(false)}
+              onSubmit={handleAddWithQuantity}
+              initialQuantity={1}
+            />
           </div>
         </div>
       </div>
