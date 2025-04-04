@@ -55,13 +55,10 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Red top bar */}
-      <div className="w-full bg-red-600 h-12 shadow-md"></div>
-      
       <div className="flex-grow flex items-center justify-center p-4">
         <Card className="w-full max-w-md overflow-hidden">
           {/* Red accent strip at the top of the card */}
-          <div className="h-2 bg-red-600 w-full"></div>
+          <div className="h-[30%] bg-red-600 w-full"></div>
           
           <CardHeader className="space-y-1 flex flex-col items-center">
             <div className="flex items-center justify-center text-primary-600 mb-2">
