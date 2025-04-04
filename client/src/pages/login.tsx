@@ -54,47 +54,56 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 flex flex-col items-center">
-          <div className="flex items-center justify-center text-primary-600 mb-2">
-            <Logo size={50} color="hsl(var(--primary))" />
-          </div>
-          <CardTitle className="text-2xl font-bold">FastFire Parts Supply</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Red top bar */}
+      <div className="w-full bg-red-600 h-12 shadow-md"></div>
+      
+      <div className="flex-grow flex items-center justify-center p-4">
+        <Card className="w-full max-w-md overflow-hidden">
+          {/* Red accent strip at the top of the card */}
+          <div className="h-2 bg-red-600 w-full"></div>
+          
+          <CardHeader className="space-y-1 flex flex-col items-center">
+            <div className="flex items-center justify-center text-primary-600 mb-2">
+              <Logo size={50} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-              {loginMutation.isPending ? "Logging in..." : "Login"}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+            <CardTitle className="text-2xl font-bold">FastFire Parts Supply</CardTitle>
+            <CardDescription>Enter your credentials to access your account</CardDescription>
+          </CardHeader>
+          
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+                {loginMutation.isPending ? "Logging in..." : "Login"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
       
       <div className="fixed bottom-4 left-0 right-0 text-center text-sm">
         <p className="font-medium text-primary-600 mb-1">Demo Credentials</p>
