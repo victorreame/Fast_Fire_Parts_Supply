@@ -58,8 +58,8 @@ const LoginPage = () => {
       <Card className="w-full max-w-md overflow-hidden border-0 shadow-lg">
         {/* Red header section with logo and title */}
         <div className="bg-red-600 p-6 text-center text-white">
-          <div className="flex justify-center mb-2">
-            <Logo size={40} />
+          <div className="flex justify-center mb-3">
+            <Logo size={60} />
           </div>
           <h1 className="text-2xl font-bold mb-1">FastFire Parts Supply</h1>
           <p className="text-sm opacity-90">Enter your credentials to access your account</p>
