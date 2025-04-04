@@ -8,12 +8,12 @@ interface LogoProps {
 const Logo: React.FC<LogoProps> = ({ size = 50, className = "" }) => {
   // Using the new logo image from attached assets
   return (
-    <img 
-      src="/assets/fire%20logo.png" 
-      alt="FastFire Parts Logo" 
-      width={size} 
+    <img
+      src="/assets/firelogo.png"
+      alt="FastFire Parts Logo"
+      width={size}
       height={size}
-      className={className} 
+      className={className}
       style={{ objectFit: "contain" }}
     />
   );
