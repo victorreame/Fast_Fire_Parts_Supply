@@ -188,17 +188,30 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   return (
     <div className="p-4 border-b border-neutral-200">
       <div className="flex justify-between">
-        <div className="w-3/4">
-          <div className="flex items-start">
-            <Badge variant="outline" className="font-semibold bg-neutral-100 text-neutral-800 mr-2">
-              {part.itemCode}
-            </Badge>
-            <Badge variant="secondary" className="bg-primary-100 text-primary-800">
-              {part.pipeSize}
-            </Badge>
+        <div className="w-3/4 flex">
+          <div className="mr-3 flex-shrink-0">
+            <img 
+              src={`/assets/parts/${part.itemCode}.svg`} 
+              alt={part.description}
+              className="h-16 w-16 object-contain"
+              onError={(e) => {
+                // Fallback if SVG doesn't load
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
           </div>
-          <h3 className="font-medium mt-1">{part.description}</h3>
-          <p className="text-sm text-neutral-500 mt-1">Type: {part.type}</p>
+          <div>
+            <div className="flex items-start">
+              <Badge variant="outline" className="font-semibold bg-neutral-100 text-neutral-800 mr-2">
+                {part.itemCode}
+              </Badge>
+              <Badge variant="secondary" className="bg-primary-100 text-primary-800">
+                {part.pipeSize}
+              </Badge>
+            </div>
+            <h3 className="font-medium mt-1">{part.description}</h3>
+            <p className="text-sm text-neutral-500 mt-1">Type: {part.type}</p>
+          </div>
         </div>
 
         <div className="flex items-center">

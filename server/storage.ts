@@ -607,7 +607,7 @@ export class DatabaseStorage implements IStorage {
         businessId: business2.id
       });
       
-      // Create sample parts
+      // Create sample parts with SVG images
       await this.createPart({
         itemCode: "VLV-243",
         pipeSize: "2\"",
@@ -618,24 +618,24 @@ export class DatabaseStorage implements IStorage {
         priceT3: 62.00,
         inStock: 36,
         isPopular: true,
-        image: null
+        image: "/assets/parts/VLV-243.svg"
       });
       
       await this.createPart({
-        itemCode: "SPK-108",
+        itemCode: "SPK-567",
         pipeSize: "1/2\"",
-        description: "Standard Sprinkler Head - K5.6",
+        description: "Pendant Sprinkler Head - K5.6",
         type: "Sprinkler",
         priceT1: 12.99,
         priceT2: 11.75,
         priceT3: 10.50,
         inStock: 122,
         isPopular: true,
-        image: null
+        image: "/assets/parts/SPK-567.svg"
       });
       
       await this.createPart({
-        itemCode: "FIT-432",
+        itemCode: "FIT-789",
         pipeSize: "1\"",
         description: "Threaded Elbow - 90°",
         type: "Fitting",
@@ -644,33 +644,98 @@ export class DatabaseStorage implements IStorage {
         priceT3: 3.25,
         inStock: 245,
         isPopular: true,
-        image: null
+        image: "/assets/parts/FIT-789.svg"
       });
       
       await this.createPart({
-        itemCode: "PIP-101",
-        pipeSize: "1\"",
-        description: "Schedule 40 Steel Pipe - 10ft",
-        type: "Pipe",
+        itemCode: "FSW-321",
+        pipeSize: "2\"",
+        description: "Flow Switch",
+        type: "Monitor",
+        priceT1: 105.99,
+        priceT2: 119.99,
+        priceT3: 134.99,
+        inStock: 75,
+        isPopular: false,
+        image: "/assets/parts/FSW-321.svg"
+      });
+      
+      await this.createPart({
+        itemCode: "PGE-654",
+        pipeSize: "1/4\"",
+        description: "Pressure Gauge",
+        type: "Monitor",
         priceT1: 28.50,
-        priceT2: 27.25,
-        priceT3: 26.00,
-        inStock: 85,
+        priceT2: 32.99,
+        priceT3: 37.99,
+        inStock: 120,
         isPopular: true,
-        image: null
+        image: "/assets/parts/PGE-654.svg"
       });
       
       await this.createPart({
-        itemCode: "FIT-211",
-        pipeSize: "3/4\"",
-        description: "Threaded Tee",
+        itemCode: "ALP-987",
+        pipeSize: "N/A",
+        description: "Fire Alarm Pull Station",
+        type: "Alarm",
+        priceT1: 42.99,
+        priceT2: 47.99,
+        priceT3: 54.99,
+        inStock: 90,
+        isPopular: false,
+        image: "/assets/parts/ALP-987.svg"
+      });
+      
+      await this.createPart({
+        itemCode: "CPL-135",
+        pipeSize: "1\"",
+        description: "Pipe Coupling",
         type: "Fitting",
-        priceT1: 4.25,
-        priceT2: 4.00,
-        priceT3: 3.75,
-        inStock: 180,
+        priceT1: 5.25,
+        priceT2: 6.49,
+        priceT3: 7.99,
+        inStock: 800,
         isPopular: true,
-        image: null
+        image: "/assets/parts/CPL-135.svg"
+      });
+      
+      await this.createPart({
+        itemCode: "CHV-246",
+        pipeSize: "1-1/2\"",
+        description: "Check Valve",
+        type: "Valve",
+        priceT1: 65.50,
+        priceT2: 72.99,
+        priceT3: 82.99,
+        inStock: 110,
+        isPopular: false,
+        image: "/assets/parts/CHV-246.svg"
+      });
+      
+      await this.createPart({
+        itemCode: "FDC-159",
+        pipeSize: "2-1/2\"",
+        description: "Fire Department Connection",
+        type: "Connection",
+        priceT1: 175.00,
+        priceT2: 195.00,
+        priceT3: 225.00,
+        inStock: 45,
+        isPopular: false,
+        image: "/assets/parts/FDC-159.svg"
+      });
+      
+      await this.createPart({
+        itemCode: "HSE-753",
+        pipeSize: "1-1/2\"",
+        description: "Fire Hose",
+        type: "Hose",
+        priceT1: 95.00,
+        priceT2: 105.00,
+        priceT3: 125.00,
+        inStock: 60,
+        isPopular: false,
+        image: "/assets/parts/HSE-753.svg"
       });
       
       // Create Jobs
@@ -723,8 +788,8 @@ export class DatabaseStorage implements IStorage {
       
       // Get parts for order items
       const part1 = await this.getPartByItemCode("VLV-243");
-      const part2 = await this.getPartByItemCode("SPK-108");
-      const part3 = await this.getPartByItemCode("FIT-432");
+      const part2 = await this.getPartByItemCode("SPK-567");
+      const part3 = await this.getPartByItemCode("FIT-789");
       
       // Create order items
       if (part1 && order1) {
