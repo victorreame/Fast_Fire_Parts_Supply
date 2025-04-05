@@ -13,6 +13,9 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication and session management
@@ -625,6 +628,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to get stats" });
     }
   });
+
+  // Configure multer for file uploads
+  const uploadStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const uploadPath = path.join(process.cwd(), 'public', 'uploads');
+      
+      // Ensure the directory exists
+      if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+      }
+      
+      cb(null, uploadPath);
+    },
+    filename: (_req, file, cb) => {
+      // Generate a unique filename
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = path.extname(file.originalname);
+      cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    }
+  });
+
+  // File filter to only allow images
+  const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  };
+
+  const upload = multer({ 
+    storage: uploadStorage, 
+    fileFilter,
+    limits: {
+      fileSize: 2 * 1024 * 1024, // 2MB limit
+    }
+  });
+
+  // Upload image for a part
+  apiRouter.post("/parts/:id/image", upload.single('image'), async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || req.user.role !== "supplier") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const id = parseInt(req.params.id);
+      const part = await storage.getPart(id);
+      
+      if (!part) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      // Create the URL for the uploaded image
+      const imagePath = `/uploads/${req.file.filename}`;
+      
+      // Update the part with the image path
+      const updatedPart = await storage.updatePart(id, { image: imagePath });
+      
+      res.json(updatedPart);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
+  // Serve uploaded files
+  app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
   const httpServer = createServer(app);
   return httpServer;

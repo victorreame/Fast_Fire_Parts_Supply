@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { z } from "zod";
+import { FaUpload, FaImage } from "react-icons/fa";
 
 interface PartFormProps {
   part?: Part | null;
@@ -36,18 +37,90 @@ type PartFormValues = z.infer<typeof partFormSchema>;
 const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [image, setImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(part?.image || null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: parts } = useQuery({
     queryKey: ['/api/parts'],
   });
 
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Image size must be less than 2MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Only image files are allowed",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setImage(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  // Upload image to server
+  const uploadImageMutation = useMutation({
+    mutationFn: async (partId: number) => {
+      if (!image) return null;
+      
+      setIsUploading(true);
+      
+      const formData = new FormData();
+      formData.append('image', image);
+      
+      const response = await fetch(`/api/parts/${partId}/image`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsUploading(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      });
+    },
+    onError: () => {
+      setIsUploading(false);
+      toast({
+        title: "Error",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Extract unique types for dropdown
-  const partTypes = parts
+  const partTypes = Array.isArray(parts)
     ? Array.from(new Set(parts.map((p: Part) => p.type))).sort()
     : [];
 
   // Extract unique pipe sizes for dropdown
-  const pipeSizes = parts
+  const pipeSizes = Array.isArray(parts)
     ? Array.from(new Set(parts.map((p: Part) => p.pipeSize))).sort()
     : [];
 
@@ -62,8 +135,9 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
           priceT1: part.priceT1,
           priceT2: part.priceT2,
           priceT3: part.priceT3,
-          inStock: part.inStock,
-          isPopular: part.isPopular,
+          inStock: part.inStock || 0, // Ensure it's not null
+          isPopular: part.isPopular || false, // Ensure it's not null
+          image: part.image
         }
       : {
           itemCode: "",
@@ -75,6 +149,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
           priceT3: 0,
           inStock: 0,
           isPopular: false,
+          image: undefined
         },
   });
 
@@ -122,11 +197,51 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
     },
   });
 
-  const onSubmit = (values: PartFormValues) => {
-    if (part) {
-      updatePartMutation.mutate(values);
-    } else {
-      createPartMutation.mutate(values);
+  const onSubmit = async (values: PartFormValues) => {
+    try {
+      if (part) {
+        // Update existing part
+        await updatePartMutation.mutateAsync(values);
+        
+        // Upload image if selected
+        if (image) {
+          setIsUploading(true);
+          await uploadImageMutation.mutateAsync(part.id);
+          setIsUploading(false);
+        }
+      } else {
+        // Create new part
+        const newPartResponse = await createPartMutation.mutateAsync(values);
+        
+        // Upload image if selected and part created successfully
+        if (image && newPartResponse) {
+          // Safely parse the response to get the part ID
+          let newPartId: number | undefined;
+          try {
+            const newPart = newPartResponse as unknown as Part;
+            newPartId = newPart.id;
+          } catch (err) {
+            console.error("Error parsing part response:", err);
+          }
+          
+          if (newPartId) {
+            setIsUploading(true);
+            await uploadImageMutation.mutateAsync(newPartId);
+            setIsUploading(false);
+          }
+        }
+      }
+      
+      // Clear file input after successful submission
+      if (image) {
+        setImage(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    } catch (error) {
+      setIsUploading(false);
+      console.error("Error saving part:", error);
     }
   };
 
@@ -340,13 +455,74 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
             </FormItem>
           )}
         />
+        
+        {/* Image Upload Section */}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="part-image">Part Image</Label>
+            <div className="flex items-center mt-2">
+              <div className="mr-4">
+                {previewUrl ? (
+                  <div className="relative w-24 h-24 rounded border overflow-hidden">
+                    <img 
+                      src={previewUrl} 
+                      alt="Part preview" 
+                      className="w-full h-full object-contain"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                      onClick={() => {
+                        setPreviewUrl(null);
+                        setImage(null);
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = '';
+                        }
+                      }}
+                    >
+                      <span className="sr-only">Remove image</span>
+                      &times;
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 flex items-center justify-center rounded border bg-muted">
+                    <FaImage className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center"
+                disabled={isUploading}
+              >
+                <FaUpload className="mr-2 h-4 w-4" />
+                {previewUrl ? "Change image" : "Upload image"}
+              </Button>
+              <input
+                ref={fileInputRef}
+                id="part-image"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Upload a clear image of the part. JPG, PNG or GIF, max 2MB.
+            </p>
+          </div>
+        </div>
 
         <Button
           type="submit"
           className="w-full"
-          disabled={createPartMutation.isPending || updatePartMutation.isPending}
+          disabled={createPartMutation.isPending || updatePartMutation.isPending || isUploading}
         >
-          {createPartMutation.isPending || updatePartMutation.isPending
+          {createPartMutation.isPending || updatePartMutation.isPending || isUploading
             ? "Saving..."
             : part
             ? "Update Part"

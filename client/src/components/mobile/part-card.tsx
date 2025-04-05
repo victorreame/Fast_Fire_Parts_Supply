@@ -191,12 +191,12 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
         <div className="w-3/4 flex">
           <div className="mr-3 flex-shrink-0">
             <img 
-              src={`/assets/parts/${part.itemCode}.svg`} 
+              src={part.image || `/assets/parts/${part.itemCode}.svg`}
               alt={part.description}
-              className="h-16 w-16 object-contain"
+              className="h-16 w-16 object-contain bg-gray-50 rounded"
               onError={(e) => {
-                // Fallback if SVG doesn't load
-                (e.target as HTMLImageElement).style.display = 'none';
+                // Fallback if image doesn't load - show a placeholder
+                (e.target as HTMLImageElement).src = '/assets/placeholder-part.svg';
               }}
             />
           </div>
