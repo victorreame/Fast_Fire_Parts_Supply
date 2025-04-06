@@ -23,20 +23,20 @@ const MobileHome = () => {
 
   return (
     <MobileLayout>
-      <div className="p-4">
+      <div className="p-4 flex flex-col h-[calc(100vh-80px)]">
         <form onSubmit={handleSearch} className="mb-6">
           <div className="relative">
             <Input
               type="text"
               placeholder="Search parts..."
-              className="w-full p-3 pl-10 rounded-md shadow-sm border-gray-300 focus:border-red-500 focus:ring focus:ring-red-200 focus:ring-opacity-50"
+              className="w-full p-4 pl-12 rounded-md shadow-sm border-gray-300 focus:border-red-500 focus:ring focus:ring-red-200 focus:ring-opacity-50 text-lg h-14"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <FaSearch className="absolute left-3 top-3.5 text-red-600" />
+            <FaSearch className="absolute left-4 top-4.5 text-red-600 text-lg" />
             <Button 
               type="submit" 
-              className="absolute right-1 top-1 h-8 px-3 bg-red-600 hover:bg-red-700 text-white"
+              className="absolute right-2 top-2 h-10 px-4 bg-red-600 hover:bg-red-700 text-white"
               disabled={!searchQuery.trim()}
             >
               <FaSearch className="mr-1" />
@@ -45,7 +45,7 @@ const MobileHome = () => {
           </div>
         </form>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-6 flex-1 my-auto">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
             <Button
               onClick={() => navigate("/jobs")}
