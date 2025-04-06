@@ -189,9 +189,6 @@ const JobDetailsPage = () => {
                 <h2 className="text-xl font-bold">{job.description || job.name}</h2>
                 <p className="text-sm text-neutral-500 mt-1">Job #: {job.jobNumber}</p>
               </div>
-              <Button variant="outline" size="sm" onClick={openUpdateDialog}>
-                <i className="fas fa-edit mr-1"></i> Update
-              </Button>
             </div>
             
             <div className="flex mt-3">
@@ -214,15 +211,12 @@ const JobDetailsPage = () => {
         )}
       </div>
 
-      <Tabs defaultValue="jobParts" className="w-full">
-        <div className="border-b border-neutral-200">
-          <TabsList className="w-full grid grid-cols-2">
-            <TabsTrigger value="jobParts">Job Parts</TabsTrigger>
-            <TabsTrigger value="catalog">Parts Catalog</TabsTrigger>
-          </TabsList>
+      <div className="w-full">
+        <div className="border-b border-neutral-200 p-2 bg-neutral-50">
+          <h3 className="font-medium text-center">Job Parts</h3>
         </div>
         
-        <TabsContent value="jobParts" className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-4 bg-neutral-100 border-b border-neutral-200 flex justify-between items-center">
             <div>
               <h3 className="font-semibold">Parts for this Job</h3>
@@ -284,67 +278,11 @@ const JobDetailsPage = () => {
           ) : (
             <div className="p-8 text-center">
               <p className="text-neutral-500">No parts added to this job yet.</p>
-              <p className="text-sm text-neutral-400 mt-2">Switch to the Parts Catalog tab to add parts.</p>
+              <p className="text-sm text-neutral-400 mt-2">Contact your supervisor to have parts added to this job.</p>
             </div>
           )}
-        </TabsContent>
-        
-        <TabsContent value="catalog" className="flex-1 overflow-y-auto">
-          <div className="p-4 bg-neutral-100 border-b border-neutral-200">
-            <h3 className="font-semibold">Parts Catalog</h3>
-            <p className="text-sm text-neutral-500">Add parts to this job</p>
-          </div>
-          
-          {isLoadingParts ? (
-            // Loading skeleton
-            Array(3)
-              .fill(0)
-              .map((_, index) => (
-                <div key={index} className="p-4 border-b border-neutral-200">
-                  <div className="flex justify-between">
-                    <div className="w-full">
-                      <div className="flex items-start">
-                        <Skeleton className="h-6 w-16 rounded mr-2" />
-                        <Skeleton className="h-6 w-10 rounded" />
-                      </div>
-                      <Skeleton className="h-5 w-3/4 mt-2" />
-                      <Skeleton className="h-4 w-1/4 mt-2" />
-                    </div>
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                  </div>
-                </div>
-              ))
-          ) : parts?.length > 0 ? (
-            parts.slice(0, 20).map((part: any) => (
-              <div key={part.id} className="p-4 border-b border-neutral-200">
-                <div className="flex justify-between">
-                  <div>
-                    <div className="flex items-center">
-                      <div className="text-lg font-semibold">{part.item_code}</div>
-                      <div className="ml-2 text-sm bg-neutral-100 px-2 py-0.5 rounded">{part.pipe_size}</div>
-                    </div>
-                    <div className="mt-1 text-sm">{part.description}</div>
-                    <div className="mt-1 text-xs text-neutral-500">Type: {part.type}</div>
-                  </div>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-8 text-xs"
-                    onClick={() => handleOpenAddPartDialog(part.id)}
-                  >
-                    Add to Job
-                  </Button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="p-8 text-center">
-              <p className="text-neutral-500">No parts available.</p>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
 
       {/* Update Status Dialog */}
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
