@@ -106,6 +106,13 @@ const SupplierJobs = () => {
             />
             <i className="fas fa-search absolute left-3 top-3 text-neutral-400"></i>
           </div>
+          <Button 
+            className="ml-4 bg-primary hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium flex items-center"
+            onClick={handleAddJob}
+          >
+            <i className="fas fa-plus mr-2"></i>
+            Add New Job
+          </Button>
         </div>
       </div>
 
