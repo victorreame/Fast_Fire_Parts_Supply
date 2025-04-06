@@ -31,7 +31,7 @@ interface JobFormProps {
 }
 
 const formSchema = insertJobSchema.extend({
-  name: z.string().optional(), // Make name optional as we'll use description as the main title
+  name: z.string().min(1, "Name is required"), // Keep name required to match the schema
   jobNumber: z.string().min(2, "Job number is required"),
   description: z.string().min(3, "Description must be at least 3 characters"), // Make description required
   isPublic: z.boolean().optional().default(false),
@@ -61,10 +61,11 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
 
   const createJobMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
-      // Set name to be the same as description since we're using description as the main title
-      // And keep location as empty string since we're removing it
+      // Since we're already setting name = description in onSubmit and onChange
+      // We can just use the data directly. We still need to map field names to
+      // match the snake_case API naming convention
       const apiData = {
-        name: data.description, // Use description as the name
+        name: data.name, // Already set to description value
         job_number: data.jobNumber,
         location: "", // Empty location as we're removing this field
         description: data.description,
@@ -97,6 +98,9 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    // Make sure name is set to the description before submitting
+    // This ensures the database requirement for name is met
+    values.name = values.description;
     createJobMutation.mutate(values);
   }
 
@@ -115,6 +119,11 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
                   className="resize-none"
                   {...field}
                   value={field.value || ""}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    // Also update the hidden name field
+                    form.setValue("name", e.target.value);
+                  }}
                 />
               </FormControl>
               <FormMessage />

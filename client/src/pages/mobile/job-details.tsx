@@ -110,7 +110,7 @@ const JobDetailsPage = () => {
           <div>
             <div className="flex justify-between items-start">
               <div>
-                <h2 className="text-xl font-bold">{job.name}</h2>
+                <h2 className="text-xl font-bold">{job.description || job.name}</h2>
                 <p className="text-sm text-neutral-500 mt-1">Job #: {job.jobNumber}</p>
               </div>
               <Button variant="outline" size="sm" onClick={openUpdateDialog}>

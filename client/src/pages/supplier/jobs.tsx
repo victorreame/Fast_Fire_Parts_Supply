@@ -46,7 +46,7 @@ const SupplierJobs = () => {
   const filteredJobs = jobs
     ? jobs.filter(job => {
         const matchesSearch = searchQuery
-          ? job.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          ? (job.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             job.jobNumber.toLowerCase().includes(searchQuery.toLowerCase())
           : true;
         
@@ -142,10 +142,10 @@ const SupplierJobs = () => {
               <TableHeader className="bg-neutral-50">
                 <TableRow>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    Job Number
+                    Job Title
                   </TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    Description
+                    Job Number
                   </TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                     Status
@@ -166,10 +166,10 @@ const SupplierJobs = () => {
                   filteredJobs.map((job) => (
                     <TableRow key={job.id}>
                       <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                        {job.jobNumber}
+                        {job.description || job.name || "-"}
                       </TableCell>
                       <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                        {job.description || job.name || "-"}
+                        {job.jobNumber}
                       </TableCell>
                       <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
                         <span

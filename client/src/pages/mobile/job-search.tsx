@@ -25,7 +25,8 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 const newJobSchema = z.object({
-  name: z.string().min(3, "Job name must be at least 3 characters"),
+  name: z.string().min(3, "Job title must be at least 3 characters"),
+  description: z.string().min(3, "Job title must be at least 3 characters"),
   jobNumber: z.string().min(3, "Job number must be at least 3 characters"),
   status: z.enum(["active", "pending", "completed"]),
 });
@@ -43,6 +44,7 @@ const JobSearchPage = () => {
     resolver: zodResolver(newJobSchema),
     defaultValues: {
       name: "",
+      description: "",
       jobNumber: "",
       status: "active",
     },
@@ -75,6 +77,8 @@ const JobSearchPage = () => {
   });
 
   const onSubmit = (values: NewJobFormValues) => {
+    // Make sure name matches description for consistency
+    values.name = values.description;
     createJobMutation.mutate(values);
   };
 
@@ -83,15 +87,19 @@ const JobSearchPage = () => {
     ? jobs
         .filter((job) =>
           searchQuery
-            ? job.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            ? (job.description || job.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
               job.jobNumber.toLowerCase().includes(searchQuery.toLowerCase())
             : true
         )
         .sort((a, b) => {
           if (sortBy === "recent") {
-            return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+            const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+            const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+            return dateB - dateA;
           } else if (sortBy === "name") {
-            return a.name.localeCompare(b.name);
+            const textA = (a.description || a.name || '');
+            const textB = (b.description || b.name || '');
+            return textA.localeCompare(textB);
           } else if (sortBy === "status") {
             return a.status.localeCompare(b.status);
           }
@@ -128,12 +136,20 @@ const JobSearchPage = () => {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
                   <FormField
                     control={form.control}
-                    name="name"
+                    name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Job Name</FormLabel>
+                        <FormLabel>Job Title</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter job name" {...field} />
+                          <Input 
+                            placeholder="Enter job title" 
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              // Also set the name field to the same value
+                              form.setValue("name", e.target.value);
+                            }} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -196,7 +212,7 @@ const JobSearchPage = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="recent">Sort by Recent</SelectItem>
-              <SelectItem value="name">Sort by Name</SelectItem>
+              <SelectItem value="name">Sort by Title</SelectItem>
               <SelectItem value="status">Sort by Status</SelectItem>
             </SelectContent>
           </Select>

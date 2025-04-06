@@ -38,7 +38,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
     <div className="p-4 border-b border-neutral-200">
       <div className="flex justify-between">
         <div>
-          <h3 className="font-medium">{job.name}</h3>
+          <h3 className="font-medium">{job.description || job.name}</h3>
           <p className="text-sm text-neutral-500 mt-1">Job #: {job.jobNumber}</p>
           <div className="flex mt-2">
             <Badge variant="outline" className={statusBadgeVariant()}>
