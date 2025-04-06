@@ -104,10 +104,10 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
             {parts.map((part) => (
               <TableRow key={part.id}>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                  {part.itemCode}
+                  {part.item_code}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                  {part.pipeSize}
+                  {part.pipe_size}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                   {part.description}
@@ -116,16 +116,16 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                   {part.type}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                  ${part.priceT1.toFixed(2)}
+                  ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                  ${part.priceT2.toFixed(2)}
+                  ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                  ${part.priceT3.toFixed(2)}
+                  ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                  {part.inStock}
+                  {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <Button 

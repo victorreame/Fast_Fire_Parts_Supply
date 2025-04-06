@@ -452,9 +452,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!part) continue;
         
         // Determine price based on business price tier
-        let price = part.priceT3; // Default to T3
-        if (business.priceTier === "T1") price = part.priceT1;
-        else if (business.priceTier === "T2") price = part.priceT2;
+        let price = part.price_t3; // Default to T3
+        if (business.priceTier === "T1") price = part.price_t1;
+        else if (business.priceTier === "T2") price = part.price_t2;
         
         await storage.createOrderItem({
           orderId: order.id,
@@ -615,7 +615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Count low stock items (< 10)
       const lowStockItems = parts.filter(part => {
-        return part.inStock === null ? true : part.inStock < 10;
+        return part.in_stock === null ? true : part.in_stock < 10;
       }).length;
       
       res.json({
