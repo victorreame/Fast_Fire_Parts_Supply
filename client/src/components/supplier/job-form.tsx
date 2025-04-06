@@ -143,8 +143,8 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
             <FormItem>
               <FormLabel>Associated Business (optional)</FormLabel>
               <Select
-                onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                value={field.value?.toString() || ""}
+                onValueChange={(value) => field.onChange(value && value !== "none" ? parseInt(value) : null)}
+                value={field.value?.toString() || "none"}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -152,7 +152,7 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {businesses?.map((business) => (
                     <SelectItem key={business.id} value={business.id.toString()}>
                       {business.name}
