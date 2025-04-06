@@ -30,11 +30,14 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import JobForm from "@/components/supplier/job-form";
+import JobPartsModal from "@/components/supplier/job-parts-modal";
 
 const SupplierJobs = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAddJobDialog, setShowAddJobDialog] = useState(false);
+  const [showJobPartsModal, setShowJobPartsModal] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [jobToEdit, setJobToEdit] = useState<Job | null>(null);
   const { toast } = useToast();
 
@@ -210,7 +213,10 @@ const SupplierJobs = () => {
                             variant="ghost" 
                             size="sm"
                             className="text-blue-600 hover:text-blue-900"
-                            onClick={() => window.location.href = `/job/${job.id}`}
+                            onClick={() => {
+                              setSelectedJobId(job.id);
+                              setShowJobPartsModal(true);
+                            }}
                           >
                             <i className="fas fa-tools mr-1"></i> Parts
                           </Button>
@@ -242,6 +248,15 @@ const SupplierJobs = () => {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Job Parts Modal */}
+      {selectedJobId && (
+        <JobPartsModal
+          jobId={selectedJobId}
+          open={showJobPartsModal}
+          onOpenChange={setShowJobPartsModal}
+        />
+      )}
     </SupplierLayout>
   );
 };
