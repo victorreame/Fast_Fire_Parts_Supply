@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, boolean, doublePrecision, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Users table
 export const users = pgTable("users", {
@@ -117,6 +118,39 @@ export const insertCartItemSchema = createInsertSchema(cartItems).omit({
   id: true,
 });
 
+// Job Parts table (association between Jobs and Parts)
+export const jobParts = pgTable("job_parts", {
+  id: serial("id").primaryKey(),
+  jobId: integer("job_id").references(() => jobs.id).notNull(),
+  partId: integer("part_id").references(() => parts.id).notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  notes: text("notes"),
+});
+
+export const insertJobPartSchema = createInsertSchema(jobParts).omit({
+  id: true,
+});
+
+// Define relations
+export const jobsRelations = relations(jobs, ({ many }) => ({
+  jobParts: many(jobParts),
+}));
+
+export const partsRelations = relations(parts, ({ many }) => ({
+  jobParts: many(jobParts),
+}));
+
+export const jobPartsRelations = relations(jobParts, ({ one }) => ({
+  job: one(jobs, {
+    fields: [jobParts.jobId],
+    references: [jobs.id],
+  }),
+  part: one(parts, {
+    fields: [jobParts.partId],
+    references: [parts.id],
+  }),
+}));
+
 // Type definitions
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -138,3 +172,6 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 
 export type CartItem = typeof cartItems.$inferSelect;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
+
+export type JobPart = typeof jobParts.$inferSelect;
+export type InsertJobPart = z.infer<typeof insertJobPartSchema>;

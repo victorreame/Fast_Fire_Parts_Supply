@@ -9,7 +9,8 @@ import {
   insertJobSchema,
   insertOrderSchema,
   insertOrderItemSchema,
-  insertCartItemSchema
+  insertCartItemSchema,
+  insertJobPartSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
@@ -694,6 +695,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error uploading image:", error);
       res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
+  // Job Parts routes
+  apiRouter.get("/jobs/:jobId/parts", async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+      
+      // Check if job exists
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Get job parts with part details
+      const jobParts = await storage.getJobPartsWithDetails(jobId);
+      
+      res.json(jobParts);
+    } catch (error) {
+      console.error("Error getting job parts:", error);
+      res.status(500).json({ message: "Failed to get job parts" });
+    }
+  });
+  
+  apiRouter.post("/jobs/:jobId/parts", async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+      
+      // Check if job exists
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Validate part data
+      const jobPartData = insertJobPartSchema.parse({
+        ...req.body,
+        jobId
+      });
+      
+      // Check if part exists
+      const part = await storage.getPart(jobPartData.partId);
+      if (!part) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+      
+      // Add part to job
+      const jobPart = await storage.addJobPart(jobPartData);
+      
+      res.status(201).json({ ...jobPart, part });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid job part data", errors: error.errors });
+      }
+      console.error("Error adding part to job:", error);
+      res.status(500).json({ message: "Failed to add part to job" });
+    }
+  });
+  
+  apiRouter.put("/jobs/:jobId/parts/:id", async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const id = parseInt(req.params.id);
+      const { quantity } = req.body;
+      
+      if (isNaN(jobId) || isNaN(id)) {
+        return res.status(400).json({ message: "Invalid IDs" });
+      }
+      
+      if (typeof quantity !== 'number' || quantity < 1) {
+        return res.status(400).json({ message: "Invalid quantity" });
+      }
+      
+      // Check if job exists
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Update job part quantity
+      const jobPart = await storage.updateJobPartQuantity(id, quantity);
+      
+      if (!jobPart) {
+        return res.status(404).json({ message: "Job part not found" });
+      }
+      
+      // Get part details
+      const part = await storage.getPart(jobPart.partId);
+      
+      res.json({ ...jobPart, part });
+    } catch (error) {
+      console.error("Error updating job part:", error);
+      res.status(500).json({ message: "Failed to update job part" });
+    }
+  });
+  
+  apiRouter.delete("/jobs/:jobId/parts/:id", async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(jobId) || isNaN(id)) {
+        return res.status(400).json({ message: "Invalid IDs" });
+      }
+      
+      // Check if job exists
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Remove part from job
+      const success = await storage.removeJobPart(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Job part not found" });
+      }
+      
+      res.json({ success: true, message: "Part removed from job successfully" });
+    } catch (error) {
+      console.error("Error removing part from job:", error);
+      res.status(500).json({ message: "Failed to remove part from job" });
     }
   });
 

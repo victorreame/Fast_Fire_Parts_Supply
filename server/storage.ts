@@ -5,7 +5,8 @@ import {
   jobs, type Job, type InsertJob,
   orders, type Order, type InsertOrder,
   orderItems, type OrderItem, type InsertOrderItem,
-  cartItems, type CartItem, type InsertCartItem
+  cartItems, type CartItem, type InsertCartItem,
+  jobParts, type JobPart, type InsertJobPart
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -75,6 +76,13 @@ export interface IStorage {
   updateCartItemQuantity(id: number, quantity: number): Promise<CartItem | undefined>;
   removeCartItem(id: number): Promise<boolean>;
   clearCart(userId: number): Promise<boolean>;
+  
+  // Job Parts
+  getJobParts(jobId: number): Promise<JobPart[]>;
+  getJobPartsWithDetails(jobId: number): Promise<(JobPart & { part: Part })[]>;
+  addJobPart(jobPart: InsertJobPart): Promise<JobPart>;
+  updateJobPartQuantity(id: number, quantity: number): Promise<JobPart | undefined>;
+  removeJobPart(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -85,6 +93,7 @@ export class MemStorage implements IStorage {
   private orders: Map<number, Order>;
   private orderItems: Map<number, OrderItem>;
   private cartItems: Map<number, CartItem>;
+  private jobParts: Map<number, JobPart>;
   
   // Session store for authentication
   public sessionStore: session.Store;
@@ -96,6 +105,7 @@ export class MemStorage implements IStorage {
   private orderIdCounter: number = 1;
   private orderItemIdCounter: number = 1;
   private cartItemIdCounter: number = 1;
+  private jobPartIdCounter: number = 1;
 
   constructor() {
     this.users = new Map();
@@ -105,6 +115,7 @@ export class MemStorage implements IStorage {
     this.orders = new Map();
     this.orderItems = new Map();
     this.cartItems = new Map();
+    this.jobParts = new Map();
     
     // Initialize memory store for sessions
     const MemoryStore = createMemoryStore(session);
@@ -527,6 +538,59 @@ export class MemStorage implements IStorage {
     }
     
     return true;
+  }
+  
+  // Job Part Methods
+  async getJobParts(jobId: number): Promise<JobPart[]> {
+    return Array.from(this.jobParts.values()).filter(item => item.jobId === jobId);
+  }
+  
+  async getJobPartsWithDetails(jobId: number): Promise<(JobPart & { part: Part })[]> {
+    const jobParts = await this.getJobParts(jobId);
+    const result: (JobPart & { part: Part })[] = [];
+    
+    for (const jobPart of jobParts) {
+      const part = await this.getPart(jobPart.partId);
+      if (part) {
+        result.push({ ...jobPart, part });
+      }
+    }
+    
+    return result;
+  }
+  
+  async addJobPart(jobPart: InsertJobPart): Promise<JobPart> {
+    // Check if part already exists in job
+    const existingItem = Array.from(this.jobParts.values()).find(
+      item => item.jobId === jobPart.jobId && item.partId === jobPart.partId
+    );
+    
+    if (existingItem) {
+      // Update quantity instead of adding new item
+      return this.updateJobPartQuantity(existingItem.id, existingItem.quantity + (jobPart.quantity || 1));
+    }
+    
+    const id = this.jobPartIdCounter++;
+    const newJobPart: JobPart = { 
+      ...jobPart, 
+      id,
+      quantity: jobPart.quantity || 1 
+    };
+    this.jobParts.set(id, newJobPart);
+    return newJobPart;
+  }
+  
+  async updateJobPartQuantity(id: number, quantity: number): Promise<JobPart | undefined> {
+    const existingItem = this.jobParts.get(id);
+    if (!existingItem) return undefined;
+    
+    const updatedItem = { ...existingItem, quantity };
+    this.jobParts.set(id, updatedItem);
+    return updatedItem;
+  }
+  
+  async removeJobPart(id: number): Promise<boolean> {
+    return this.jobParts.delete(id);
   }
 }
 
@@ -1034,6 +1098,74 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(cartItems)
       .where(eq(cartItems.userId, userId));
+  }
+  
+  // Job Part Methods
+  async getJobParts(jobId: number): Promise<JobPart[]> {
+    return await db
+      .select()
+      .from(jobParts)
+      .where(eq(jobParts.jobId, jobId));
+  }
+  
+  async getJobPartsWithDetails(jobId: number): Promise<(JobPart & { part: Part })[]> {
+    const jobPartsList = await this.getJobParts(jobId);
+    const result: (JobPart & { part: Part })[] = [];
+    
+    for (const jobPart of jobPartsList) {
+      const part = await this.getPart(jobPart.partId);
+      if (part) {
+        result.push({ ...jobPart, part });
+      }
+    }
+    
+    return result;
+  }
+  
+  async addJobPart(jobPart: InsertJobPart): Promise<JobPart> {
+    // Check if part already exists in job
+    const [existingJobPart] = await db
+      .select()
+      .from(jobParts)
+      .where(
+        and(
+          eq(jobParts.jobId, jobPart.jobId),
+          eq(jobParts.partId, jobPart.partId)
+        )
+      );
+    
+    if (existingJobPart) {
+      // Update quantity instead of adding new item
+      return this.updateJobPartQuantity(
+        existingJobPart.id, 
+        existingJobPart.quantity + (jobPart.quantity || 1)
+      );
+    }
+    
+    const [newJobPart] = await db
+      .insert(jobParts)
+      .values({
+        ...jobPart,
+        quantity: jobPart.quantity || 1
+      })
+      .returning();
+    
+    return newJobPart;
+  }
+  
+  async updateJobPartQuantity(id: number, quantity: number): Promise<JobPart | undefined> {
+    const [updatedJobPart] = await db
+      .update(jobParts)
+      .set({ quantity })
+      .where(eq(jobParts.id, id))
+      .returning();
+    
+    return updatedJobPart;
+  }
+  
+  async removeJobPart(id: number): Promise<boolean> {
+    await db.delete(jobParts).where(eq(jobParts.id, id));
+    return true;
   }
   
   async addCartItem(cartItem: InsertCartItem): Promise<CartItem> {
