@@ -247,8 +247,9 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-2">
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-2">
+        {/* Top Section - Main Fields */}
+        <div className="grid grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="itemCode"
@@ -301,114 +302,55 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
               </FormItem>
             )}
           />
+          
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Type</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {partTypes.length > 0 ? (
+                      partTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="Valve">Valve</SelectItem>
+                        <SelectItem value="Pipe">Pipe</SelectItem>
+                        <SelectItem value="Fitting">Fitting</SelectItem>
+                        <SelectItem value="Sprinkler">Sprinkler</SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter part description" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Type</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {partTypes.length > 0 ? (
-                    partTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <>
-                      <SelectItem value="Valve">Valve</SelectItem>
-                      <SelectItem value="Pipe">Pipe</SelectItem>
-                      <SelectItem value="Fitting">Fitting</SelectItem>
-                      <SelectItem value="Sprinkler">Sprinkler</SelectItem>
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-3 gap-4">
+        {/* Description Field */}
+        <div className="grid grid-cols-1">
           <FormField
             control={form.control}
-            name="priceT1"
+            name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Price T1 ($)</FormLabel>
+                <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0.01" 
-                    step="0.01" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="priceT2"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Price T2 ($)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0.01" 
-                    step="0.01" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="priceT3"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Price T3 ($)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0.01" 
-                    step="0.01" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  />
+                  <Input placeholder="Enter part description" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -416,54 +358,120 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="inStock"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Stock Quantity</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number" 
-                  min="0" 
-                  {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Middle Section - Split in Two Columns */}
+        <div className="grid grid-cols-2 gap-8">
+          {/* Left Column - Pricing and Stock */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <FormField
+                control={form.control}
+                name="priceT1"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price T1 ($)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0.01" 
+                        step="0.01" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="priceT2"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price T2 ($)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0.01" 
+                        step="0.01" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="priceT3"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price T3 ($)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0.01" 
+                        step="0.01" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-        <FormField
-          control={form.control}
-          name="isPopular"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Popular Item</FormLabel>
-                <FormDescription>
-                  Mark this item as popular to show in Top 50 list
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        
-        {/* Image Upload Section */}
-        <div className="space-y-4">
-          <div>
+            <FormField
+              control={form.control}
+              name="inStock"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Stock Quantity</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="0" 
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="isPopular"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Popular Item</FormLabel>
+                    <FormDescription>
+                      Show in Top 50 list
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          {/* Right Column - Image Upload */}
+          <div className="space-y-2">
             <Label htmlFor="part-image">Part Image</Label>
-            <div className="flex items-center mt-2">
-              <div className="mr-4">
+            <div className="flex items-start gap-4">
+              <div>
                 {previewUrl ? (
-                  <div className="relative w-24 h-24 rounded border overflow-hidden">
+                  <div className="relative w-32 h-32 rounded border overflow-hidden">
                     <img 
                       src={previewUrl} 
                       alt="Part preview" 
@@ -487,39 +495,44 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="w-24 h-24 flex items-center justify-center rounded border bg-muted">
-                    <FaImage className="h-8 w-8 text-muted-foreground" />
+                  <div className="w-32 h-32 flex items-center justify-center rounded border bg-muted">
+                    <FaImage className="h-10 w-10 text-muted-foreground" />
                   </div>
                 )}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center"
-                disabled={isUploading}
-              >
-                <FaUpload className="mr-2 h-4 w-4" />
-                {previewUrl ? "Change image" : "Upload image"}
-              </Button>
-              <input
-                ref={fileInputRef}
-                id="part-image"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+              
+              <div className="flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center mb-2 w-full"
+                  disabled={isUploading}
+                >
+                  <FaUpload className="mr-2 h-4 w-4" />
+                  {previewUrl ? "Change image" : "Upload image"}
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Upload a clear image of the part.<br />
+                  JPG, PNG or GIF, max 2MB.
+                </p>
+                <input
+                  ref={fileInputRef}
+                  id="part-image"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Upload a clear image of the part. JPG, PNG or GIF, max 2MB.
-            </p>
           </div>
         </div>
 
+        {/* Submit Button */}
         <Button
           type="submit"
-          className="w-full"
+          className="w-full mt-6"
           disabled={createPartMutation.isPending || updatePartMutation.isPending || isUploading}
         >
           {createPartMutation.isPending || updatePartMutation.isPending || isUploading

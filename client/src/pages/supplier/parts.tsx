@@ -148,7 +148,7 @@ const SupplierParts = () => {
       </div>
 
       <Dialog open={showAddPartDialog} onOpenChange={setShowAddPartDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-4xl w-[95vw]">
           <DialogHeader>
             <DialogTitle>{partToEdit ? "Edit Part" : "Add New Part"}</DialogTitle>
           </DialogHeader>
