@@ -31,10 +31,9 @@ interface JobFormProps {
 }
 
 const formSchema = insertJobSchema.extend({
-  name: z.string().min(3, "Name must be at least 3 characters"),
+  name: z.string().optional(), // Make name optional as we'll use description as the main title
   jobNumber: z.string().min(2, "Job number is required"),
-  location: z.string().optional(),
-  description: z.string().optional(),
+  description: z.string().min(3, "Description must be at least 3 characters"), // Make description required
   isPublic: z.boolean().optional().default(false),
   businessId: z.number().optional().nullable(),
   status: z.enum(["active", "pending", "completed"]).default("active"),
@@ -62,11 +61,12 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
 
   const createJobMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
-      // Convert form names to the expected API format (snake_case)
+      // Set name to be the same as description since we're using description as the main title
+      // And keep location as empty string since we're removing it
       const apiData = {
-        name: data.name,
+        name: data.description, // Use description as the name
         job_number: data.jobNumber,
-        location: data.location,
+        location: "", // Empty location as we're removing this field
         description: data.description,
         is_public: data.isPublic,
         business_id: data.businessId,
@@ -105,12 +105,17 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
         <FormField
           control={form.control}
-          name="name"
+          name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Job Name</FormLabel>
+              <FormLabel>Job Title</FormLabel>
               <FormControl>
-                <Input placeholder="Enter job name" {...field} />
+                <Textarea
+                  placeholder="Enter job title/description"
+                  className="resize-none"
+                  {...field}
+                  value={field.value || ""}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -125,20 +130,6 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
               <FormLabel>Job Number</FormLabel>
               <FormControl>
                 <Input placeholder="Enter job number" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="location"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Location (optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter job location" {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -195,25 +186,6 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
                   <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description (optional)</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter job description"
-                  className="resize-none"
-                  {...field}
-                  value={field.value || ""}
-                />
-              </FormControl>
               <FormMessage />
             </FormItem>
           )}

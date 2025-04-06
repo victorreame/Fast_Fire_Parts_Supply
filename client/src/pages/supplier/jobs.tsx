@@ -46,9 +46,8 @@ const SupplierJobs = () => {
   const filteredJobs = jobs
     ? jobs.filter(job => {
         const matchesSearch = searchQuery
-          ? job.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            job.jobNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            job.location?.toLowerCase().includes(searchQuery.toLowerCase())
+          ? job.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            job.jobNumber.toLowerCase().includes(searchQuery.toLowerCase())
           : true;
         
         const matchesStatus = statusFilter !== "all" 
@@ -146,10 +145,7 @@ const SupplierJobs = () => {
                     Job Number
                   </TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    Name
-                  </TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    Location
+                    Description
                   </TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                     Status
@@ -173,10 +169,7 @@ const SupplierJobs = () => {
                         {job.jobNumber}
                       </TableCell>
                       <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                        {job.name}
-                      </TableCell>
-                      <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                        {job.location || "-"}
+                        {job.description || job.name || "-"}
                       </TableCell>
                       <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
                         <span
@@ -216,7 +209,7 @@ const SupplierJobs = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="px-6 py-10 text-center text-sm text-neutral-500">
+                    <TableCell colSpan={6} className="px-6 py-10 text-center text-sm text-neutral-500">
                       No jobs found. {searchQuery && "Try adjusting your search."}
                     </TableCell>
                   </TableRow>
