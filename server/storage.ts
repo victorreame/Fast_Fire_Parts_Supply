@@ -51,8 +51,12 @@ export interface IStorage {
   // Jobs
   getJob(id: number): Promise<Job | undefined>;
   getJobsByBusiness(businessId: number): Promise<Job[]>;
+  getPublicJobs(): Promise<Job[]>;
+  getJobsByCreator(userId: number): Promise<Job[]>;
+  getAllJobs(): Promise<Job[]>;
   createJob(job: InsertJob): Promise<Job>;
   updateJob(id: number, job: Partial<InsertJob>): Promise<Job | undefined>;
+  deleteJob(id: number): Promise<boolean>;
   
   // Orders
   getOrder(id: number): Promise<Order | undefined>;
@@ -408,6 +412,10 @@ export class MemStorage implements IStorage {
   async getJobsByCreator(userId: number): Promise<Job[]> {
     return Array.from(this.jobs.values()).filter(job => job.createdBy === userId);
   }
+  
+  async getAllJobs(): Promise<Job[]> {
+    return Array.from(this.jobs.values());
+  }
 
   async createJob(job: InsertJob): Promise<Job> {
     const id = this.jobIdCounter++;
@@ -423,6 +431,10 @@ export class MemStorage implements IStorage {
     const updatedJob = { ...existingJob, ...job, updatedAt: new Date() };
     this.jobs.set(id, updatedJob);
     return updatedJob;
+  }
+  
+  async deleteJob(id: number): Promise<boolean> {
+    return this.jobs.delete(id);
   }
 
   // Order Methods
@@ -938,6 +950,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobs.createdBy, userId));
   }
   
+  async getAllJobs(): Promise<Job[]> {
+    return await db.select().from(jobs);
+  }
+  
   async createJob(job: InsertJob): Promise<Job> {
     const [newJob] = await db.insert(jobs).values(job).returning();
     return newJob;
@@ -950,6 +966,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobs.id, id))
       .returning();
     return updatedJob;
+  }
+  
+  async deleteJob(id: number): Promise<boolean> {
+    await db.delete(jobs).where(eq(jobs.id, id));
+    return true;
   }
   
   // Order Methods

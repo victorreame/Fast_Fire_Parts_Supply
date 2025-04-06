@@ -22,6 +22,7 @@ import SupplierOrders from "@/pages/supplier/orders";
 import SupplierOrderDetails from "@/pages/supplier/order-details";
 import SupplierParts from "@/pages/supplier/parts";
 import SupplierCustomers from "@/pages/supplier/customers";
+import SupplierJobs from "@/pages/supplier/jobs";
 
 // Auth pages
 import LoginPage from "@/pages/login";
@@ -187,6 +188,9 @@ function App() {
         </Route>
         <Route path="/supplier/customers">
           {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierCustomers /> : <NotFound />}
+        </Route>
+        <Route path="/supplier/jobs">
+          {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierJobs /> : <NotFound />}
         </Route>
         
         {/* Fallback to 404 */}

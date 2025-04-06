@@ -71,7 +71,7 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
       <header className="bg-primary text-white p-4 flex items-center justify-between shadow-md fixed top-0 left-0 right-0 z-10">
         <div className="flex items-center max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mr-3">
-            <Logo color="white" size={60} />
+            <Logo size={60} className="text-white" />
           </div>
           <h1 className="text-xl font-bold">FastFire Parts Supply Dashboard</h1>
           
@@ -89,6 +89,13 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
                   : 'text-neutral-300 hover:text-white'
               }`}>
                 Orders
+            </Link>
+            <Link href="/supplier/jobs" className={`px-3 py-2 text-sm font-medium ${
+                location === '/supplier/jobs' 
+                  ? 'text-white border-b-2 border-secondary' 
+                  : 'text-neutral-300 hover:text-white'
+              }`}>
+                Jobs
             </Link>
             <Link href="/supplier/customers" className={`px-3 py-2 text-sm font-medium ${
                 location === '/supplier/customers' 
@@ -136,7 +143,7 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <main className="pt-20 pb-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="pt-24 pb-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>
