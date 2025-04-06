@@ -1,10 +1,7 @@
-import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import SupplierLayout from "@/components/supplier/layout";
 import StatsCard from "@/components/supplier/stats-card";
 import OrdersTable from "@/components/supplier/orders-table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { FaShoppingCart, FaTruck, FaUsers, FaExclamationTriangle } from "react-icons/fa";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,24 +17,8 @@ const SupplierDashboard = () => {
 
   return (
     <SupplierLayout>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <h2 className="text-2xl font-bold text-neutral-800">Dashboard</h2>
-        <div className="flex">
-          <div className="relative">
-            <Input
-              type="text"
-              placeholder="Search..."
-              className="py-2 pl-10 pr-4 rounded-lg w-64"
-            />
-            <i className="fas fa-search absolute left-3 top-3 text-neutral-400"></i>
-          </div>
-          <Link href="/supplier/parts">
-            <Button className="ml-4 bg-primary hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium flex items-center">
-              <i className="fas fa-plus mr-2"></i>
-              Add New
-            </Button>
-          </Link>
-        </div>
       </div>
 
       {/* Stats Overview */}
