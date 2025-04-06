@@ -1,8 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-        <rect x="70" y="40" width="60" height="120" rx="5" ry="5" fill="#ddd" stroke="#333" stroke-width="2" />
-        <circle cx="100" cy="70" r="15" fill="#CD5C5C" stroke="#333" stroke-width="2" />
-        <circle cx="100" cy="110" r="15" fill="#CD5C5C" stroke="#333" stroke-width="2" />
-        <text x="100" y="75" font-size="14" text-anchor="middle" fill="#fff">FD</text>
-        <text x="100" y="115" font-size="14" text-anchor="middle" fill="#fff">FD</text>
-        <rect x="85" y="160" width="30" height="20" fill="#333" />
-      </svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200px" height="200px" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#f7f7f7"/>
+  
+  <!-- FDC Main body -->
+  <g transform="translate(100, 100)">
+    <!-- Siamese connection -->
+    <rect x="-60" y="-25" width="120" height="50" rx="5" fill="#cc0000" stroke="#990000" stroke-width="2"/>
+    
+    <!-- Outlet 1 -->
+    <g transform="translate(-30, -40)">
+      <circle cx="0" cy="0" r="15" fill="#bb0000" stroke="#880000" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="12" fill="#dd0000" stroke="none"/>
+      <circle cx="0" cy="0" r="8" fill="#ffffff" stroke="#cccccc" stroke-width="1"/>
+    </g>
+    
+    <!-- Outlet 2 -->
+    <g transform="translate(30, -40)">
+      <circle cx="0" cy="0" r="15" fill="#bb0000" stroke="#880000" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="12" fill="#dd0000" stroke="none"/>
+      <circle cx="0" cy="0" r="8" fill="#ffffff" stroke="#cccccc" stroke-width="1"/>
+    </g>
+    
+    <!-- Chains for caps -->
+    <path d="M-30,-40 C-25,-55 25,-55 30,-40" fill="none" stroke="#999999" stroke-width="1"/>
+    
+    <!-- Main inlet pipe -->
+    <rect x="-10" y="25" width="20" height="25" fill="#aa0000" stroke="#880000" stroke-width="1.5"/>
+  </g>
+  
+  <!-- Text label -->
+  <text x="100" y="160" font-family="Arial" font-size="14" font-weight="bold" fill="#333333" text-anchor="middle">Fire Department Connection</text>
+</svg>

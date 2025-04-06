@@ -1,7 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-        <rect x="60" y="50" width="80" height="100" rx="5" ry="5" fill="#DC143C" stroke="#333" stroke-width="2" />
-        <rect x="70" y="60" width="60" height="40" rx="2" ry="2" fill="#fff" stroke="#333" stroke-width="1" />
-        <rect x="80" y="110" width="40" height="30" rx="2" ry="2" fill="#333" />
-        <text x="100" y="80" font-size="14" text-anchor="middle" fill="#333">PULL</text>
-        <line x1="85" y1="130" x2="115" y2="120" stroke="#fff" stroke-width="2" />
-      </svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200px" height="200px" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#f7f7f7"/>
+  
+  <!-- Alarm Panel -->
+  <rect x="25" y="30" width="150" height="110" rx="5" fill="#555555" stroke="#333333" stroke-width="2"/>
+  
+  <!-- Panel face -->
+  <rect x="35" y="40" width="130" height="90" rx="3" fill="#222222" stroke="#111111" stroke-width="1"/>
+  
+  <!-- Display screen -->
+  <rect x="45" y="50" width="110" height="30" rx="2" fill="#000000" stroke="#333333" stroke-width="1"/>
+  <text x="100" y="70" font-family="Courier" font-size="12" fill="#00ff00" text-anchor="middle">SYSTEM NORMAL</text>
+  
+  <!-- Control buttons -->
+  <g transform="translate(60, 100)">
+    <rect x="0" y="0" width="15" height="15" rx="2" fill="#cc0000" stroke="#990000" stroke-width="1"/>
+    <rect x="25" y="0" width="15" height="15" rx="2" fill="#ffcc00" stroke="#cc9900" stroke-width="1"/>
+    <rect x="50" y="0" width="15" height="15" rx="2" fill="#00cc00" stroke="#009900" stroke-width="1"/>
+    <rect x="75" y="0" width="15" height="15" rx="2" fill="#0066cc" stroke="#004499" stroke-width="1"/>
+  </g>
+  
+  <!-- Keypad -->
+  <g transform="translate(110, 95)" fill="#cccccc" stroke="#999999" stroke-width="0.5">
+    <circle cx="0" cy="0" r="3"/>
+    <circle cx="15" cy="0" r="3"/>
+    <circle cx="30" cy="0" r="3"/>
+    <circle cx="0" cy="10" r="3"/>
+    <circle cx="15" cy="10" r="3"/>
+    <circle cx="30" cy="10" r="3"/>
+  </g>
+  
+  <!-- Text label -->
+  <text x="100" y="160" font-family="Arial" font-size="14" font-weight="bold" fill="#333333" text-anchor="middle">Fire Alarm Control Panel</text>
+</svg>

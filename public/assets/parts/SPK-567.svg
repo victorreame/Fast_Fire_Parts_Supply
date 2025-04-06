@@ -1,8 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-        <circle cx="100" cy="100" r="15" fill="#ddd" stroke="#333" stroke-width="2" />
-        <rect x="85" y="115" width="30" height="20" fill="#ddd" stroke="#333" stroke-width="2" />
-        <rect x="85" y="135" width="30" height="5" fill="#333" />
-        <path d="M 85 100 Q 60 70 40 80 Q 60 130 85 100" fill="#1E90FF" stroke="#333" stroke-width="1" />
-        <path d="M 115 100 Q 140 70 160 80 Q 140 130 115 100" fill="#1E90FF" stroke="#333" stroke-width="1" />
-        <circle cx="100" cy="100" r="5" fill="#333" />
-      </svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200px" height="200px" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#f7f7f7"/>
+  
+  <!-- Sprinkler head body -->
+  <g transform="translate(100, 70)">
+    <!-- Top part - cap -->
+    <circle cx="0" cy="0" r="30" fill="#cc0000" stroke="#990000" stroke-width="2"/>
+    
+    <!-- Deflector plate -->
+    <circle cx="0" cy="0" r="20" fill="#ffcc00" stroke="#cc9900" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="10" fill="#ffffff" stroke="#dddddd" stroke-width="1"/>
+    
+    <!-- Connection pipe -->
+    <rect x="-5" y="30" width="10" height="40" fill="#888888" stroke="#666666" stroke-width="1"/>
+  </g>
+  
+  <!-- Water spray pattern -->
+  <g transform="translate(100, 70)" stroke="#3498db" stroke-width="1.5" stroke-dasharray="2,3" opacity="0.8">
+    <path d="M-25,-5 L-50,-30" />
+    <path d="M-15,-15 L-30,-50" />
+    <path d="M0,-20 L0,-60" />
+    <path d="M15,-15 L30,-50" />
+    <path d="M25,-5 L50,-30" />
+  </g>
+  
+  <!-- Threading -->
+  <g transform="translate(100, 140)" fill="#aaaaaa" stroke="#999999" stroke-width="0.5">
+    <rect x="-12" y="0" width="24" height="5" />
+    <rect x="-12" y="7" width="24" height="5" />
+    <rect x="-12" y="14" width="24" height="5" />
+  </g>
+  
+  <!-- Text label -->
+  <text x="100" y="180" font-family="Arial" font-size="14" font-weight="bold" fill="#333333" text-anchor="middle">Pendant Sprinkler 1/2"</text>
+</svg>
