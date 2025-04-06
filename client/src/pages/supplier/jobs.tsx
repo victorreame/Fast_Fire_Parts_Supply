@@ -197,13 +197,24 @@ const SupplierJobs = () => {
                         </Button>
                       </TableCell>
                       <TableCell className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Button
-                          variant="link"
-                          className="text-primary hover:text-primary-900 mr-3"
-                          onClick={() => handleEditJob(job)}
-                        >
-                          Edit
-                        </Button>
+                        <div className="flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary hover:text-primary-900 mr-2"
+                            onClick={() => handleEditJob(job)}
+                          >
+                            <i className="fas fa-edit mr-1"></i> Edit
+                          </Button>
+                          <Button
+                            variant="ghost" 
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-900"
+                            onClick={() => window.location.href = `/job/${job.id}`}
+                          >
+                            <i className="fas fa-tools mr-1"></i> Parts
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

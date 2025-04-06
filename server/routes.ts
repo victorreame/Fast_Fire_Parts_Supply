@@ -188,6 +188,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get a single job by ID
+  apiRouter.get("/jobs/:id", async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+      
+      const job = await storage.getJob(jobId);
+      
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Check authorization: only allow access to public jobs or jobs created by the user
+      // or if the user is a supplier/admin
+      if (!req.isAuthenticated()) {
+        if (!job.isPublic) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+      } else {
+        const user = req.user;
+        if (user.role !== 'supplier' && user.role !== 'admin' && 
+            !job.isPublic && job.createdBy !== user.id) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+      }
+      
+      res.json(job);
+    } catch (error) {
+      console.error("Error getting job:", error);
+      res.status(500).json({ message: "Failed to get job" });
+    }
+  });
+  
   // Get public jobs only (no authentication required)
   apiRouter.get("/jobs/public", async (_req: Request, res: Response) => {
     try {

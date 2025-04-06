@@ -24,6 +24,9 @@ import SupplierParts from "@/pages/supplier/parts";
 import SupplierCustomers from "@/pages/supplier/customers";
 import SupplierJobs from "@/pages/supplier/jobs";
 
+// Shared pages
+import SupplierJobDetailsPage from "@/pages/job/[id]";
+
 // Auth pages
 import LoginPage from "@/pages/login";
 
@@ -191,6 +194,11 @@ function App() {
         </Route>
         <Route path="/supplier/jobs">
           {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierJobs /> : <NotFound />}
+        </Route>
+        
+        {/* Job details page for suppliers */}
+        <Route path="/job/:id">
+          {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierJobDetailsPage /> : <JobDetailsPage />}
         </Route>
         
         {/* Fallback to 404 */}
