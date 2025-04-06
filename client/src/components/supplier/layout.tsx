@@ -68,7 +68,7 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-primary text-white p-4 flex items-center justify-between shadow-md fixed top-0 left-0 right-0 z-10">
+      <header className="bg-primary text-white p-4 flex items-center justify-between shadow-md fixed top-0 left-0 right-0 z-10 h-24">
         <div className="flex items-center max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mr-3">
             <Logo size={60} className="text-white" />
@@ -143,7 +143,7 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <main className="pt-24 pb-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="pt-32 pb-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>
