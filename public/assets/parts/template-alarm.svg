@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="50" y="50" width="100" height="100" rx="10" fill="#f0f0f0" stroke="#e74c3c" stroke-width="3"/>
+  <circle cx="100" cy="85" r="20" fill="#e74c3c"/>
+  <rect x="75" y="115" width="50" height="15" rx="5" fill="#e74c3c"/>
+  <path d="M100 35V50" stroke="#e74c3c" stroke-width="3" stroke-linecap="round"/>
+  <path d="M135 100H150" stroke="#e74c3c" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100 150V165" stroke="#e74c3c" stroke-width="3" stroke-linecap="round"/>
+  <path d="M50 100H65" stroke="#e74c3c" stroke-width="3" stroke-linecap="round"/>
+  <text x="100" y="195" font-family="Arial" font-size="14" fill="#333333" text-anchor="middle">Alarm</text>
+</svg>

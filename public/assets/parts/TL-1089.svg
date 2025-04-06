@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M60 120L120 60" stroke="#e74c3c" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="140" cy="40" r="20" fill="#f0f0f0" stroke="#e74c3c" stroke-width="3"/>
+  <rect x="40" y="120" width="40" height="25" rx="5" fill="#f0f0f0" stroke="#e74c3c" stroke-width="3"/>
+  <path d="M40 132.5H80" stroke="#e74c3c" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="100" y="195" font-family="Arial" font-size="14" fill="#333333" text-anchor="middle">Tool</text>
+</svg>

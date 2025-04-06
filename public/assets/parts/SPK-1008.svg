@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="75" fill="#f0f0f0" stroke="#e74c3c" stroke-width="3"/>
+  <path d="M100 30V170" stroke="#e74c3c" stroke-width="6" stroke-linecap="round"/>
+  <path d="M60 100H140" stroke="#e74c3c" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="100" cy="100" r="15" fill="#e74c3c"/>
+  <!-- Droplet shapes -->
+  <path d="M70 70C75 65 80 60 85 70 90 80 75 85 70 70Z" fill="#3498db"/>
+  <path d="M130 70C125 65 120 60 115 70 110 80 125 85 130 70Z" fill="#3498db"/>
+  <path d="M70 130C75 135 80 140 85 130 90 120 75 115 70 130Z" fill="#3498db"/>
+  <path d="M130 130C125 135 120 140 115 130 110 120 125 115 130 130Z" fill="#3498db"/>
+  <text x="100" y="195" font-family="Arial" font-size="14" fill="#333333" text-anchor="middle">Sprinkler</text>
+</svg>
