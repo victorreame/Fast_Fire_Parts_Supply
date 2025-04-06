@@ -72,27 +72,12 @@ const SupplierParts = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
-        <div className="border-b border-neutral-200">
-          <nav className="-mb-px flex" aria-label="Tabs">
-            <a
-              href="#"
-              className="border-primary-500 text-primary-600 w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm"
-              aria-current="page"
-            >
-              Parts Management
-            </a>
-            <a
-              href="/supplier/customers"
-              className="border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm"
-            >
-              Customer Management
-            </a>
-          </nav>
+        <div className="border-b border-neutral-200 p-4">
+          <h3 className="text-lg font-medium text-neutral-800">Parts Inventory</h3>
         </div>
 
         <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-neutral-800">Inventory</h3>
+          <div className="flex justify-end items-center mb-4">
             <div className="flex">
               <Button
                 className="bg-primary hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center"
