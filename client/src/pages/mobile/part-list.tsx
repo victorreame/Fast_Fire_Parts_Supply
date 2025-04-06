@@ -16,7 +16,7 @@ const PartListPage = () => {
   
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const [filterType, setFilterType] = useState("");
-  const [sortBy, setSortBy] = useState("itemCode");
+  const [sortBy, setSortBy] = useState("item_code");
 
   const { data: parts, isLoading } = useQuery<Part[]>({
     queryKey: [isPopular ? '/api/parts/popular' : '/api/parts'],
@@ -29,7 +29,7 @@ const PartListPage = () => {
           // Filter by search query
           const matchesSearch = localSearchQuery
             ? part.description.toLowerCase().includes(localSearchQuery.toLowerCase()) ||
-              part.itemCode.toLowerCase().includes(localSearchQuery.toLowerCase())
+              part.item_code.toLowerCase().includes(localSearchQuery.toLowerCase())
             : true;
           
           // Filter by type
@@ -39,8 +39,8 @@ const PartListPage = () => {
         })
         .sort((a, b) => {
           // Sort by selected field
-          if (sortBy === "itemCode") {
-            return a.itemCode.localeCompare(b.itemCode);
+          if (sortBy === "item_code") {
+            return a.item_code.localeCompare(b.item_code);
           } else if (sortBy === "description") {
             return a.description.localeCompare(b.description);
           } else if (sortBy === "type") {
@@ -90,7 +90,7 @@ const PartListPage = () => {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="itemCode">Sort by Item Code</SelectItem>
+              <SelectItem value="item_code">Sort by Item Code</SelectItem>
               <SelectItem value="description">Sort by Description</SelectItem>
               <SelectItem value="type">Sort by Type</SelectItem>
             </SelectContent>
