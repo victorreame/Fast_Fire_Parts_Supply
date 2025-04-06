@@ -36,15 +36,15 @@ export const insertBusinessSchema = createInsertSchema(businesses).omit({
 // Parts table
 export const parts = pgTable("parts", {
   id: serial("id").primaryKey(),
-  itemCode: text("item_code").notNull().unique(),
-  pipeSize: text("pipe_size").notNull(),
+  item_code: text("item_code").notNull().unique(),
+  pipe_size: text("pipe_size").notNull(),
   description: text("description").notNull(),
   type: text("type").notNull(),
-  priceT1: doublePrecision("price_t1").notNull(),
-  priceT2: doublePrecision("price_t2").notNull(),
-  priceT3: doublePrecision("price_t3").notNull(),
-  inStock: integer("in_stock").default(0),
-  isPopular: boolean("is_popular").default(false),
+  price_t1: doublePrecision("price_t1").notNull(),
+  price_t2: doublePrecision("price_t2").notNull(),
+  price_t3: doublePrecision("price_t3").notNull(),
+  in_stock: integer("in_stock").default(0),
+  is_popular: boolean("is_popular").default(false),
   image: text("image"), // URL to the image of the part
 });
 

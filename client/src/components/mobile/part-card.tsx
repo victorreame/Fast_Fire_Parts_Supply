@@ -191,22 +191,36 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
         <div className="w-3/4 flex">
           <div className="mr-3 flex-shrink-0">
             <img 
-              src={part.image || `/assets/parts/${part.itemCode}.svg`}
+              src={part.image || `/assets/parts/${part.item_code}.svg`}
               alt={part.description}
               className="h-16 w-16 object-contain bg-gray-50 rounded"
               onError={(e) => {
-                // Fallback if image doesn't load - show a placeholder
-                (e.target as HTMLImageElement).src = '/assets/placeholder-part.svg';
+                console.log(`Image failed to load: ${part.image || `/assets/parts/${part.item_code}.svg`}`);
+                // First try the default SVG by item code
+                if (part.image) {
+                  // If we're already trying the specific image, fall back to the SVG
+                  (e.target as HTMLImageElement).src = `/assets/parts/${part.item_code}.svg`;
+                  // Add a second error handler to catch if the SVG also fails
+                  (e.target as HTMLImageElement).onerror = () => {
+                    console.log(`SVG also failed: /assets/parts/${part.item_code}.svg`);
+                    (e.target as HTMLImageElement).src = '/assets/placeholder-part.svg';
+                    (e.target as HTMLImageElement).onerror = null; // Prevent infinite loop
+                  };
+                } else {
+                  // If we're already trying the SVG, fall back to placeholder
+                  (e.target as HTMLImageElement).src = '/assets/placeholder-part.svg';
+                  (e.target as HTMLImageElement).onerror = null; // Prevent infinite loop
+                }
               }}
             />
           </div>
           <div>
             <div className="flex items-start">
               <Badge variant="outline" className="font-semibold bg-neutral-100 text-neutral-800 mr-2">
-                {part.itemCode}
+                {part.item_code}
               </Badge>
               <Badge variant="secondary" className="bg-primary-100 text-primary-800">
-                {part.pipeSize}
+                {part.pipe_size}
               </Badge>
             </div>
             <h3 className="font-medium mt-1">{part.description}</h3>
