@@ -4,7 +4,7 @@ import MobileLayout from "@/components/mobile/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { FaStar, FaList, FaSearch, FaHardHat, FaFireExtinguisher, FaListAlt, FaTint } from "react-icons/fa";
+import { FaStar, FaList, FaSearch, FaHardHat, FaFireExtinguisher, FaListAlt, FaTint, FaHeart } from "react-icons/fa";
 
 const MobileHome = () => {
   const [_, navigate] = useLocation();
@@ -45,50 +45,53 @@ const MobileHome = () => {
           </div>
         </form>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-2 gap-4">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
             <Button
               onClick={() => navigate("/jobs")}
-              className="bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition-all duration-300 w-full h-28"
+              className="bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white rounded-lg p-4 flex flex-col items-center justify-center transition-all duration-300 w-full h-32"
             >
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/15 mb-3">
-                <FaHardHat className="text-3xl text-white" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/15 mb-2">
+                <FaHardHat className="text-2xl text-white" />
               </div>
-              <span className="text-xl font-semibold">Search Parts by Job Number</span>
+              <span className="text-lg font-semibold">Job Number</span>
             </Button>
-            <div className="p-4 text-sm text-gray-600">
-              Click to see all parts used on a particular job.
-            </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
             <Button
               onClick={() => navigate("/parts/popular")}
-              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition-all duration-300 w-full h-28"
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg p-4 flex flex-col items-center justify-center transition-all duration-300 w-full h-32"
             >
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/15 mb-3">
-                <FaFireExtinguisher className="text-3xl text-white" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/15 mb-2">
+                <FaFireExtinguisher className="text-2xl text-white" />
               </div>
-              <span className="text-xl font-semibold">Top 50 Parts</span>
+              <span className="text-lg font-semibold">Best Sellers</span>
             </Button>
-            <div className="p-4 text-sm text-gray-600">
-              Browse our most popular parts used in fire sprinkler systems. Quick access to commonly ordered items.
-            </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
             <Button
               onClick={() => navigate("/parts")}
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-t-lg p-6 flex flex-col items-center justify-center transition-all duration-300 w-full h-28"
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg p-4 flex flex-col items-center justify-center transition-all duration-300 w-full h-32"
             >
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/15 mb-3">
-                <FaListAlt className="text-3xl text-white" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/15 mb-2">
+                <FaListAlt className="text-2xl text-white" />
               </div>
-              <span className="text-xl font-semibold">Full Parts List</span>
+              <span className="text-lg font-semibold">Full Parts List</span>
             </Button>
-            <div className="p-4 text-sm text-gray-600">
-              View our complete catalog of fire sprinkler system parts with detailed specifications and availability.
-            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <Button
+              onClick={() => navigate("/favorites")}
+              className="bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white rounded-lg p-4 flex flex-col items-center justify-center transition-all duration-300 w-full h-32"
+            >
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/15 mb-2">
+                <FaHeart className="text-2xl text-white" />
+              </div>
+              <span className="text-lg font-semibold">Favorites</span>
+            </Button>
           </div>
         </div>
       </div>
