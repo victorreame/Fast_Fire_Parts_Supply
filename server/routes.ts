@@ -1234,6 +1234,256 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get pending tradies awaiting approval
+  pmRouter.get("/tradies/pending", async (req: Request, res: Response) => {
+    try {
+      // Get users with role 'tradie' who are not approved
+      const pendingTradies = await storage.getUsersByRoleAndApprovalStatus("tradie", false);
+      res.json(pendingTradies);
+    } catch (error) {
+      console.error("Error getting pending tradies:", error);
+      res.status(500).json({ message: "Failed to get pending tradies" });
+    }
+  });
+  
+  // Get approved tradies
+  pmRouter.get("/tradies/approved", async (req: Request, res: Response) => {
+    try {
+      // Get users with role 'tradie' who are approved
+      const approvedTradies = await storage.getUsersByRoleAndApprovalStatus("tradie", true);
+      res.json(approvedTradies);
+    } catch (error) {
+      console.error("Error getting approved tradies:", error);
+      res.status(500).json({ message: "Failed to get approved tradies" });
+    }
+  });
+  
+  // Approve a tradie
+  pmRouter.put("/tradies/:id/approve", async (req: Request, res: Response) => {
+    try {
+      const tradieId = parseInt(req.params.id);
+      
+      if (isNaN(tradieId)) {
+        return res.status(400).json({ message: "Invalid tradie ID" });
+      }
+      
+      // Check if the tradie exists
+      const tradie = await storage.getUser(tradieId);
+      
+      if (!tradie) {
+        return res.status(404).json({ message: "Tradie not found" });
+      }
+      
+      if (tradie.role !== "tradie") {
+        return res.status(400).json({ message: "User is not a tradie" });
+      }
+      
+      if (tradie.isApproved) {
+        return res.status(400).json({ message: "Tradie is already approved" });
+      }
+      
+      // Approve the tradie
+      const updatedTradie = await storage.updateUser(tradieId, {
+        isApproved: true,
+        approvedBy: req.user!.id,
+        approvalDate: new Date()
+      });
+      
+      // Create a notification for the tradie
+      await storage.createNotification({
+        userId: tradieId,
+        title: "Account Approved",
+        message: "Your account has been approved. You can now access the system.",
+        type: "account_approval",
+        isRead: false
+      });
+      
+      res.json(updatedTradie);
+    } catch (error) {
+      console.error("Error approving tradie:", error);
+      res.status(500).json({ message: "Failed to approve tradie" });
+    }
+  });
+  
+  // Reject a tradie
+  pmRouter.put("/tradies/:id/reject", async (req: Request, res: Response) => {
+    try {
+      const tradieId = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      if (isNaN(tradieId)) {
+        return res.status(400).json({ message: "Invalid tradie ID" });
+      }
+      
+      // Check if the tradie exists
+      const tradie = await storage.getUser(tradieId);
+      
+      if (!tradie) {
+        return res.status(404).json({ message: "Tradie not found" });
+      }
+      
+      if (tradie.role !== "tradie") {
+        return res.status(400).json({ message: "User is not a tradie" });
+      }
+      
+      // Reject the tradie by updating the user status
+      // We keep the user in the system but mark them as rejected
+      const updatedTradie = await storage.updateUser(tradieId, {
+        isApproved: false,
+        approvedBy: req.user!.id,
+        approvalDate: new Date(),
+        status: "rejected" // Add a status field to mark as rejected
+      });
+      
+      // Create a notification for the tradie
+      await storage.createNotification({
+        userId: tradieId,
+        title: "Account Rejected",
+        message: reason ? `Your account registration was rejected: ${reason}` : "Your account registration was rejected.",
+        type: "account_rejection",
+        isRead: false
+      });
+      
+      res.json(updatedTradie);
+    } catch (error) {
+      console.error("Error rejecting tradie:", error);
+      res.status(500).json({ message: "Failed to reject tradie" });
+    }
+  });
+  
+  // Invite a tradie (create a new tradie account)
+  pmRouter.post("/tradies/invite", async (req: Request, res: Response) => {
+    try {
+      const { firstName, lastName, email, phone, businessId } = req.body;
+      
+      // Validate required fields
+      if (!firstName || !lastName || !email) {
+        return res.status(400).json({ message: "First name, last name, and email are required" });
+      }
+      
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(email);
+      
+      if (existingUser) {
+        return res.status(400).json({ message: "Email is already in use" });
+      }
+      
+      // Generate a random password
+      const tempPassword = Math.random().toString(36).slice(-8);
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(tempPassword);
+      
+      // Create the tradie user
+      const newTradie = await storage.createUser({
+        username: email.split('@')[0], // Use the first part of email as username
+        password: hashedPassword,
+        firstName,
+        lastName,
+        email,
+        phone: phone || null,
+        role: "tradie",
+        isApproved: true, // Auto-approve invited tradies
+        approvedBy: req.user!.id,
+        approvalDate: new Date(),
+        businessId: businessId || req.user!.businessId
+      });
+      
+      // Create a notification for the tradie
+      await storage.createNotification({
+        userId: newTradie.id,
+        title: "Welcome to Fast Fire Parts",
+        message: `You've been invited to join Fast Fire Parts. Your temporary password is: ${tempPassword}. Please change it after your first login.`,
+        type: "account_invitation",
+        isRead: false
+      });
+      
+      // TODO: Send email with temp password (for a real system)
+      
+      res.status(201).json({
+        ...newTradie,
+        temporaryPassword: tempPassword
+      });
+    } catch (error) {
+      console.error("Error inviting tradie:", error);
+      res.status(500).json({ message: "Failed to invite tradie" });
+    }
+  });
+  
+  // Get tradie order history
+  pmRouter.get("/tradies/:id/orders", async (req: Request, res: Response) => {
+    try {
+      const tradieId = parseInt(req.params.id);
+      
+      if (isNaN(tradieId)) {
+        return res.status(400).json({ message: "Invalid tradie ID" });
+      }
+      
+      // Check if the tradie exists
+      const tradie = await storage.getUser(tradieId);
+      
+      if (!tradie) {
+        return res.status(404).json({ message: "Tradie not found" });
+      }
+      
+      if (tradie.role !== "tradie") {
+        return res.status(400).json({ message: "User is not a tradie" });
+      }
+      
+      // Get orders created by this tradie
+      const orders = await storage.getOrdersByUser(tradieId);
+      
+      res.json(orders);
+    } catch (error) {
+      console.error("Error getting tradie orders:", error);
+      res.status(500).json({ message: "Failed to get tradie orders" });
+    }
+  });
+  
+  // Get tradie job assignments
+  pmRouter.get("/tradies/:id/jobs", async (req: Request, res: Response) => {
+    try {
+      const tradieId = parseInt(req.params.id);
+      
+      if (isNaN(tradieId)) {
+        return res.status(400).json({ message: "Invalid tradie ID" });
+      }
+      
+      // Check if the tradie exists
+      const tradie = await storage.getUser(tradieId);
+      
+      if (!tradie) {
+        return res.status(404).json({ message: "Tradie not found" });
+      }
+      
+      if (tradie.role !== "tradie") {
+        return res.status(400).json({ message: "User is not a tradie" });
+      }
+      
+      // Get job assignments for this tradie
+      const jobAssignments = await storage.getJobUsersByUser(tradieId);
+      
+      // Enrich with job details
+      const enrichedAssignments = [];
+      for (const assignment of jobAssignments) {
+        const job = await storage.getJob(assignment.jobId);
+        if (job) {
+          enrichedAssignments.push({
+            ...assignment,
+            jobName: job.name,
+            jobNumber: job.jobNumber,
+            jobStatus: job.status,
+          });
+        }
+      }
+      
+      res.json(enrichedAssignments);
+    } catch (error) {
+      console.error("Error getting tradie job assignments:", error);
+      res.status(500).json({ message: "Failed to get tradie job assignments" });
+    }
+  });
+  
   // Get all clients (for job creation/assignment)
   pmRouter.get("/clients", async (req: Request, res: Response) => {
     try {
