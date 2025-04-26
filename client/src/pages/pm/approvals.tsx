@@ -107,10 +107,10 @@ const OrderApprovals = () => {
     isLoading: pendingOrdersLoading,
     refetch: refetchPendingOrders
   } = useQuery<Order[]>({
-    queryKey: ['/api/orders', 'pending_approval'],
+    queryKey: ['/api/pm/orders/pending'],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', '/api/orders/for-approval');
+        const response = await apiRequest('GET', '/api/pm/orders/pending');
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch pending orders:", error);
@@ -125,10 +125,10 @@ const OrderApprovals = () => {
     isLoading: approvedOrdersLoading,
     refetch: refetchApprovedOrders
   } = useQuery<Order[]>({
-    queryKey: ['/api/orders', 'approved', user?.id],
+    queryKey: ['/api/pm/orders/approved', user?.id],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', '/api/orders/approved-by-me');
+        const response = await apiRequest('GET', '/api/pm/orders/approved');
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch approved orders:", error);
@@ -141,6 +141,8 @@ const OrderApprovals = () => {
   // Query for order items
   const fetchOrderItems = async (orderId: number) => {
     try {
+      // The items are already included in the order data from our API
+      // But if we need to fetch them separately:
       const response = await apiRequest('GET', `/api/orders/${orderId}/items`);
       const items = await response.json();
       setOrderItems(items);
@@ -155,7 +157,7 @@ const OrderApprovals = () => {
   // Approve order mutation
   const approveMutation = useMutation({
     mutationFn: async ({ orderId, notes }: { orderId: number; notes: string }) => {
-      const response = await apiRequest('PUT', `/api/orders/${orderId}/approve`, { notes });
+      const response = await apiRequest('POST', `/api/orders/${orderId}/approve`, { notes });
       return await response.json();
     },
     onSuccess: () => {
@@ -189,7 +191,7 @@ const OrderApprovals = () => {
   // Reject order mutation
   const rejectMutation = useMutation({
     mutationFn: async ({ orderId, reason }: { orderId: number; reason: string }) => {
-      const response = await apiRequest('PUT', `/api/orders/${orderId}/reject`, { reason });
+      const response = await apiRequest('POST', `/api/orders/${orderId}/reject`, { reason });
       return await response.json();
     },
     onSuccess: () => {
