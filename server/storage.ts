@@ -692,6 +692,20 @@ export class DatabaseStorage implements IStorage {
         businessId: null
       });
       
+      // Create sample Project Manager user
+      const pmPassword = await hashPassword("manager123");
+      const pmUser = await this.createUser({
+        username: "pm",
+        password: pmPassword,
+        firstName: "Project",
+        lastName: "Manager",
+        email: "pm@fastfire.com",
+        phone: "555-123-4567",
+        role: "project_manager",
+        isApproved: true,
+        businessId: null
+      });
+      
       // Create sample businesses
       const business1 = await this.createBusiness({
         name: "AquaFire Systems",
