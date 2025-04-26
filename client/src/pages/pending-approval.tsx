@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExclamationTriangleIcon, ArrowLeftIcon } from "lucide-react";
+import { AlertTriangleIcon, ArrowLeftIcon } from "lucide-react";
 
 const PendingApprovalPage = () => {
   const [location, navigate] = useLocation();
@@ -45,7 +45,7 @@ const PendingApprovalPage = () => {
       <Card className="max-w-md w-full">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4 text-yellow-500">
-            <ExclamationTriangleIcon className="h-12 w-12" />
+            <AlertTriangleIcon className="h-12 w-12" />
           </div>
           <CardTitle className="text-2xl font-bold text-center">Account Pending Approval</CardTitle>
           <CardDescription className="text-center">
