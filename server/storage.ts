@@ -106,6 +106,11 @@ export interface IStorage {
   getOrdersByStatus(status: string): Promise<Order[]>;
   getOrdersByRequestor(userId: number): Promise<Order[]>;
   getOrdersForApproval(projectManagerId: number): Promise<Order[]>;
+  getApprovedOrdersByPM(pmId: number, limit?: number): Promise<Order[]>;
+  approveOrder(orderId: number, pmId: number, notes: string): Promise<Order>;
+  rejectOrder(orderId: number, pmId: number, reason: string): Promise<Order>;
+  modifyOrder(orderId: number, pmId: number, updatedItems: { partId: number; quantity: number }[], notes: string): Promise<Order>;
+  getOrderHistory(orderId: number): Promise<OrderHistory[]>;
   getRecentOrders(limit: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: string, approverId?: number): Promise<Order | undefined>;

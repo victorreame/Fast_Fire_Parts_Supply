@@ -247,6 +247,21 @@ export const insertJobPartSchema = createInsertSchema(jobParts).omit({
   addedAt: true,
 });
 
+// Order History table (for tracking order status changes)
+export const orderHistory = pgTable("order_history", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").references(() => orders.id).notNull(),
+  status: text("status").notNull(), // Status the order changed to
+  notes: text("notes"), // Notes associated with status change
+  changedBy: integer("changed_by").references(() => users.id), // User who changed the status
+  changedAt: timestamp("changed_at").defaultNow(),
+});
+
+export const insertOrderHistorySchema = createInsertSchema(orderHistory).omit({
+  id: true,
+  changedAt: true,
+});
+
 // Notifications table (new)
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
@@ -391,6 +406,18 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     relationName: "approver",
   }),
   orderItems: many(orderItems),
+  history: many(orderHistory),
+}));
+
+export const orderHistoryRelations = relations(orderHistory, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderHistory.orderId],
+    references: [orders.id],
+  }),
+  changedByUser: one(users, {
+    fields: [orderHistory.changedBy],
+    references: [users.id],
+  }),
 }));
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
@@ -477,6 +504,9 @@ export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 
 export type JobPart = typeof jobParts.$inferSelect;
 export type InsertJobPart = z.infer<typeof insertJobPartSchema>;
+
+export type OrderHistory = typeof orderHistory.$inferSelect;
+export type InsertOrderHistory = z.infer<typeof insertOrderHistorySchema>;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
