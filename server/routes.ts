@@ -1033,7 +1033,225 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static assets including part SVGs
   app.use('/assets', express.static(path.join(process.cwd(), 'public', 'assets')));
 
-  // Project Manager Routes are now handled by pmRouter defined above
+  // Add Job Management routes for PM
+  
+  // Get all jobs assigned to the PM
+  pmRouter.get("/jobs", async (req: Request, res: Response) => {
+    try {
+      const pmId = req.user!.id;
+      const jobs = await storage.getJobsByProjectManager(pmId);
+      res.json(jobs);
+    } catch (error) {
+      console.error("Error getting PM jobs:", error);
+      res.status(500).json({ message: "Failed to get jobs" });
+    }
+  });
+  
+  // Get job with detailed information
+  pmRouter.get("/jobs/:id", async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+      
+      const jobDetails = await storage.getJobWithDetails(jobId);
+      
+      if (!jobDetails) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Check if the PM is assigned to this job
+      if (jobDetails.projectManagerId !== req.user!.id) {
+        return res.status(403).json({ message: "Not authorized to view this job" });
+      }
+      
+      res.json(jobDetails);
+    } catch (error) {
+      console.error("Error getting job details:", error);
+      res.status(500).json({ message: "Failed to get job details" });
+    }
+  });
+  
+  // Create a new job
+  pmRouter.post("/jobs", async (req: Request, res: Response) => {
+    try {
+      const pmId = req.user!.id;
+      const jobData = req.body;
+      
+      // Validate required fields
+      if (!jobData.name || !jobData.jobNumber) {
+        return res.status(400).json({ message: "Job name and number are required" });
+      }
+      
+      // Create the job with the PM as the creator and assigned PM
+      const newJob = await storage.createJob({
+        ...jobData,
+        projectManagerId: pmId,
+        createdBy: pmId,
+        status: jobData.status || "Not Started" 
+      });
+      
+      res.status(201).json(newJob);
+    } catch (error) {
+      console.error("Error creating job:", error);
+      res.status(500).json({ message: "Failed to create job" });
+    }
+  });
+  
+  // Update a job
+  pmRouter.put("/jobs/:id", async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+      
+      // Get the job to check authorization
+      const job = await storage.getJob(jobId);
+      
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Check if the PM is assigned to this job
+      if (job.projectManagerId !== req.user!.id) {
+        return res.status(403).json({ message: "Not authorized to update this job" });
+      }
+      
+      const updatedJob = await storage.updateJob(jobId, updateData);
+      res.json(updatedJob);
+    } catch (error) {
+      console.error("Error updating job:", error);
+      res.status(500).json({ message: "Failed to update job" });
+    }
+  });
+  
+  // Assign a tradie to a job
+  pmRouter.post("/jobs/:id/assign", async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const { userId } = req.body;
+      
+      if (isNaN(jobId) || !userId) {
+        return res.status(400).json({ message: "Valid job ID and user ID are required" });
+      }
+      
+      // Get the job to check authorization
+      const job = await storage.getJob(jobId);
+      
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Check if the PM is assigned to this job
+      if (job.projectManagerId !== req.user!.id) {
+        return res.status(403).json({ message: "Not authorized to manage this job" });
+      }
+      
+      // Check if the user exists and is a tradie
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.role !== 'tradie') {
+        return res.status(400).json({ message: "Only tradies can be assigned to jobs" });
+      }
+      
+      // Check if already assigned
+      const existingAssignments = await storage.getJobUsersByJob(jobId);
+      const alreadyAssigned = existingAssignments.some(assignment => assignment.userId === userId);
+      
+      if (alreadyAssigned) {
+        return res.status(400).json({ message: "User is already assigned to this job" });
+      }
+      
+      // Assign the user to the job
+      const jobUser = await storage.assignUserToJob({
+        jobId,
+        userId,
+        assignedBy: req.user!.id
+      });
+      
+      res.status(201).json(jobUser);
+    } catch (error) {
+      console.error("Error assigning user to job:", error);
+      res.status(500).json({ message: "Failed to assign user to job" });
+    }
+  });
+  
+  // Remove a tradie from a job
+  pmRouter.delete("/jobs/:jobId/users/:assignmentId", async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const assignmentId = parseInt(req.params.assignmentId);
+      
+      if (isNaN(jobId) || isNaN(assignmentId)) {
+        return res.status(400).json({ message: "Invalid job ID or assignment ID" });
+      }
+      
+      // Get the job to check authorization
+      const job = await storage.getJob(jobId);
+      
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Check if the PM is assigned to this job
+      if (job.projectManagerId !== req.user!.id) {
+        return res.status(403).json({ message: "Not authorized to manage this job" });
+      }
+      
+      // Check if the assignment exists
+      const jobUser = await storage.getJobUser(assignmentId);
+      
+      if (!jobUser || jobUser.jobId !== jobId) {
+        return res.status(404).json({ message: "Assignment not found for this job" });
+      }
+      
+      await storage.removeUserFromJob(assignmentId);
+      
+      res.json({ message: "User removed from job successfully" });
+    } catch (error) {
+      console.error("Error removing user from job:", error);
+      res.status(500).json({ message: "Failed to remove user from job" });
+    }
+  });
+  
+  // Get all tradies (for assignment selection)
+  pmRouter.get("/tradies", async (req: Request, res: Response) => {
+    try {
+      const tradies = await storage.getUsersByRole('tradie');
+      res.json(tradies);
+    } catch (error) {
+      console.error("Error getting tradies:", error);
+      res.status(500).json({ message: "Failed to get tradies" });
+    }
+  });
+  
+  // Get all clients (for job creation/assignment)
+  pmRouter.get("/clients", async (req: Request, res: Response) => {
+    try {
+      // Get the PM's business ID
+      const pmId = req.user!.id;
+      const pm = await storage.getUser(pmId);
+      
+      if (!pm || !pm.businessId) {
+        return res.status(400).json({ message: "PM business not found" });
+      }
+      
+      const clients = await storage.getClientsByBusiness(pm.businessId);
+      res.json(clients);
+    } catch (error) {
+      console.error("Error getting clients:", error);
+      res.status(500).json({ message: "Failed to get clients" });
+    }
+  });
   
   const httpServer = createServer(app);
   return httpServer;
