@@ -1253,6 +1253,210 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Parts catalog endpoints for PMs
+  
+  // Get all parts with optional filtering
+  pmRouter.get("/parts", async (req: Request, res: Response) => {
+    try {
+      const { type, category, search } = req.query;
+      
+      let parts: any[] = [];
+      
+      if (type) {
+        parts = await storage.getPartsByType(type as string);
+      } else {
+        parts = await storage.getAllParts();
+      }
+      
+      // Apply additional filtering
+      if (category) {
+        parts = parts.filter(part => 
+          part.category && part.category.toLowerCase() === (category as string).toLowerCase()
+        );
+      }
+      
+      // Apply search filtering
+      if (search) {
+        const searchTerm = (search as string).toLowerCase();
+        parts = parts.filter(part => 
+          part.description.toLowerCase().includes(searchTerm) ||
+          part.item_code.toLowerCase().includes(searchTerm) ||
+          (part.manufacturer && part.manufacturer.toLowerCase().includes(searchTerm))
+        );
+      }
+      
+      res.json(parts);
+    } catch (error) {
+      console.error("Error getting parts:", error);
+      res.status(500).json({ message: "Failed to get parts" });
+    }
+  });
+  
+  // Get part by ID
+  pmRouter.get("/parts/:id", async (req: Request, res: Response) => {
+    try {
+      const partId = parseInt(req.params.id);
+      
+      if (isNaN(partId)) {
+        return res.status(400).json({ message: "Invalid part ID" });
+      }
+      
+      const part = await storage.getPart(partId);
+      
+      if (!part) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+      
+      res.json(part);
+    } catch (error) {
+      console.error("Error getting part:", error);
+      res.status(500).json({ message: "Failed to get part" });
+    }
+  });
+  
+  // Get all part categories (distinct)
+  pmRouter.get("/parts/categories", async (_req: Request, res: Response) => {
+    try {
+      const parts = await storage.getAllParts();
+      
+      // Get distinct categories, excluding null/undefined
+      const categories = Array.from(new Set(
+        parts
+          .map(part => part.category)
+          .filter(category => category) // Filter out null/undefined values
+      ));
+      
+      res.json(categories);
+    } catch (error) {
+      console.error("Error getting part categories:", error);
+      res.status(500).json({ message: "Failed to get part categories" });
+    }
+  });
+  
+  // Get all part types (distinct)
+  pmRouter.get("/parts/types", async (_req: Request, res: Response) => {
+    try {
+      const parts = await storage.getAllParts();
+      
+      // Get distinct types
+      const types = Array.from(new Set(
+        parts.map(part => part.type)
+      ));
+      
+      res.json(types);
+    } catch (error) {
+      console.error("Error getting part types:", error);
+      res.status(500).json({ message: "Failed to get part types" });
+    }
+  });
+  
+  // Add part to job
+  pmRouter.post("/jobs/:jobId/parts", async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const { partId, quantity, notes } = req.body;
+      
+      if (isNaN(jobId) || !partId || quantity < 1) {
+        return res.status(400).json({ message: "Invalid job ID, part ID, or quantity" });
+      }
+      
+      // Check if the job exists and PM has access
+      const job = await storage.getJob(jobId);
+      
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      if (job.projectManagerId !== req.user!.id) {
+        return res.status(403).json({ message: "Not authorized to modify this job" });
+      }
+      
+      // Check if the part exists
+      const part = await storage.getPart(partId);
+      
+      if (!part) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+      
+      // Add the part to the job
+      const jobPart = await storage.addJobPart({
+        jobId,
+        partId,
+        quantity,
+        notes: notes || "",
+        addedBy: req.user!.id
+      });
+      
+      res.status(201).json(jobPart);
+    } catch (error) {
+      console.error("Error adding part to job:", error);
+      res.status(500).json({ message: "Failed to add part to job" });
+    }
+  });
+  
+  // Recommend a part to tradies
+  pmRouter.post("/parts/:partId/recommend", async (req: Request, res: Response) => {
+    try {
+      const partId = parseInt(req.params.partId);
+      const { jobId, message } = req.body;
+      
+      if (isNaN(partId) || !jobId) {
+        return res.status(400).json({ message: "Invalid part ID or job ID" });
+      }
+      
+      // Check if the job exists and PM has access
+      const job = await storage.getJob(jobId);
+      
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      if (job.projectManagerId !== req.user!.id) {
+        return res.status(403).json({ message: "Not authorized for this job" });
+      }
+      
+      // Check if the part exists
+      const part = await storage.getPart(partId);
+      
+      if (!part) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+      
+      // Get tradies assigned to the job
+      const jobUsers = await storage.getJobUsersByJob(jobId);
+      
+      if (!jobUsers.length) {
+        return res.status(400).json({ message: "No tradies assigned to this job" });
+      }
+      
+      // Create notifications for each tradie
+      const notifications = [];
+      for (const jobUser of jobUsers) {
+        // Create notification for each tradie
+        const notification = await storage.createNotification({
+          title: "Part Recommendation",
+          message: message || `Your project manager has recommended ${part.description} for job ${job.name}`,
+          type: "part_recommendation",
+          userId: jobUser.userId,
+          isRead: false,
+          relatedId: partId,
+          relatedType: "part",
+          jobId
+        });
+        
+        notifications.push(notification);
+      }
+      
+      res.status(201).json({ 
+        message: `Recommended to ${notifications.length} tradies`,
+        count: notifications.length
+      });
+    } catch (error) {
+      console.error("Error recommending part:", error);
+      res.status(500).json({ message: "Failed to recommend part" });
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }

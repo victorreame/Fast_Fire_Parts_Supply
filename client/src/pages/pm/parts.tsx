@@ -1,793 +1,1040 @@
 import { useState, useEffect } from "react";
+import PmLayout from "@/components/pm/layout";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import PMLayout from "@/components/pm/layout";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+import { 
+  Loader2, 
+  Search, 
+  Package, 
+  Filter, 
+  ThumbsUp, 
+  PlusCircle,
+  Info,
+  X, 
+  ListFilter,
+  Tag
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  EyeIcon,
-  SearchIcon,
-  FilterIcon,
-  PackageIcon,
-  ArrowUpDownIcon,
-  PlusCircleIcon,
-  Loader2,
-} from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLocation } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
-// Part interface
+// Part type
 interface Part {
   id: number;
   item_code: string;
-  type: string;
   pipe_size: string;
   description: string;
+  type: string;
+  category: string | null;
+  manufacturer: string | null;
+  supplier_code: string | null;
   price_t1: number;
   price_t2: number;
   price_t3: number;
-  manufacturer: string | null;
-  category: string | null;
+  cost_price?: number;
   in_stock: number;
+  min_stock: number;
   is_popular: boolean;
   image: string | null;
 }
 
-// Part with details interface
-interface PartWithDetails extends Part {
-  part_number: string | null;
-  barcode: string | null;
-  weight: number | null;
-  dimensions: string | null;
-  notes: string | null;
-  min_stock_level: number | null;
-  last_ordered: string | null;
+// Job type (simplified)
+interface Job {
+  id: number;
+  name: string;
+  jobNumber: string;
+  status: string;
 }
 
-const PAGE_SIZE = 10;
+// Part recommendation form schema
+const recommendPartSchema = z.object({
+  jobId: z.string().min(1, "You must select a job"),
+  message: z.string().optional(),
+});
 
-const PartsCatalog = () => {
+type RecommendPartValues = z.infer<typeof recommendPartSchema>;
+
+// Add part to job form schema
+const addPartToJobSchema = z.object({
+  jobId: z.string().min(1, "You must select a job"),
+  quantity: z.number().min(1, "Quantity must be at least 1"),
+  notes: z.string().optional(),
+});
+
+type AddPartToJobValues = z.infer<typeof addPartToJobSchema>;
+
+export default function PmParts() {
   const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [, navigate] = useLocation();
+  
+  // State for search, filtering, and pagination
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortField, setSortField] = useState("item_code");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [showPartDetails, setShowPartDetails] = useState(false);
-  const [selectedPart, setSelectedPart] = useState<PartWithDetails | null>(null);
-  const [showJobPartForm, setShowJobPartForm] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<number | null>(null);
-  const [quantity, setQuantity] = useState(1);
-
-  // Query for parts
-  const {
-    data: partsData,
-    isLoading: partsLoading,
-    refetch: refetchParts,
-  } = useQuery<{ parts: Part[]; types: string[]; categories: string[] }>({
-    queryKey: ['/api/parts', 'catalog'],
-    queryFn: async () => {
-      try {
-        const response = await apiRequest('GET', '/api/parts/catalog');
-        return await response.json();
-      } catch (error) {
-        console.error("Failed to fetch parts catalog:", error);
-        return { parts: [], types: [], categories: [] };
-      }
-    },
-  });
-
-  // Query for user's jobs
-  const {
-    data: jobs,
-    isLoading: jobsLoading,
-  } = useQuery<{ id: number; name: string; jobNumber: string }[]>({
-    queryKey: ['/api/jobs/pm/active'],
-    queryFn: async () => {
-      try {
-        const response = await apiRequest('GET', '/api/jobs/pm/active/minimal');
-        return await response.json();
-      } catch (error) {
-        console.error("Failed to fetch jobs:", error);
-        return [];
-      }
-    },
-  });
-
-  // Query for part details
-  const fetchPartDetails = async (partId: number) => {
-    try {
-      const response = await apiRequest('GET', `/api/parts/${partId}/details`);
-      const data = await response.json();
-      setSelectedPart(data);
-      return data;
-    } catch (error) {
-      console.error("Failed to fetch part details:", error);
-      setSelectedPart(null);
-      return null;
-    }
-  };
-
-  // Add part to job mutation
-  const addToJobMutation = useMutation({
-    mutationFn: async ({ jobId, partId, quantity }: { jobId: number; partId: number; quantity: number }) => {
-      const response = await apiRequest('POST', `/api/jobs/${jobId}/parts`, { partId, quantity });
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Part added to job",
-        description: "The part has been added to the job successfully.",
-      });
-      
-      // Close dialog and reset form
-      setShowJobPartForm(false);
-      setSelectedJob(null);
-      setQuantity(1);
-      
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to add part to job. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Filter and sort parts
-  const filteredParts = partsData?.parts.filter(part => {
-    // Filter by search query
-    const matchesSearch = searchQuery === "" || 
-      part.item_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      part.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (part.manufacturer && part.manufacturer.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    // Filter by type
-    const matchesType = selectedType === "" || part.type === selectedType;
-    
-    // Filter by category
-    const matchesCategory = selectedCategory === "" || part.category === selectedCategory;
-    
-    return matchesSearch && matchesType && matchesCategory;
-  }) || [];
-
-  // Sort parts
-  const sortedParts = [...filteredParts].sort((a, b) => {
-    let aValue = a[sortField as keyof Part];
-    let bValue = b[sortField as keyof Part];
-    
-    // Handle null values
-    if (aValue === null) aValue = '';
-    if (bValue === null) bValue = '';
-    
-    // Compare based on type
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return sortDirection === 'asc'
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
-    } else {
-      // For numbers and booleans
-      if (sortDirection === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
-    }
-  });
-
-  // Paginate parts
-  const paginatedParts = sortedParts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  // Calculate total pages
-  const totalPages = Math.ceil(filteredParts.length / PAGE_SIZE);
-
-  // Handle sort toggle
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  // Reset pagination when filters change
+  const [itemsPerPage] = useState(12);
+  
+  // State for detail modal
+  const [selectedPart, setSelectedPart] = useState<Part | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  
+  // State for recommend modal
+  const [isRecommendModalOpen, setIsRecommendModalOpen] = useState(false);
+  const [partToRecommend, setPartToRecommend] = useState<Part | null>(null);
+  
+  // State for add to job modal
+  const [isAddToJobModalOpen, setIsAddToJobModalOpen] = useState(false);
+  const [partToAdd, setPartToAdd] = useState<Part | null>(null);
+  
+  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedType, selectedCategory]);
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const handleViewPart = async (part: Part) => {
-    await fetchPartDetails(part.id);
-    setShowPartDetails(true);
-  };
-
-  const handleAddToJob = (part: Part) => {
-    setSelectedPart(part as PartWithDetails);
-    setShowJobPartForm(true);
-  };
-
-  const handleAddToJobSubmit = () => {
-    if (!selectedJob || !selectedPart) return;
+  }, [searchTerm, selectedType, selectedCategory]);
+  
+  // Fetch all parts
+  const { data: parts, isLoading: isLoadingParts } = useQuery({
+    queryKey: ['/api/pm/parts', searchTerm, selectedType, selectedCategory],
+    queryFn: async () => {
+      let url = '/api/pm/parts';
+      const params = new URLSearchParams();
+      
+      if (selectedType) {
+        params.append('type', selectedType);
+      }
+      
+      if (selectedCategory) {
+        params.append('category', selectedCategory);
+      }
+      
+      if (searchTerm) {
+        params.append('search', searchTerm);
+      }
+      
+      const paramString = params.toString();
+      if (paramString) {
+        url += `?${paramString}`;
+      }
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch parts');
+      }
+      return response.json();
+    }
+  });
+  
+  // Fetch part types for filter
+  const { data: partTypes } = useQuery({
+    queryKey: ['/api/pm/parts/types'],
+    queryFn: async () => {
+      const response = await fetch('/api/pm/parts/types');
+      if (!response.ok) {
+        throw new Error('Failed to fetch part types');
+      }
+      return response.json();
+    }
+  });
+  
+  // Fetch part categories for filter
+  const { data: partCategories } = useQuery({
+    queryKey: ['/api/pm/parts/categories'],
+    queryFn: async () => {
+      const response = await fetch('/api/pm/parts/categories');
+      if (!response.ok) {
+        throw new Error('Failed to fetch part categories');
+      }
+      return response.json();
+    }
+  });
+  
+  // Fetch PM's jobs for recommend and add to job modals
+  const { data: jobs } = useQuery({
+    queryKey: ['/api/pm/jobs'],
+    queryFn: async () => {
+      const response = await fetch('/api/pm/jobs');
+      if (!response.ok) {
+        throw new Error('Failed to fetch jobs');
+      }
+      return response.json();
+    }
+  });
+  
+  // Recommend part mutation
+  const recommendPartMutation = useMutation({
+    mutationFn: async ({ partId, data }: { partId: number, data: RecommendPartValues }) => {
+      const response = await apiRequest('POST', `/api/pm/parts/${partId}/recommend`, {
+        jobId: parseInt(data.jobId),
+        message: data.message
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to recommend part');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsRecommendModalOpen(false);
+      setPartToRecommend(null);
+      toast({
+        title: "Part recommended",
+        description: "Your recommendation has been sent to the tradies assigned to this job.",
+        variant: "default",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to recommend part",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Add part to job mutation
+  const addPartToJobMutation = useMutation({
+    mutationFn: async ({ jobId, partId, quantity, notes }: { jobId: number, partId: number, quantity: number, notes?: string }) => {
+      const response = await apiRequest('POST', `/api/pm/jobs/${jobId}/parts`, {
+        partId,
+        quantity,
+        notes
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to add part to job');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsAddToJobModalOpen(false);
+      setPartToAdd(null);
+      toast({
+        title: "Part added to job",
+        description: "The part has been added to the job requirements.",
+        variant: "default",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to add part to job",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Forms setup
+  const recommendForm = useForm<RecommendPartValues>({
+    resolver: zodResolver(recommendPartSchema),
+    defaultValues: {
+      jobId: "",
+      message: ""
+    }
+  });
+  
+  const addToJobForm = useForm<AddPartToJobValues>({
+    resolver: zodResolver(addPartToJobSchema),
+    defaultValues: {
+      jobId: "",
+      quantity: 1,
+      notes: ""
+    }
+  });
+  
+  // Form submission handlers
+  const onSubmitRecommend = (values: RecommendPartValues) => {
+    if (!partToRecommend) return;
     
-    addToJobMutation.mutate({
-      jobId: selectedJob,
-      partId: selectedPart.id,
-      quantity,
+    recommendPartMutation.mutate({
+      partId: partToRecommend.id,
+      data: values
     });
   };
-
+  
+  const onSubmitAddToJob = (values: AddPartToJobValues) => {
+    if (!partToAdd) return;
+    
+    addPartToJobMutation.mutate({
+      jobId: parseInt(values.jobId),
+      partId: partToAdd.id,
+      quantity: values.quantity,
+      notes: values.notes
+    });
+  };
+  
+  // Handle opening detail modal
+  const handleViewDetails = (part: Part) => {
+    setSelectedPart(part);
+    setIsDetailModalOpen(true);
+  };
+  
+  // Handle opening recommend modal
+  const handleRecommendPart = (part: Part) => {
+    setPartToRecommend(part);
+    recommendForm.reset({
+      jobId: "",
+      message: `I recommend using this ${part.description} (${part.item_code}) for the job.`
+    });
+    setIsRecommendModalOpen(true);
+  };
+  
+  // Handle opening add to job modal
+  const handleAddToJob = (part: Part) => {
+    setPartToAdd(part);
+    addToJobForm.reset({
+      jobId: "",
+      quantity: 1,
+      notes: ""
+    });
+    setIsAddToJobModalOpen(true);
+  };
+  
+  // Filter and paginate parts
+  const filteredParts = parts || [];
+  const totalPages = Math.ceil(filteredParts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentParts = filteredParts.slice(startIndex, startIndex + itemsPerPage);
+  
+  // Format price for display
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(price);
+  };
+  
+  // Determine stock status and badge color
+  const getStockStatus = (part: Part) => {
+    if (part.in_stock <= 0) return { status: "Out of Stock", color: "bg-red-400" };
+    if (part.in_stock < part.min_stock) return { status: "Low Stock", color: "bg-amber-400" };
+    return { status: "In Stock", color: "bg-green-400" };
+  };
+  
   return (
-    <PMLayout>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Parts Catalog</h1>
-      </div>
-
-      <Card className="mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle>Search & Filter</CardTitle>
-          <CardDescription>
-            Find parts by name, type, or category
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="search"
-                  placeholder="Search by item code, description, manufacturer..."
-                  className="pl-9"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+    <PmLayout>
+      <div className="container mx-auto py-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <h1 className="text-3xl font-bold">Parts Catalog</h1>
+          
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Search Input */}
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search parts..."
+                className="pl-8 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <div>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
-                  {partsData?.types.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
-                  {partsData?.categories
-                    .filter(Boolean) // Filter out null values
-                    .map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Parts List</CardTitle>
-          <CardDescription>
-            Browse and add parts to jobs
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {partsLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
-            </div>
-          ) : paginatedParts.length > 0 ? (
-            <>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[150px] cursor-pointer" onClick={() => handleSort('item_code')}>
-                        <div className="flex items-center">
-                          Item Code
-                          {sortField === 'item_code' && (
-                            <ArrowUpDownIcon className="ml-1 h-4 w-4" />
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('description')}>
-                        <div className="flex items-center">
-                          Description
-                          {sortField === 'description' && (
-                            <ArrowUpDownIcon className="ml-1 h-4 w-4" />
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('type')}>
-                        <div className="flex items-center">
-                          Type
-                          {sortField === 'type' && (
-                            <ArrowUpDownIcon className="ml-1 h-4 w-4" />
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort('pipe_size')}>
-                        <div className="flex items-center">
-                          Size
-                          {sortField === 'pipe_size' && (
-                            <ArrowUpDownIcon className="ml-1 h-4 w-4" />
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-right cursor-pointer" onClick={() => handleSort('price_t2')}>
-                        <div className="flex items-center justify-end">
-                          Price
-                          {sortField === 'price_t2' && (
-                            <ArrowUpDownIcon className="ml-1 h-4 w-4" />
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead className="hidden md:table-cell text-center cursor-pointer" onClick={() => handleSort('in_stock')}>
-                        <div className="flex items-center justify-center">
-                          Stock
-                          {sortField === 'in_stock' && (
-                            <ArrowUpDownIcon className="ml-1 h-4 w-4" />
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedParts.map((part) => (
-                      <TableRow key={part.id}>
-                        <TableCell className="font-medium">{part.item_code}</TableCell>
-                        <TableCell>
-                          <div>{part.description}</div>
-                          {part.is_popular && (
-                            <Badge variant="default" className="mt-1 text-xs bg-primary/20 text-primary hover:bg-primary/20">
-                              Popular
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>{part.type}</TableCell>
-                        <TableCell className="hidden md:table-cell">{part.pipe_size}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(part.price_t2)}</TableCell>
-                        <TableCell className="hidden md:table-cell text-center">
-                          <Badge
-                            variant={part.in_stock > 10 ? "outline" : part.in_stock > 0 ? "secondary" : "destructive"}
-                          >
-                            {part.in_stock > 0 ? part.in_stock : "Out of stock"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewPart(part)}
-                            >
-                              <EyeIcon className="h-4 w-4 mr-1" />
-                              <span className="hidden md:inline">Details</span>
-                            </Button>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => handleAddToJob(part)}
-                            >
-                              <PlusCircleIcon className="h-4 w-4 mr-1" />
-                              <span className="hidden md:inline">Add to Job</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-4">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                        />
-                      </PaginationItem>
-                      
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          // If 5 or fewer pages, show all page numbers
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          // We're near the start
-                          pageNum = i + 1;
-                          if (i === 4) return (
-                            <PaginationItem key="ellipsis-end">
-                              <PaginationEllipsis />
-                            </PaginationItem>
-                          );
-                        } else if (currentPage >= totalPages - 2) {
-                          // We're near the end
-                          pageNum = totalPages - 4 + i;
-                          if (i === 0) return (
-                            <PaginationItem key="ellipsis-start">
-                              <PaginationEllipsis />
-                            </PaginationItem>
-                          );
-                        } else {
-                          // We're in the middle
-                          pageNum = currentPage - 2 + i;
-                          if (i === 0) return (
-                            <PaginationItem key="ellipsis-start">
-                              <PaginationEllipsis />
-                            </PaginationItem>
-                          );
-                          if (i === 4) return (
-                            <PaginationItem key="ellipsis-end">
-                              <PaginationEllipsis />
-                            </PaginationItem>
-                          );
-                        }
-                        
-                        return (
-                          <PaginationItem key={pageNum}>
-                            <PaginationLink
-                              onClick={() => setCurrentPage(pageNum)}
-                              isActive={currentPage === pageNum}
-                            >
-                              {pageNum}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      })}
-                      
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-10 text-gray-500">
-              <PackageIcon className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-              <p>No parts found matching your criteria</p>
-              <p className="text-sm mt-1">Try adjusting your filters</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Part Details Dialog */}
-      <Dialog open={showPartDetails} onOpenChange={setShowPartDetails}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Part Details</DialogTitle>
-            <DialogDescription>
-              {selectedPart && (
-                <div className="text-sm text-gray-500">
-                  {selectedPart.item_code} - {selectedPart.description}
-                </div>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedPart && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-1">
-                <div className="rounded-lg overflow-hidden mb-4 border border-gray-200">
-                  {selectedPart.image ? (
-                    <img
-                      src={selectedPart.image}
-                      alt={selectedPart.description}
-                      className="w-full h-auto object-contain"
-                    />
-                  ) : (
-                    <div className="bg-gray-100 flex items-center justify-center h-48">
-                      <PackageIcon className="h-16 w-16 text-gray-400" />
-                    </div>
+            
+            {/* Type Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex gap-2">
+                  <ListFilter className="h-4 w-4" />
+                  <span className="hidden sm:inline">Filter by Type</span>
+                  {selectedType && (
+                    <Badge variant="secondary" className="ml-1">
+                      {selectedType}
+                    </Badge>
                   )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuLabel>Part Types</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={() => setSelectedType(null)}
+                    className={!selectedType ? "bg-accent" : ""}
+                  >
+                    All Types
+                  </DropdownMenuItem>
+                  {partTypes?.map((type: string) => (
+                    <DropdownMenuItem 
+                      key={type}
+                      onClick={() => setSelectedType(type)}
+                      className={selectedType === type ? "bg-accent" : ""}
+                    >
+                      {type}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* Category Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex gap-2">
+                  <Tag className="h-4 w-4" />
+                  <span className="hidden sm:inline">Filter by Category</span>
+                  {selectedCategory && (
+                    <Badge variant="secondary" className="ml-1">
+                      {selectedCategory}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuLabel>Categories</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={() => setSelectedCategory(null)}
+                    className={!selectedCategory ? "bg-accent" : ""}
+                  >
+                    All Categories
+                  </DropdownMenuItem>
+                  {partCategories?.map((category: string) => (
+                    <DropdownMenuItem 
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={selectedCategory === category ? "bg-accent" : ""}
+                    >
+                      {category}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* Clear Filters Button */}
+            {(selectedType || selectedCategory || searchTerm) && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSelectedType(null);
+                  setSelectedCategory(null);
+                  setSearchTerm("");
+                }}
+                className="flex gap-2"
+              >
+                <X className="h-4 w-4" />
+                <span className="hidden sm:inline">Clear Filters</span>
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        {/* Parts Grid */}
+        {isLoadingParts ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, index) => (
+              <Card key={index} className="overflow-hidden">
+                <div className="h-48 bg-muted">
+                  <Skeleton className="h-full w-full" />
+                </div>
+                <CardHeader className="p-4">
+                  <Skeleton className="h-4 w-3/4 mb-2" />
+                  <Skeleton className="h-3 w-1/2" />
+                </CardHeader>
+                <CardFooter className="p-4 pt-0 flex justify-between">
+                  <Skeleton className="h-8 w-20" />
+                  <Skeleton className="h-8 w-20" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : currentParts.length === 0 ? (
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>No Parts Found</CardTitle>
+              <CardDescription>
+                No parts match your current search criteria or filters.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedType(null);
+                  setSelectedCategory(null);
+                  setSearchTerm("");
+                }}
+              >
+                Clear All Filters
+              </Button>
+            </CardFooter>
+          </Card>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {currentParts.map((part) => {
+                const stockStatus = getStockStatus(part);
+                
+                return (
+                  <Card key={part.id} className="overflow-hidden flex flex-col">
+                    <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
+                      {part.image ? (
+                        <img
+                          src={part.image}
+                          alt={part.description}
+                          className="object-cover h-full w-full"
+                        />
+                      ) : (
+                        <Package className="h-24 w-24 text-muted-foreground/50" />
+                      )}
+                      
+                      {/* Popular badge */}
+                      {part.is_popular && (
+                        <div className="absolute top-2 left-2">
+                          <Badge className="bg-primary">Popular</Badge>
+                        </div>
+                      )}
+                      
+                      {/* Stock status badge */}
+                      <div className="absolute top-2 right-2">
+                        <Badge className={stockStatus.color}>{stockStatus.status}</Badge>
+                      </div>
+                    </div>
+                    
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-lg truncate" title={part.description}>
+                        {part.description}
+                      </CardTitle>
+                      <CardDescription className="flex justify-between">
+                        <span>Item: {part.item_code}</span>
+                        <span>Size: {part.pipe_size}</span>
+                      </CardDescription>
+                    </CardHeader>
+                    
+                    <CardContent className="px-4 py-0 flex-grow">
+                      <div className="mb-2">
+                        <div className="text-sm text-muted-foreground">
+                          Type: <span className="font-medium">{part.type}</span>
+                        </div>
+                        {part.category && (
+                          <div className="text-sm text-muted-foreground">
+                            Category: <span className="font-medium">{part.category}</span>
+                          </div>
+                        )}
+                        {part.manufacturer && (
+                          <div className="text-sm text-muted-foreground">
+                            Manufacturer: <span className="font-medium">{part.manufacturer}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div>
+                          <p className="text-sm text-muted-foreground">T1 Price:</p>
+                          <p className="font-semibold">{formatPrice(part.price_t1)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">T2 Price:</p>
+                          <p className="font-semibold">{formatPrice(part.price_t2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">T3 Price:</p>
+                          <p className="font-semibold">{formatPrice(part.price_t3)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">In Stock:</p>
+                          <p className="font-semibold">{part.in_stock}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                    
+                    <CardFooter className="p-4 pt-2 flex justify-between">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetails(part)}
+                      >
+                        <Info className="mr-1 h-4 w-4" />
+                        Details
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="default" size="sm">
+                            Actions
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => handleAddToJob(part)}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add to Job
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRecommendPart(part)}>
+                            <ThumbsUp className="mr-2 h-4 w-4" />
+                            Recommend to Tradies
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+            
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {[...Array(totalPages)].map((_, index) => (
+                    <Button
+                      key={index}
+                      variant={currentPage === index + 1 ? "default" : "outline"}
+                      size="sm"
+                      className="w-8 h-8 p-0"
+                      onClick={() => setCurrentPage(index + 1)}
+                    >
+                      {index + 1}
+                    </Button>
+                  ))}
                 </div>
                 
-                <Card>
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm">Inventory Status</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">In Stock:</span>
-                        <Badge
-                          variant={selectedPart.in_stock > 10 ? "outline" : selectedPart.in_stock > 0 ? "secondary" : "destructive"}
-                        >
-                          {selectedPart.in_stock > 0 ? selectedPart.in_stock : "Out of stock"}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Min Stock Level:</span>
-                        <span>{selectedPart.min_stock_level || "Not set"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Last Ordered:</span>
-                        <span>
-                          {selectedPart.last_ordered
-                            ? new Date(selectedPart.last_ordered).toLocaleDateString()
-                            : "Never"}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      
+      {/* Part Detail Modal */}
+      {selectedPart && (
+        <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>{selectedPart.description}</DialogTitle>
+              <DialogDescription>Item Code: {selectedPart.item_code}</DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-1 flex items-center justify-center bg-muted rounded-md p-4">
+                {selectedPart.image ? (
+                  <img
+                    src={selectedPart.image}
+                    alt={selectedPart.description}
+                    className="max-h-48 object-contain"
+                  />
+                ) : (
+                  <Package className="h-24 w-24 text-muted-foreground/50" />
+                )}
               </div>
               
               <div className="md:col-span-2">
-                <Card>
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm">Specifications</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2">
+                <Tabs defaultValue="details">
+                  <TabsList className="w-full">
+                    <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
+                    <TabsTrigger value="pricing" className="flex-1">Pricing</TabsTrigger>
+                    <TabsTrigger value="stock" className="flex-1">Stock</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="details" className="mt-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-muted-foreground">Type</Label>
+                        <p className="font-medium">{selectedPart.type}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Pipe Size</Label>
+                        <p className="font-medium">{selectedPart.pipe_size}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Category</Label>
+                        <p className="font-medium">{selectedPart.category || "N/A"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Manufacturer</Label>
+                        <p className="font-medium">{selectedPart.manufacturer || "N/A"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Supplier Code</Label>
+                        <p className="font-medium">{selectedPart.supplier_code || "N/A"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Popular Item</Label>
+                        <p className="font-medium">{selectedPart.is_popular ? "Yes" : "No"}</p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="pricing" className="mt-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <h3 className="text-sm font-semibold mb-1">Item Code</h3>
-                        <p className="text-sm">{selectedPart.item_code}</p>
+                        <Label className="text-muted-foreground">Tier 1 Price (Retail)</Label>
+                        <p className="text-xl font-semibold">{formatPrice(selectedPart.price_t1)}</p>
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold mb-1">Part Number</h3>
-                        <p className="text-sm">{selectedPart.part_number || "N/A"}</p>
+                        <Label className="text-muted-foreground">Tier 2 Price (Standard)</Label>
+                        <p className="text-xl font-semibold">{formatPrice(selectedPart.price_t2)}</p>
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold mb-1">Type</h3>
-                        <p className="text-sm">{selectedPart.type}</p>
+                        <Label className="text-muted-foreground">Tier 3 Price (Volume)</Label>
+                        <p className="text-xl font-semibold">{formatPrice(selectedPart.price_t3)}</p>
+                      </div>
+                      {selectedPart.cost_price && (
+                        <div>
+                          <Label className="text-muted-foreground">Cost Price</Label>
+                          <p className="text-xl font-semibold">{formatPrice(selectedPart.cost_price)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="stock" className="mt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-muted-foreground">Current Stock</Label>
+                        <p className="text-xl font-semibold">{selectedPart.in_stock} units</p>
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold mb-1">Category</h3>
-                        <p className="text-sm">{selectedPart.category || "Uncategorized"}</p>
+                        <Label className="text-muted-foreground">Minimum Stock</Label>
+                        <p className="text-xl font-semibold">{selectedPart.min_stock} units</p>
                       </div>
-                      <div>
-                        <h3 className="text-sm font-semibold mb-1">Pipe Size</h3>
-                        <p className="text-sm">{selectedPart.pipe_size}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold mb-1">Manufacturer</h3>
-                        <p className="text-sm">{selectedPart.manufacturer || "Unknown"}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold mb-1">Weight</h3>
-                        <p className="text-sm">
-                          {selectedPart.weight ? `${selectedPart.weight} kg` : "Not specified"}
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold mb-1">Dimensions</h3>
-                        <p className="text-sm">{selectedPart.dimensions || "Not specified"}</p>
+                      <div className="col-span-2">
+                        <Label className="text-muted-foreground">Stock Status</Label>
+                        <div className="mt-1">
+                          <Badge className={getStockStatus(selectedPart).color}>
+                            {getStockStatus(selectedPart).status}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="mt-4">
-                      <h3 className="text-sm font-semibold mb-1">Description</h3>
-                      <p className="text-sm">{selectedPart.description}</p>
-                    </div>
-                    
-                    {selectedPart.notes && (
-                      <div className="mt-4">
-                        <h3 className="text-sm font-semibold mb-1">Notes</h3>
-                        <p className="text-sm bg-gray-50 p-2 rounded">{selectedPart.notes}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                <Card className="mt-4">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm">Pricing</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <h3 className="text-sm font-semibold mb-1">Tier 1 Price</h3>
-                        <p className="text-lg font-bold">{formatCurrency(selectedPart.price_t1)}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold mb-1">Tier 2 Price</h3>
-                        <p className="text-lg font-bold">{formatCurrency(selectedPart.price_t2)}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold mb-1">Tier 3 Price</h3>
-                        <p className="text-lg font-bold">{formatCurrency(selectedPart.price_t3)}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <div className="mt-6 flex justify-end">
-                  <Button onClick={() => handleAddToJob(selectedPart)}>
-                    <PlusCircleIcon className="mr-2 h-4 w-4" />
-                    Add to Job
-                  </Button>
-                </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Add to Job Dialog */}
-      <Dialog open={showJobPartForm} onOpenChange={setShowJobPartForm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Part to Job</DialogTitle>
-            <DialogDescription>
-              Select a job and specify the quantity
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="job" className="text-sm font-medium">
-                Select Job
-              </label>
-              <Select
-                onValueChange={(value) => setSelectedJob(parseInt(value))}
-                value={selectedJob?.toString()}
+            
+            <DialogFooter className="sm:justify-between gap-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsDetailModalOpen(false);
+                  handleRecommendPart(selectedPart);
+                }}
               >
-                <SelectTrigger id="job">
-                  <SelectValue placeholder="Select a job" />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobs?.map((job) => (
-                    <SelectItem key={job.id} value={job.id.toString()}>
-                      {job.jobNumber} - {job.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="quantity" className="text-sm font-medium">
-                Quantity
-              </label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-              />
-            </div>
-
-            {selectedPart && (
-              <div className="border rounded-md p-3 bg-gray-50 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Part:</span>
-                  <span className="text-sm">
-                    {selectedPart.item_code} - {selectedPart.description}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Unit Price:</span>
-                  <span className="text-sm">{formatCurrency(selectedPart.price_t2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Total Price:</span>
-                  <span className="text-sm font-bold">
-                    {formatCurrency(selectedPart.price_t2 * quantity)}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowJobPartForm(false);
-                setSelectedJob(null);
-                setQuantity(1);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddToJobSubmit}
-              disabled={!selectedJob || addToJobMutation.isPending}
-            >
-              {addToJobMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <PlusCircleIcon className="mr-2 h-4 w-4" />
-                  Add to Job
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </PMLayout>
+                <ThumbsUp className="mr-2 h-4 w-4" />
+                Recommend to Tradies
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsDetailModalOpen(false);
+                  handleAddToJob(selectedPart);
+                }}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add to Job
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* Recommend Part Modal */}
+      {partToRecommend && (
+        <Dialog open={isRecommendModalOpen} onOpenChange={setIsRecommendModalOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Recommend Part to Tradies</DialogTitle>
+              <DialogDescription>
+                Recommend {partToRecommend.description} to tradies assigned to a job.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...recommendForm}>
+              <form onSubmit={recommendForm.handleSubmit(onSubmitRecommend)} className="space-y-4">
+                <FormField
+                  control={recommendForm.control}
+                  name="jobId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Job</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a job" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Your Jobs</SelectLabel>
+                            {jobs?.map((job: Job) => (
+                              <SelectItem key={job.id} value={job.id.toString()}>
+                                {job.name} ({job.jobNumber})
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        The recommendation will be sent to all tradies assigned to this job.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={recommendForm.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Message (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Add a message to the recommendation..."
+                          className="min-h-[100px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Explain why you're recommending this part.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsRecommendModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={recommendPartMutation.isPending}
+                  >
+                    {recommendPartMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <ThumbsUp className="mr-2 h-4 w-4" />
+                        Send Recommendation
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* Add Part to Job Modal */}
+      {partToAdd && (
+        <Dialog open={isAddToJobModalOpen} onOpenChange={setIsAddToJobModalOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Add Part to Job</DialogTitle>
+              <DialogDescription>
+                Add {partToAdd.description} to a job's requirements.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...addToJobForm}>
+              <form onSubmit={addToJobForm.handleSubmit(onSubmitAddToJob)} className="space-y-4">
+                <FormField
+                  control={addToJobForm.control}
+                  name="jobId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Job</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a job" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Your Jobs</SelectLabel>
+                            {jobs?.map((job: Job) => (
+                              <SelectItem key={job.id} value={job.id.toString()}>
+                                {job.name} ({job.jobNumber})
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={addToJobForm.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={addToJobForm.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notes (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Add notes about this part requirement..."
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Include any special instructions or details.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="text-sm text-muted-foreground flex items-center mr-auto">
+                          <Info className="h-4 w-4 mr-1" />
+                          {partToAdd.in_stock > 0 ? (
+                            <span>{partToAdd.in_stock} in stock</span>
+                          ) : (
+                            <span className="text-red-500">Out of stock</span>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {partToAdd.in_stock > 0
+                          ? `${partToAdd.in_stock} units available to order`
+                          : "This part is currently out of stock"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsAddToJobModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={addPartToJobMutation.isPending}
+                  >
+                    {addPartToJobMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add to Job
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      )}
+    </PmLayout>
   );
-};
-
-export default PartsCatalog;
+}
