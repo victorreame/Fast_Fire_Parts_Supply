@@ -3,6 +3,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { useQuery } from "@tanstack/react-query";
 import { useMobile } from "@/hooks/use-mobile";
+import { AuthProvider } from "@/hooks/use-auth";
 
 // Mobile pages
 import MobileHome from "@/pages/mobile/home";
@@ -24,11 +25,20 @@ import SupplierParts from "@/pages/supplier/parts";
 import SupplierCustomers from "@/pages/supplier/customers";
 import SupplierJobs from "@/pages/supplier/jobs";
 
+// Project Manager pages
+import PMDashboard from "@/pages/pm/dashboard";
+import PMApprovals from "@/pages/pm/approvals";
+import PMJobs from "@/pages/pm/jobs";
+import PMParts from "@/pages/pm/parts";
+import PMTradies from "@/pages/pm/tradies";
+import PMNotifications from "@/pages/pm/notifications";
+
 // Shared pages
 import SupplierJobDetailsPage from "@/pages/job/[id]";
 
 // Auth pages
 import LoginPage from "@/pages/login";
+import PendingApprovalPage from "@/pages/pending-approval";
 
 // Not found
 import NotFound from "@/pages/not-found";
@@ -149,7 +159,7 @@ function App() {
   }
 
   return (
-    <>
+    <AuthProvider>
       <Switch>
         {/* Auth routes - default routes for user entry */}
         <Route path="/">
@@ -157,11 +167,14 @@ function App() {
           {user 
             ? user.role === 'supplier' || user.role === 'admin'
               ? <SupplierDashboard />
-              : <MobileHome />
+              : user.role === 'project_manager'
+                ? <PMDashboard />
+                : <MobileHome />
             : <LoginPage />
           }
         </Route>
         <Route path="/login" component={LoginPage} />
+        <Route path="/pending-approval" component={PendingApprovalPage} />
         
         {/* Mobile client routes */}
         <Route path="/mobile" component={MobileHome} />
@@ -196,16 +209,39 @@ function App() {
           {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierJobs /> : <NotFound />}
         </Route>
         
+        {/* Project Manager routes - only accessible if role is project_manager */}
+        <Route path="/pm/dashboard">
+          {user?.role === 'project_manager' ? <PMDashboard /> : <NotFound />}
+        </Route>
+        <Route path="/pm/approvals">
+          {user?.role === 'project_manager' ? <PMApprovals /> : <NotFound />}
+        </Route>
+        <Route path="/pm/jobs">
+          {user?.role === 'project_manager' ? <PMJobs /> : <NotFound />}
+        </Route>
+        <Route path="/pm/parts">
+          {user?.role === 'project_manager' ? <PMParts /> : <NotFound />}
+        </Route>
+        <Route path="/pm/tradies">
+          {user?.role === 'project_manager' ? <PMTradies /> : <NotFound />}
+        </Route>
+        <Route path="/pm/notifications">
+          {user?.role === 'project_manager' ? <PMNotifications /> : <NotFound />}
+        </Route>
+        
         {/* Job details page for suppliers */}
         <Route path="/job/:id">
-          {user?.role === 'supplier' || user?.role === 'admin' ? <SupplierJobDetailsPage /> : <JobDetailsPage />}
+          {user?.role === 'supplier' || user?.role === 'admin' 
+            ? <SupplierJobDetailsPage /> 
+            : <JobDetailsPage />
+          }
         </Route>
         
         {/* Fallback to 404 */}
         <Route component={NotFound} />
       </Switch>
       <Toaster />
-    </>
+    </AuthProvider>
   );
 }
 
