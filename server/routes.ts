@@ -1579,7 +1579,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(categories);
     } catch (error) {
       console.error("Error getting part categories:", error);
-      res.status(500).json({ message: "Failed to get part categories" });
+      // Include more detailed error information
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Detailed error:", errorMessage);
+      res.status(500).json({ message: "Failed to get part categories", error: errorMessage });
     }
   });
   
@@ -1596,7 +1599,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(types);
     } catch (error) {
       console.error("Error getting part types:", error);
-      res.status(500).json({ message: "Failed to get part types" });
+      // Include more detailed error information
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Detailed error:", errorMessage);
+      res.status(500).json({ message: "Failed to get part types", error: errorMessage });
     }
   });
   
