@@ -11,7 +11,8 @@ import {
   contacts, type Contact, type InsertContact,
   contractPricing, type ContractPricing, type InsertContractPricing,
   jobUsers, type JobUser, type InsertJobUser,
-  notifications, type Notification, type InsertNotification
+  notifications, type Notification, type InsertNotification,
+  orderHistory, type OrderHistory, type InsertOrderHistory
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
