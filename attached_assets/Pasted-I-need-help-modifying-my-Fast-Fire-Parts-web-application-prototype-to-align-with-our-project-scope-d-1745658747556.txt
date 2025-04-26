@@ -1,0 +1,60 @@
+I need help modifying my Fast Fire Parts web application prototype to align with our project scope document. Please help implement the following key changes and additions:
+
+## 1. User Role System Enhancement
+- Modify the existing authentication system to support three distinct user roles: Supplier (Admin), Project Manager (PM), and Tradie (Contractor)
+- Implement proper role-based access control for each user type
+- Add a registration workflow where Tradies can self-register but need PM approval to access jobs
+- Add PM registration with approval from Supplier/Admin
+
+## 2. Database Structure Redesign
+- Redesign the database to properly support:
+  * Clients/Contacts (with multiple contacts per client)
+  * Parts (with detailed attributes including 3-tier pricing and contract pricing)
+  * Jobs (with job name, job number, site address, associated parts, assigned PM)
+  * Orders/Cart system
+  * User management (with role distinctions)
+- Include necessary relationships between these entities
+
+## 3. Order Flow Modification
+- Redesign the order process to follow this flow:
+  * Tradie selects parts and adds to cart
+  * Tradie submits order request to PM (not directly to supplier/admin)
+  * PM reviews and can approve/reject order
+  * Approved orders are sent to Supplier/Admin
+  * Notifications are sent at each step
+
+## 4. Project Manager Interface
+- Create a new PM dashboard with:
+  * Order request approval interface
+  * Job management capabilities
+  * Parts search functionality (with pricing visibility)
+  * Order history tracking per job
+  * Ability to create new jobs
+
+## 5. Tradie Interface Enhancement
+- Enhance the mobile-optimized Tradie interface to:
+  * Search parts by job number, item code, description
+  * Hide pricing information
+  * Improve the cart functionality
+  * Show order status/tracking
+  * Associate orders with specific jobs
+
+## 6. Supplier/Admin Interface Enhancement
+- Enhance the admin dashboard with:
+  * Complete management of clients, parts, jobs, users
+  * Order processing and tracking
+  * User approval workflows
+  * (Future consideration: CSV import for parts/clients)
+
+## 7. Notification System
+- Implement a browser-based notification system for:
+  * New order requests (to PMs)
+  * Order approvals/rejections (to Tradies)
+  * Approved orders (to Suppliers)
+  * New user registration requests
+
+## 8. Responsive Design
+- Ensure the Tradie interface is fully optimized for mobile devices
+- Make PM and Supplier interfaces responsive for both desktop and tablet use
+
+Please focus on implementing these changes in a modular, step-by-step approach, starting with the core database restructuring and user role system. Provide explanations for your implementation choices and highlight any potential challenges or alternative approaches.
