@@ -1113,6 +1113,58 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobs.createdBy, userId));
   }
   
+  async getJobsByProjectManager(pmId: number): Promise<Job[]> {
+    return await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.projectManagerId, pmId));
+  }
+  
+  async getJobWithDetails(jobId: number): Promise<any> {
+    // Get the job
+    const job = await this.getJob(jobId);
+    if (!job) return null;
+    
+    // Get assigned tradies
+    const assignedUsers = await this.getJobUsersByJob(jobId);
+    const assignedUserDetails = await Promise.all(
+      assignedUsers.map(async (assignment) => {
+        const user = await this.getUser(assignment.userId);
+        return { ...assignment, user };
+      })
+    );
+    
+    // Get associated orders
+    const orders = await this.getOrdersByJob(jobId);
+    
+    // Get client details if available
+    let client = null;
+    if (job.clientId) {
+      client = await this.getClient(job.clientId);
+    }
+    
+    // Get business details if available
+    let business = null;
+    if (job.businessId) {
+      business = await this.getBusiness(job.businessId);
+    }
+    
+    return {
+      ...job,
+      assignedUsers: assignedUserDetails,
+      orders,
+      client,
+      business
+    };
+  }
+  
+  async getJobsWithStatus(status: string): Promise<Job[]> {
+    return await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.status, status));
+  }
+  
   async getAllJobs(): Promise<Job[]> {
     return await db.select().from(jobs);
   }
