@@ -138,10 +138,10 @@ const TradieManagement = () => {
     isLoading: activeTradiesLoading,
     refetch: refetchActiveTradies,
   } = useQuery<Tradie[]>({
-    queryKey: ['/api/users/tradies', 'active'],
+    queryKey: ['/api/pm/tradies', 'active'],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', '/api/users/tradies/approved');
+        const response = await apiRequest('GET', '/api/pm/tradies/approved');
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch active tradies:", error);
@@ -155,10 +155,10 @@ const TradieManagement = () => {
     isLoading: pendingTradiesLoading,
     refetch: refetchPendingTradies,
   } = useQuery<Tradie[]>({
-    queryKey: ['/api/users/tradies', 'pending'],
+    queryKey: ['/api/pm/tradies', 'pending'],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', '/api/users/tradies/pending');
+        const response = await apiRequest('GET', '/api/pm/tradies/pending');
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch pending tradies:", error);
@@ -171,7 +171,7 @@ const TradieManagement = () => {
   // Fetch tradie job assignments
   const fetchTradieJobs = async (tradieId: number) => {
     try {
-      const response = await apiRequest('GET', `/api/users/${tradieId}/jobs`);
+      const response = await apiRequest('GET', `/api/pm/tradies/${tradieId}/jobs`);
       const data = await response.json();
       setJobAssignments(data);
       return data;
@@ -185,7 +185,7 @@ const TradieManagement = () => {
   // Mutations
   const inviteTradieMutation = useMutation({
     mutationFn: async (tradieData: InviteFormValues) => {
-      const response = await apiRequest('POST', '/api/users/tradies/invite', {
+      const response = await apiRequest('POST', '/api/pm/tradies/invite', {
         ...tradieData,
         role: 'tradie',
       });
@@ -218,7 +218,7 @@ const TradieManagement = () => {
 
   const approveTradieMutation = useMutation({
     mutationFn: async (tradieId: number) => {
-      const response = await apiRequest('PUT', `/api/users/${tradieId}/approve`, {});
+      const response = await apiRequest('PUT', `/api/pm/tradies/${tradieId}/approve`, {});
       return await response.json();
     },
     onSuccess: () => {
@@ -250,7 +250,7 @@ const TradieManagement = () => {
 
   const rejectTradieMutation = useMutation({
     mutationFn: async (tradieId: number) => {
-      const response = await apiRequest('PUT', `/api/users/${tradieId}/reject`, {});
+      const response = await apiRequest('PUT', `/api/pm/tradies/${tradieId}/reject`, {});
       return await response.json();
     },
     onSuccess: () => {
