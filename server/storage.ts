@@ -6,7 +6,12 @@ import {
   orders, type Order, type InsertOrder,
   orderItems, type OrderItem, type InsertOrderItem,
   cartItems, type CartItem, type InsertCartItem,
-  jobParts, type JobPart, type InsertJobPart
+  jobParts, type JobPart, type InsertJobPart,
+  clients, type Client, type InsertClient,
+  contacts, type Contact, type InsertContact,
+  contractPricing, type ContractPricing, type InsertContractPricing,
+  jobUsers, type JobUser, type InsertJobUser,
+  notifications, type Notification, type InsertNotification
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -28,16 +33,34 @@ async function hashPassword(password: string) {
 export interface IStorage {
   // Session store
   sessionStore: session.Store;
+  
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUsersByRole(role: string): Promise<User[]>;
+  getPendingUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   
   // Businesses
   getBusiness(id: number): Promise<Business | undefined>;
   getAllBusinesses(): Promise<Business[]>;
   createBusiness(business: InsertBusiness): Promise<Business>;
   updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business | undefined>;
+  
+  // Clients
+  getClient(id: number): Promise<Client | undefined>;
+  getClientsByBusiness(businessId: number): Promise<Client[]>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined>;
+  deleteClient(id: number): Promise<boolean>;
+  
+  // Contacts
+  getContact(id: number): Promise<Contact | undefined>;
+  getContactsByClient(clientId: number): Promise<Contact[]>;
+  createContact(contact: InsertContact): Promise<Contact>;
+  updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact | undefined>;
+  deleteContact(id: number): Promise<boolean>;
   
   // Parts
   getPart(id: number): Promise<Part | undefined>;
@@ -49,9 +72,18 @@ export interface IStorage {
   updatePart(id: number, part: Partial<InsertPart>): Promise<Part | undefined>;
   deletePart(id: number): Promise<boolean>;
   
+  // Contract Pricing
+  getContractPrice(clientId: number, partId: number): Promise<ContractPricing | undefined>;
+  getContractPricesByClient(clientId: number): Promise<ContractPricing[]>;
+  createContractPrice(pricing: InsertContractPricing): Promise<ContractPricing>;
+  updateContractPrice(id: number, pricing: Partial<InsertContractPricing>): Promise<ContractPricing | undefined>;
+  deleteContractPrice(id: number): Promise<boolean>;
+  
   // Jobs
   getJob(id: number): Promise<Job | undefined>;
   getJobsByBusiness(businessId: number): Promise<Job[]>;
+  getJobsByClient(clientId: number): Promise<Job[]>;
+  getJobsByProjectManager(pmId: number): Promise<Job[]>;
   getPublicJobs(): Promise<Job[]>;
   getJobsByCreator(userId: number): Promise<Job[]>;
   getAllJobs(): Promise<Job[]>;
@@ -59,21 +91,38 @@ export interface IStorage {
   updateJob(id: number, job: Partial<InsertJob>): Promise<Job | undefined>;
   deleteJob(id: number): Promise<boolean>;
   
+  // Job Users (assignments)
+  getJobUser(id: number): Promise<JobUser | undefined>;
+  getJobUsersByJob(jobId: number): Promise<JobUser[]>;
+  getJobUsersByUser(userId: number): Promise<JobUser[]>;
+  assignUserToJob(jobUser: InsertJobUser): Promise<JobUser>;
+  removeUserFromJob(id: number): Promise<boolean>;
+  
   // Orders
   getOrder(id: number): Promise<Order | undefined>;
   getOrdersByBusiness(businessId: number): Promise<Order[]>;
+  getOrdersByClient(clientId: number): Promise<Order[]>;
+  getOrdersByJob(jobId: number): Promise<Order[]>;
+  getOrdersByStatus(status: string): Promise<Order[]>;
+  getOrdersByRequestor(userId: number): Promise<Order[]>;
+  getOrdersForApproval(projectManagerId: number): Promise<Order[]>;
   getRecentOrders(limit: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
-  updateOrderStatus(id: number, status: string): Promise<Order | undefined>;
+  updateOrderStatus(id: number, status: string, approverId?: number): Promise<Order | undefined>;
+  updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined>;
   
   // Order Items
   getOrderItems(orderId: number): Promise<OrderItem[]>;
   createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
+  updateOrderItem(id: number, orderItem: Partial<InsertOrderItem>): Promise<OrderItem | undefined>;
+  deleteOrderItem(id: number): Promise<boolean>;
   
   // Cart Items
   getCartItems(userId: number): Promise<CartItem[]>;
+  getCartItemsByJob(userId: number, jobId: number): Promise<CartItem[]>;
   addCartItem(cartItem: InsertCartItem): Promise<CartItem>;
   updateCartItemQuantity(id: number, quantity: number): Promise<CartItem | undefined>;
+  updateCartItem(id: number, cartItem: Partial<InsertCartItem>): Promise<CartItem | undefined>;
   removeCartItem(id: number): Promise<boolean>;
   clearCart(userId: number): Promise<boolean>;
   
@@ -82,7 +131,17 @@ export interface IStorage {
   getJobPartsWithDetails(jobId: number): Promise<(JobPart & { part: Part })[]>;
   addJobPart(jobPart: InsertJobPart): Promise<JobPart>;
   updateJobPartQuantity(id: number, quantity: number): Promise<JobPart | undefined>;
+  updateJobPart(id: number, jobPart: Partial<InsertJobPart>): Promise<JobPart | undefined>;
   removeJobPart(id: number): Promise<boolean>;
+  
+  // Notifications
+  getNotification(id: number): Promise<Notification | undefined>;
+  getNotificationsByUser(userId: number): Promise<Notification[]>;
+  getUnreadNotificationsByUser(userId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: number): Promise<boolean>;
+  deleteNotification(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -912,9 +971,29 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
+  async getUsersByRole(role: string): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, role));
+  }
+  
+  async getPendingUsers(): Promise<User[]> {
+    return await db.select().from(users)
+      .where(and(
+        eq(users.isApproved, false),
+        not(eq(users.role, 'supplier')) // Suppliers don't need approval
+      ));
+  }
+  
   async createUser(user: InsertUser): Promise<User> {
     const [newUser] = await db.insert(users).values(user).returning();
     return newUser;
+  }
+  
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const [updatedUser] = await db.update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
   }
   
   // Business Methods
@@ -948,7 +1027,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getPartByItemCode(itemCode: string): Promise<Part | undefined> {
-    const [part] = await db.select().from(parts).where(eq(parts.itemCode, itemCode));
+    const [part] = await db.select().from(parts).where(eq(parts.item_code, itemCode));
     return part;
   }
   
@@ -1213,6 +1292,345 @@ export class DatabaseStorage implements IStorage {
   
   async clearCart(userId: number): Promise<boolean> {
     await db.delete(cartItems).where(eq(cartItems.userId, userId));
+    return true;
+  }
+  
+  // Client Methods
+  async getClient(id: number): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client;
+  }
+  
+  async getClientsByBusiness(businessId: number): Promise<Client[]> {
+    return await db.select().from(clients).where(eq(clients.businessId, businessId));
+  }
+  
+  async createClient(client: InsertClient): Promise<Client> {
+    const [newClient] = await db.insert(clients).values(client).returning();
+    return newClient;
+  }
+  
+  async updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined> {
+    const [updatedClient] = await db
+      .update(clients)
+      .set(client)
+      .where(eq(clients.id, id))
+      .returning();
+    return updatedClient;
+  }
+  
+  async deleteClient(id: number): Promise<boolean> {
+    await db.delete(clients).where(eq(clients.id, id));
+    return true;
+  }
+  
+  // Contact Methods
+  async getContact(id: number): Promise<Contact | undefined> {
+    const [contact] = await db.select().from(contacts).where(eq(contacts.id, id));
+    return contact;
+  }
+  
+  async getContactsByClient(clientId: number): Promise<Contact[]> {
+    return await db.select().from(contacts).where(eq(contacts.clientId, clientId));
+  }
+  
+  async createContact(contact: InsertContact): Promise<Contact> {
+    const [newContact] = await db.insert(contacts).values(contact).returning();
+    return newContact;
+  }
+  
+  async updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact | undefined> {
+    const [updatedContact] = await db
+      .update(contacts)
+      .set(contact)
+      .where(eq(contacts.id, id))
+      .returning();
+    return updatedContact;
+  }
+  
+  async deleteContact(id: number): Promise<boolean> {
+    await db.delete(contacts).where(eq(contacts.id, id));
+    return true;
+  }
+  
+  // Contract Pricing Methods
+  async getContractPrice(clientId: number, partId: number): Promise<ContractPricing | undefined> {
+    const [price] = await db
+      .select()
+      .from(contractPricing)
+      .where(
+        and(
+          eq(contractPricing.clientId, clientId),
+          eq(contractPricing.partId, partId)
+        )
+      );
+    return price;
+  }
+  
+  async getContractPricesByClient(clientId: number): Promise<ContractPricing[]> {
+    return await db
+      .select()
+      .from(contractPricing)
+      .where(eq(contractPricing.clientId, clientId));
+  }
+  
+  async createContractPrice(pricing: InsertContractPricing): Promise<ContractPricing> {
+    const [newPrice] = await db.insert(contractPricing).values(pricing).returning();
+    return newPrice;
+  }
+  
+  async updateContractPrice(id: number, pricing: Partial<InsertContractPricing>): Promise<ContractPricing | undefined> {
+    const [updatedPrice] = await db
+      .update(contractPricing)
+      .set(pricing)
+      .where(eq(contractPricing.id, id))
+      .returning();
+    return updatedPrice;
+  }
+  
+  async deleteContractPrice(id: number): Promise<boolean> {
+    await db.delete(contractPricing).where(eq(contractPricing.id, id));
+    return true;
+  }
+  
+  // Get jobs by client
+  async getJobsByClient(clientId: number): Promise<Job[]> {
+    return await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.clientId, clientId));
+  }
+  
+  // Get jobs by project manager
+  async getJobsByProjectManager(pmId: number): Promise<Job[]> {
+    return await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.projectManagerId, pmId));
+  }
+  
+  // Job User Methods
+  async getJobUser(id: number): Promise<JobUser | undefined> {
+    const [jobUser] = await db.select().from(jobUsers).where(eq(jobUsers.id, id));
+    return jobUser;
+  }
+  
+  async getJobUsersByJob(jobId: number): Promise<JobUser[]> {
+    return await db.select().from(jobUsers).where(eq(jobUsers.jobId, jobId));
+  }
+  
+  async getJobUsersByUser(userId: number): Promise<JobUser[]> {
+    return await db.select().from(jobUsers).where(eq(jobUsers.userId, userId));
+  }
+  
+  async assignUserToJob(jobUser: InsertJobUser): Promise<JobUser> {
+    const [newJobUser] = await db.insert(jobUsers).values(jobUser).returning();
+    return newJobUser;
+  }
+  
+  async removeUserFromJob(id: number): Promise<boolean> {
+    await db.delete(jobUsers).where(eq(jobUsers.id, id));
+    return true;
+  }
+  
+  // Additional Order Methods
+  async getOrdersByClient(clientId: number): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.clientId, clientId))
+      .orderBy(desc(orders.createdAt));
+  }
+  
+  async getOrdersByJob(jobId: number): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.jobId, jobId))
+      .orderBy(desc(orders.createdAt));
+  }
+  
+  async getOrdersByStatus(status: string): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.status, status))
+      .orderBy(desc(orders.createdAt));
+  }
+  
+  async getOrdersByRequestor(userId: number): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.requestedBy, userId))
+      .orderBy(desc(orders.createdAt));
+  }
+  
+  async getOrdersForApproval(projectManagerId: number): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.status, 'pending_approval'),
+          // Find orders for jobs where this PM is assigned
+          or(
+            // Direct PM assignment to job
+            eq(orders.jobId, 
+              db.select({ id: jobs.id })
+                .from(jobs)
+                .where(eq(jobs.projectManagerId, projectManagerId))
+                .limit(1)
+            ),
+            // This PM created the job
+            eq(orders.jobId, 
+              db.select({ id: jobs.id })
+                .from(jobs)
+                .where(eq(jobs.createdBy, projectManagerId))
+                .limit(1)
+            )
+          )
+        )
+      )
+      .orderBy(desc(orders.createdAt));
+  }
+  
+  async updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined> {
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({
+        ...order,
+        updatedAt: new Date()
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    return updatedOrder;
+  }
+  
+  // Update order status with optional approver
+  async updateOrderStatus(id: number, status: string, approverId?: number): Promise<Order | undefined> {
+    const updates: any = { 
+      status,
+      updatedAt: new Date()
+    };
+    
+    // If approving an order, record who approved it and when
+    if (status === 'approved' && approverId) {
+      updates.approvedBy = approverId;
+      updates.approvalDate = new Date();
+    }
+    
+    const [updatedOrder] = await db
+      .update(orders)
+      .set(updates)
+      .where(eq(orders.id, id))
+      .returning();
+    return updatedOrder;
+  }
+  
+  // Order Item Methods extensions
+  async updateOrderItem(id: number, orderItem: Partial<InsertOrderItem>): Promise<OrderItem | undefined> {
+    const [updatedOrderItem] = await db
+      .update(orderItems)
+      .set(orderItem)
+      .where(eq(orderItems.id, id))
+      .returning();
+    return updatedOrderItem;
+  }
+  
+  async deleteOrderItem(id: number): Promise<boolean> {
+    await db.delete(orderItems).where(eq(orderItems.id, id));
+    return true;
+  }
+  
+  // Cart additional methods
+  async getCartItemsByJob(userId: number, jobId: number): Promise<CartItem[]> {
+    return await db
+      .select()
+      .from(cartItems)
+      .where(
+        and(
+          eq(cartItems.userId, userId),
+          eq(cartItems.jobId, jobId)
+        )
+      );
+  }
+  
+  async updateCartItem(id: number, cartItem: Partial<InsertCartItem>): Promise<CartItem | undefined> {
+    const [updatedCartItem] = await db
+      .update(cartItems)
+      .set(cartItem)
+      .where(eq(cartItems.id, id))
+      .returning();
+    return updatedCartItem;
+  }
+  
+  // Job Part additional methods
+  async updateJobPart(id: number, jobPart: Partial<InsertJobPart>): Promise<JobPart | undefined> {
+    const [updatedJobPart] = await db
+      .update(jobParts)
+      .set(jobPart)
+      .where(eq(jobParts.id, id))
+      .returning();
+    return updatedJobPart;
+  }
+  
+  // Notification Methods
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const [notification] = await db.select().from(notifications).where(eq(notifications.id, id));
+    return notification;
+  }
+  
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+  
+  async getUnreadNotificationsByUser(userId: number): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        )
+      )
+      .orderBy(desc(notifications.createdAt));
+  }
+  
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db.insert(notifications).values(notification).returning();
+    return newNotification;
+  }
+  
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    const [updatedNotification] = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    return updatedNotification;
+  }
+  
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        )
+      );
+    return true;
+  }
+  
+  async deleteNotification(id: number): Promise<boolean> {
+    await db.delete(notifications).where(eq(notifications.id, id));
     return true;
   }
 }
