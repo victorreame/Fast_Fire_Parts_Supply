@@ -26,6 +26,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
   app.use("/api", apiRouter);
   
+  // PM middleware to check if user is a project manager
+  const isProjectManager = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user || req.user.role !== 'project_manager') {
+      return res.status(403).json({ message: "Not authorized. Project Manager role required." });
+    }
+    
+    next();
+  };
+  
+  // Project Manager routes
+  const pmRouter = express.Router();
+  apiRouter.use("/pm", isProjectManager, pmRouter);
+  
+  // PM Dashboard - Pending orders
+  pmRouter.get("/orders/pending", async (req: Request, res: Response) => {
+    try {
+      const orders = await storage.getOrdersForApproval(req.user!.id);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error getting pending orders:", error);
+      res.status(500).json({ message: "Failed to get pending orders" });
+    }
+  });
+  
+  // PM Dashboard - Approved orders
+  pmRouter.get("/orders/approved", async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 30;
+      const orders = await storage.getApprovedOrdersByPM(req.user!.id, limit);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error getting approved orders:", error);
+      res.status(500).json({ message: "Failed to get approved orders" });
+    }
+  });
+  
+  // Order approval action
+  pmRouter.post("/orders/:id/approve", async (req: Request, res: Response) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { notes } = req.body;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+      
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // Check if order is pending approval
+      if (order.status !== 'pending_approval') {
+        return res.status(400).json({ 
+          message: "Invalid order status. Only orders with 'pending_approval' status can be approved." 
+        });
+      }
+      
+      // Approve the order
+      const approvedOrder = await storage.approveOrder(orderId, req.user!.id, notes);
+      res.json(approvedOrder);
+    } catch (error) {
+      console.error("Error approving order:", error);
+      res.status(500).json({ message: "Failed to approve order" });
+    }
+  });
+  
+  // Order rejection action
+  pmRouter.post("/orders/:id/reject", async (req: Request, res: Response) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+      
+      if (!reason || reason.trim() === '') {
+        return res.status(400).json({ message: "Rejection reason is required" });
+      }
+      
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // Check if order is pending approval
+      if (order.status !== 'pending_approval') {
+        return res.status(400).json({ 
+          message: "Invalid order status. Only orders with 'pending_approval' status can be rejected." 
+        });
+      }
+      
+      // Reject the order
+      const rejectedOrder = await storage.rejectOrder(orderId, req.user!.id, reason);
+      res.json(rejectedOrder);
+    } catch (error) {
+      console.error("Error rejecting order:", error);
+      res.status(500).json({ message: "Failed to reject order" });
+    }
+  });
+  
+  // Order modification action
+  pmRouter.post("/orders/:id/modify", async (req: Request, res: Response) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { items, notes } = req.body;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+      
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ message: "Modified items are required" });
+      }
+      
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // Check if order is pending approval
+      if (order.status !== 'pending_approval') {
+        return res.status(400).json({ 
+          message: "Invalid order status. Only orders with 'pending_approval' status can be modified." 
+        });
+      }
+      
+      // Modify the order
+      const modifiedOrder = await storage.modifyOrder(orderId, req.user!.id, items, notes);
+      res.json(modifiedOrder);
+    } catch (error) {
+      console.error("Error modifying order:", error);
+      res.status(500).json({ message: "Failed to modify order" });
+    }
+  });
+  
+  // Get order history
+  pmRouter.get("/orders/:id/history", async (req: Request, res: Response) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+      
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      const history = await storage.getOrderHistory(orderId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error getting order history:", error);
+      res.status(500).json({ message: "Failed to get order history" });
+    }
+  });
+  
   // Helper to get or create a guest user ID for cart functionality
   const getGuestUserId = (req: Request): number => {
     // If already authenticated with passport, use that user ID
@@ -40,19 +203,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Auth routes are handled by setupAuth
-  
-  // PM middleware to check if user is a project manager
-  const isProjectManager = (req: Request, res: Response, next: NextFunction) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
-    if (!req.user || req.user.role !== 'project_manager') {
-      return res.status(403).json({ message: "Not authorized. Project Manager role required." });
-    }
-    
-    next();
-  };
 
   // Parts routes
   apiRouter.get("/parts", async (_req: Request, res: Response) => {

@@ -1515,6 +1515,190 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(orders.createdAt));
   }
   
+  async getApprovedOrdersByPM(pmId: number, limit: number = 30): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.approvedBy, pmId),
+          or(
+            eq(orders.status, 'approved'),
+            eq(orders.status, 'processing'),
+            eq(orders.status, 'shipped'),
+            eq(orders.status, 'delivered')
+          )
+        )
+      )
+      .orderBy(desc(orders.approvalDate))
+      .limit(limit);
+  }
+  
+  async approveOrder(orderId: number, pmId: number, notes: string): Promise<Order> {
+    // Start a transaction
+    return await db.transaction(async (tx) => {
+      // 1. Update order status to approved
+      const [updatedOrder] = await tx
+        .update(orders)
+        .set({
+          status: 'approved',
+          approvedBy: pmId,
+          approvalDate: new Date(),
+          notes: notes || null,
+          updatedAt: new Date()
+        })
+        .where(eq(orders.id, orderId))
+        .returning();
+      
+      if (!updatedOrder) {
+        throw new Error('Order not found');
+      }
+      
+      // 2. Create history record
+      await tx
+        .insert(orderHistory)
+        .values({
+          orderId: orderId,
+          status: 'approved',
+          notes: notes || null,
+          changedBy: pmId,
+          changedAt: new Date()
+        });
+      
+      // 3. Create notification for the requestor
+      if (updatedOrder.requestedBy) {
+        await tx
+          .insert(notifications)
+          .values({
+            userId: updatedOrder.requestedBy,
+            type: 'order_approved',
+            title: 'Order Approved',
+            message: `Your order #${updatedOrder.orderNumber} has been approved.`,
+            referenceId: orderId,
+            referenceType: 'order'
+          });
+      }
+      
+      return updatedOrder;
+    });
+  }
+  
+  async rejectOrder(orderId: number, pmId: number, reason: string): Promise<Order> {
+    // Start a transaction
+    return await db.transaction(async (tx) => {
+      // 1. Update order status to rejected
+      const [updatedOrder] = await tx
+        .update(orders)
+        .set({
+          status: 'rejected',
+          approvedBy: pmId, // For tracking who rejected it
+          notes: reason || 'Order rejected',
+          updatedAt: new Date()
+        })
+        .where(eq(orders.id, orderId))
+        .returning();
+      
+      if (!updatedOrder) {
+        throw new Error('Order not found');
+      }
+      
+      // 2. Create history record
+      await tx
+        .insert(orderHistory)
+        .values({
+          orderId: orderId,
+          status: 'rejected',
+          notes: reason || null,
+          changedBy: pmId,
+          changedAt: new Date()
+        });
+      
+      // 3. Create notification for the requestor
+      if (updatedOrder.requestedBy) {
+        await tx
+          .insert(notifications)
+          .values({
+            userId: updatedOrder.requestedBy,
+            type: 'order_rejected',
+            title: 'Order Rejected',
+            message: `Your order #${updatedOrder.orderNumber} has been rejected.`,
+            referenceId: orderId,
+            referenceType: 'order'
+          });
+      }
+      
+      return updatedOrder;
+    });
+  }
+  
+  async modifyOrder(orderId: number, pmId: number, updatedItems: { partId: number; quantity: number }[], notes: string): Promise<Order> {
+    // Start a transaction
+    return await db.transaction(async (tx) => {
+      // 1. Update the order
+      const [updatedOrder] = await tx
+        .update(orders)
+        .set({
+          status: 'modified',
+          notes: notes || 'Order modified by project manager',
+          updatedAt: new Date()
+        })
+        .where(eq(orders.id, orderId))
+        .returning();
+      
+      if (!updatedOrder) {
+        throw new Error('Order not found');
+      }
+      
+      // 2. Update quantities for each item
+      for (const item of updatedItems) {
+        await tx
+          .update(orderItems)
+          .set({ quantity: item.quantity })
+          .where(
+            and(
+              eq(orderItems.orderId, orderId),
+              eq(orderItems.partId, item.partId)
+            )
+          );
+      }
+      
+      // 3. Create history record
+      await tx
+        .insert(orderHistory)
+        .values({
+          orderId: orderId,
+          status: 'modified',
+          notes: notes || null,
+          changedBy: pmId,
+          changedAt: new Date()
+        });
+      
+      // 4. Create notification for the requestor
+      if (updatedOrder.requestedBy) {
+        await tx
+          .insert(notifications)
+          .values({
+            userId: updatedOrder.requestedBy,
+            type: 'order_modified',
+            title: 'Order Modified',
+            message: `Your order #${updatedOrder.orderNumber} has been modified and requires your attention.`,
+            referenceId: orderId,
+            referenceType: 'order'
+          });
+      }
+      
+      return updatedOrder;
+    });
+  }
+  
+  async getOrderHistory(orderId: number): Promise<OrderHistory[]> {
+    return await db
+      .select()
+      .from(orderHistory)
+      .where(eq(orderHistory.orderId, orderId))
+      .orderBy(desc(orderHistory.changedAt));
+  }
+  
   async updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined> {
     const [updatedOrder] = await db
       .update(orders)
