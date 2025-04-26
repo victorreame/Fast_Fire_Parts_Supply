@@ -40,6 +40,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Auth routes are handled by setupAuth
+  
+  // PM middleware to check if user is a project manager
+  const isProjectManager = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (!req.user || req.user.role !== 'project_manager') {
+      return res.status(403).json({ message: "Not authorized. Project Manager role required." });
+    }
+    
+    next();
+  };
 
   // Parts routes
   apiRouter.get("/parts", async (_req: Request, res: Response) => {
