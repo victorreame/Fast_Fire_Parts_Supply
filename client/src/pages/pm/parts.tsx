@@ -54,6 +54,7 @@ import {
   PackageIcon,
   ArrowUpDownIcon,
   PlusCircleIcon,
+  Loader2,
 } from "lucide-react";
 
 // Part interface
@@ -772,7 +773,7 @@ const PartsCatalog = () => {
             >
               {addToJobMutation.isPending ? (
                 <>
-                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Adding...
                 </>
               ) : (
