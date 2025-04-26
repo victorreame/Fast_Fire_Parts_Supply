@@ -114,6 +114,8 @@ function App() {
         // User is authenticated - route to appropriate dashboard
         if (user.role === 'supplier' || user.role === 'admin') {
           navigate('/supplier/dashboard');
+        } else if (user.role === 'project_manager') {
+          navigate('/pm/dashboard');
         } else {
           navigate('/mobile');
         }
@@ -129,6 +131,7 @@ function App() {
     // Role-based access control for routes
     if (user) {
       const isSupplier = user.role === 'supplier' || user.role === 'admin';
+      const isProjectManager = user.role === 'project_manager';
       
       // Block suppliers from accessing mobile routes
       if (isSupplier && location.startsWith('/mobile')) {
@@ -136,16 +139,38 @@ function App() {
         return;
       }
       
+      // Block project managers from accessing mobile routes
+      if (isProjectManager && location.startsWith('/mobile')) {
+        navigate('/pm/dashboard');
+        return;
+      }
+      
       // Block contractors from accessing supplier routes
       if (!isSupplier && isSupplierRoute) {
-        navigate('/mobile');
+        if (isProjectManager) {
+          navigate('/pm/dashboard');
+        } else {
+          navigate('/mobile');
+        }
+        return;
+      }
+      
+      // Block non-project managers from accessing PM routes
+      if (!isProjectManager && location.startsWith('/pm')) {
+        if (isSupplier) {
+          navigate('/supplier/dashboard');
+        } else {
+          navigate('/mobile');
+        }
         return;
       }
     }
   }, [user, isLoading, location, navigate, isSupplierRoute]);
   
   // Handle loading state
-  if (isLoading && isSupplierRoute) {
+  const isPMRoute = location.startsWith('/pm');
+  
+  if (isLoading && (isSupplierRoute || isPMRoute)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -154,7 +179,12 @@ function App() {
   }
   
   // If authenticated but not a supplier, show not found for supplier routes
-  if (isSupplierRoute && user && user.role !== 'supplier' && location !== '/login') {
+  if (isSupplierRoute && user && user.role !== 'supplier' && user.role !== 'admin' && location !== '/login') {
+    return <NotFound />;
+  }
+  
+  // If authenticated but not a project manager, show not found for PM routes
+  if (isPMRoute && user && user.role !== 'project_manager' && location !== '/login') {
     return <NotFound />;
   }
 
