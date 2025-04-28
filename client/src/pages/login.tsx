@@ -37,6 +37,8 @@ const LoginPage = () => {
         // Use direct navigation for more reliable redirection
         if (data.role === "supplier" || data.role === "admin") {
           window.location.href = "/supplier/dashboard";
+        } else if (data.role === "project_manager") {
+          window.location.href = "/pm/dashboard";
         } else {
           window.location.href = "/mobile";
         }

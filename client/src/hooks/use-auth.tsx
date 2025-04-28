@@ -124,7 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       queryClient.clear();
       queryClient.setQueryData(["/api/user"], null);
-      window.location.href = "/auth";
+      // Redirect to login page instead of non-existent /auth
+      window.location.href = "/login";
     },
     onError: (error: Error) => {
       toast({
