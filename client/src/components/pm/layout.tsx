@@ -174,12 +174,12 @@ const PMLayout: React.FC<PMLayoutProps> = ({ children }) => {
                     href={item.href}
                     className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors ${
                       location === item.href
-                        ? 'bg-white/10 text-white font-semibold shadow-md border-l-4 border-white'
+                        ? 'bg-white/10 text-yellow-300 font-semibold shadow-md border-l-4 border-yellow-300'
                         : 'text-neutral-100/70 hover:bg-primary-foreground/20 hover:text-white'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className={`mr-3 ${location === item.href ? 'text-white' : 'text-white/70'}`}>
+                    <span className={`mr-3 ${location === item.href ? 'text-yellow-300' : 'text-white/70'}`}>
                       {item.icon}
                     </span>
                     {item.name}
@@ -219,11 +219,11 @@ const PMLayout: React.FC<PMLayoutProps> = ({ children }) => {
                   href={item.href}
                   className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors ${
                     location === item.href
-                      ? 'bg-primary-foreground text-white shadow-md'
-                      : 'text-neutral-100 hover:bg-primary-foreground/20 hover:text-white'
+                      ? 'bg-white/10 text-yellow-300 font-semibold shadow-md border-l-4 border-yellow-300'
+                      : 'text-neutral-100/70 hover:bg-primary-foreground/20 hover:text-white'
                   }`}
                 >
-                  <span className={`mr-3 ${location === item.href ? 'text-white' : 'text-white/70'}`}>
+                  <span className={`mr-3 ${location === item.href ? 'text-yellow-300' : 'text-white/70'}`}>
                     {item.icon}
                   </span>
                   {item.name}
