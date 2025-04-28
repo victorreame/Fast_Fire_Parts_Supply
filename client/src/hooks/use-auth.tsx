@@ -43,6 +43,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<User, Error, RegisterData>;
+  refetchUser: () => Promise<User | null>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -53,11 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
+    refetch,
   } = useQuery<User | null, Error>({
     queryKey: ["/api/user"],
     queryFn: async () => {
       try {
-        const res = await apiRequest("GET", "/api/user");
+        // Add cache-busting query parameter instead of using headers
+        const timestamp = new Date().getTime();
+        const res = await apiRequest("GET", `/api/user?_=${timestamp}`);
         if (res.status === 401) {
           return null;
         }
@@ -66,6 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null;
       }
     },
+    // Reduce cache time to prevent stale authentication state
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    // Prevent background refetches on window focus to use our controlled auth checks
+    refetchOnWindowFocus: false,
   });
 
   const loginMutation = useMutation({
@@ -136,6 +144,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Create a wrapper for refetch that returns user data
+  const refetchUser = async () => {
+    const result = await refetch();
+    return result.data || null;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -145,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        refetchUser,
       }}
     >
       {children}

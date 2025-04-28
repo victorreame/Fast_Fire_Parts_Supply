@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useQuery } from "@tanstack/react-query";
 import { useMobile } from "@/hooks/use-mobile";
 import { AuthProvider } from "@/hooks/use-auth";
+import { AuthGuard } from "@/lib/auth-guard";
 
 // Mobile pages
 import MobileHome from "@/pages/mobile/home";
@@ -249,25 +250,39 @@ function App() {
         
         {/* Project Manager routes - only accessible if role is project_manager */}
         <Route path="/pm/dashboard">
-          {user?.role === 'project_manager' ? <PMDashboard /> : <NotFound />}
+          <AuthGuard requiredRole="project_manager">
+            <PMDashboard />
+          </AuthGuard>
         </Route>
         <Route path="/pm/approvals">
-          {user?.role === 'project_manager' ? <PMApprovals /> : <NotFound />}
+          <AuthGuard requiredRole="project_manager">
+            <PMApprovals />
+          </AuthGuard>
         </Route>
         <Route path="/pm/jobs">
-          {user?.role === 'project_manager' ? <PMJobs /> : <NotFound />}
+          <AuthGuard requiredRole="project_manager">
+            <PMJobs />
+          </AuthGuard>
         </Route>
         <Route path="/pm/jobs/:id">
-          {user?.role === 'project_manager' ? <JobDetail /> : <NotFound />}
+          <AuthGuard requiredRole="project_manager">
+            <JobDetail />
+          </AuthGuard>
         </Route>
         <Route path="/pm/parts">
-          {user?.role === 'project_manager' ? <PMParts /> : <NotFound />}
+          <AuthGuard requiredRole="project_manager">
+            <PMParts />
+          </AuthGuard>
         </Route>
         <Route path="/pm/tradies">
-          {user?.role === 'project_manager' ? <PMTradies /> : <NotFound />}
+          <AuthGuard requiredRole="project_manager">
+            <PMTradies />
+          </AuthGuard>
         </Route>
         <Route path="/pm/notifications">
-          {user?.role === 'project_manager' ? <PMNotifications /> : <NotFound />}
+          <AuthGuard requiredRole="project_manager">
+            <PMNotifications />
+          </AuthGuard>
         </Route>
         
         {/* Job details page for suppliers */}
