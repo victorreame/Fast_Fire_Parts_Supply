@@ -27,12 +27,32 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
   const { toast } = useToast();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  const { data: user } = useQuery({
+  // Define user type
+  interface User {
+    id: number;
+    username: string;
+    role: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    businessId?: number;
+  }
+
+  // Define cart item type
+  interface CartItem {
+    id: number;
+    userId: number;
+    partId: number;
+    quantity: number;
+  }
+
+  const { data: user } = useQuery<User>({
     queryKey: ['/api/user'],
     staleTime: 300000, // 5 minutes
   });
 
-  const { data: cartItems = [] } = useQuery({
+  const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ['/api/cart'],
     enabled: true, // Always fetch cart items for mobile
   });
@@ -81,7 +101,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
             </button>
           ) : (
             <div className="mr-3">
-              <Logo color="white" size={50} />
+              <Logo size={40} linkTo="/" />
             </div>
           )}
           <h1 className="text-xl font-bold flex items-center">{title || "FastFire Parts"}</h1>

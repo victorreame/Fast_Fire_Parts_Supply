@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangleIcon, ArrowLeftIcon } from "lucide-react";
+import Logo from "@/components/ui/logo";
 
 const PendingApprovalPage = () => {
   const [location, navigate] = useLocation();
@@ -44,8 +45,13 @@ const PendingApprovalPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="max-w-md w-full">
         <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4 text-yellow-500">
-            <AlertTriangleIcon className="h-12 w-12" />
+          <div className="flex flex-col items-center justify-center mb-4">
+            <div className="mb-4">
+              <Logo size={80} />
+            </div>
+            <div className="text-yellow-500">
+              <AlertTriangleIcon className="h-12 w-12" />
+            </div>
           </div>
           <CardTitle className="text-2xl font-bold text-center">Account Pending Approval</CardTitle>
           <CardDescription className="text-center">
