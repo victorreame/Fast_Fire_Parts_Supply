@@ -79,7 +79,7 @@ const PMLayout: React.FC<PMLayoutProps> = ({ children }) => {
               {mobileMenuOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
             </button>
             <div className="flex items-center gap-3">
-              <Logo size={32} className="text-white" />
+              <Logo size={40} linkTo="/pm/dashboard" />
               <div className="flex flex-col md:flex-row md:items-center">
                 <h1 className="text-lg font-bold hidden md:block whitespace-nowrap">Fast Fire Parts</h1>
                 <span className="hidden md:block text-xs text-white/70 md:ml-3 whitespace-nowrap">Project Manager Portal</span>

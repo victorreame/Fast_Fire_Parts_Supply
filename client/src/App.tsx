@@ -173,8 +173,15 @@ function App() {
   
   if (isLoading && (isSupplierRoute || isPMRoute)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div className="mb-6">
+          <img 
+            src="/assets/firelogo.png" 
+            alt="Fast Fire Parts Logo" 
+            className="h-24 md:h-32 object-contain"
+          />
+        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
       </div>
     );
   }
