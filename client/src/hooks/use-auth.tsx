@@ -138,10 +138,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.resetQueries();
       queryClient.setQueryData(["/api/user"], null);
       
-      // Force clear localStorage of any sensitive data
+      // Force clear localStorage and set logout flag in sessionStorage
       try {
         localStorage.removeItem('lastRoute');
-        sessionStorage.clear();
+        // Clear most session data but keep a flag to prevent back button navigation
+        const keys = Object.keys(sessionStorage);
+        for (const key of keys) {
+          if (key !== 'loggedOut') {
+            sessionStorage.removeItem(key);
+          }
+        }
+        // Set a flag to indicate the user has logged out
+        sessionStorage.setItem('loggedOut', 'true');
       } catch (e) {
         console.error("Failed to clear storage:", e);
       }
@@ -159,6 +167,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Even on error, attempt to force logout on the client side
       queryClient.clear();
       queryClient.setQueryData(["/api/user"], null);
+      
+      // Set logout flag even on error
+      try {
+        localStorage.removeItem('lastRoute');
+        const keys = Object.keys(sessionStorage);
+        for (const key of keys) {
+          if (key !== 'loggedOut') {
+            sessionStorage.removeItem(key);
+          }
+        }
+        sessionStorage.setItem('loggedOut', 'true');
+      } catch (e) {
+        console.error("Failed to clear storage:", e);
+      }
+      
       window.location.replace("/login");
     },
   });

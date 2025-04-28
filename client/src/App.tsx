@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMobile } from "@/hooks/use-mobile";
 import { AuthProvider } from "@/hooks/use-auth";
 import { AuthGuard } from "@/lib/auth-guard";
+import SessionExpired from "@/components/session-expired";
 
 // Mobile pages
 import MobileHome from "@/pages/mobile/home";
@@ -224,6 +225,7 @@ function App() {
           }
         </Route>
         <Route path="/login" component={LoginPage} />
+        <Route path="/session-expired" component={SessionExpired} />
         <Route path="/pending-approval" component={PendingApprovalPage} />
         
         {/* Mobile client routes */}

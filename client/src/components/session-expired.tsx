@@ -16,12 +16,21 @@ export function SessionExpired() {
   useEffect(() => {
     // Clear any cached auth data
     queryClient.clear();
+    queryClient.resetQueries();
     queryClient.setQueryData(["/api/user"], null);
     
-    // Clear storage data
+    // Clear storage data but set logout flag
     try {
       localStorage.removeItem('lastRoute');
-      sessionStorage.clear();
+      // Clear session data but keep logout flag
+      const keys = Object.keys(sessionStorage);
+      for (const key of keys) {
+        if (key !== 'loggedOut') {
+          sessionStorage.removeItem(key);
+        }
+      }
+      // Set flag to prevent back button navigation
+      sessionStorage.setItem('loggedOut', 'true');
     } catch (e) {
       console.error("Failed to clear storage:", e);
     }

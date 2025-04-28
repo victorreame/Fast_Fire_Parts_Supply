@@ -22,7 +22,7 @@ interface AuthGuardProps {
 export function AuthGuard({ 
   children, 
   requiredRole, 
-  redirectPath = '/login' 
+  redirectPath = '/session-expired' 
 }: AuthGuardProps) {
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
