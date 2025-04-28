@@ -17,7 +17,10 @@ const LoginPage = () => {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/login", { username, password });
+      const response = await apiRequest("POST", "/api/login", {
+        username,
+        password,
+      });
       return response.json();
     },
     onSuccess: (data) => {
@@ -26,11 +29,11 @@ const LoginPage = () => {
         title: "Welcome!",
         description: "You have successfully logged in.",
       });
-      
+
       // Force refresh the user query to ensure App.tsx picks up the logged-in state
       import("@/lib/queryClient").then(({ queryClient }) => {
-        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-        
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+
         // Use direct navigation for more reliable redirection
         if (data.role === "supplier" || data.role === "admin") {
           window.location.href = "/supplier/dashboard";
@@ -61,27 +64,92 @@ const LoginPage = () => {
           <div className="flex justify-center mb-3">
             {/* Direct fire hydrant icon */}
             <div className="w-24 h-24 mb-2">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="8" y="9" width="8" height="12" fill="white" stroke="white" />
-                <rect x="7" y="3" width="10" height="2" fill="white" stroke="white" />
-                <rect x="7" y="21" width="10" height="2" fill="white" stroke="white" />
-                <line x1="10" y1="9" x2="10" y2="21" stroke="white" strokeWidth="1" />
-                <line x1="14" y1="9" x2="14" y2="21" stroke="white" strokeWidth="1" />
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect
+                  x="8"
+                  y="9"
+                  width="8"
+                  height="12"
+                  fill="white"
+                  stroke="white"
+                />
+                <rect
+                  x="7"
+                  y="3"
+                  width="10"
+                  height="2"
+                  fill="white"
+                  stroke="white"
+                />
+                <rect
+                  x="7"
+                  y="21"
+                  width="10"
+                  height="2"
+                  fill="white"
+                  stroke="white"
+                />
+                <line
+                  x1="10"
+                  y1="9"
+                  x2="10"
+                  y2="21"
+                  stroke="white"
+                  strokeWidth="1"
+                />
+                <line
+                  x1="14"
+                  y1="9"
+                  x2="14"
+                  y2="21"
+                  stroke="white"
+                  strokeWidth="1"
+                />
                 <circle cx="12" cy="13" r="2" fill="white" stroke="white" />
-                <line x1="5" y1="13" x2="8" y2="13" stroke="white" strokeWidth="2" />
-                <line x1="16" y1="13" x2="19" y2="13" stroke="white" strokeWidth="2" />
-                <path d="M19 13 C20 10, 22 12, 21 14" stroke="white" strokeWidth="1" fill="none" />
+                <line
+                  x1="5"
+                  y1="13"
+                  x2="8"
+                  y2="13"
+                  stroke="white"
+                  strokeWidth="2"
+                />
+                <line
+                  x1="16"
+                  y1="13"
+                  x2="19"
+                  y2="13"
+                  stroke="white"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M19 13 C20 10, 22 12, 21 14"
+                  stroke="white"
+                  strokeWidth="1"
+                  fill="none"
+                />
               </svg>
             </div>
           </div>
           <h1 className="text-2xl font-bold mb-1">FastFire Parts Supply</h1>
-          <p className="text-sm opacity-90">Enter your credentials to access your account</p>
+          <p className="text-sm opacity-90">
+            Enter your credentials to access your account
+          </p>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-gray-700">Username</Label>
+              <Label htmlFor="username" className="text-gray-700">
+                Username
+              </Label>
               <Input
                 id="username"
                 type="text"
@@ -92,9 +160,11 @@ const LoginPage = () => {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700">Password</Label>
+              <Label htmlFor="password" className="text-gray-700">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -105,9 +175,9 @@ const LoginPage = () => {
                 required
               />
             </div>
-            
-            <Button 
-              type="submit" 
+
+            <Button
+              type="submit"
               className="w-full bg-red-600 hover:bg-red-700 text-white py-2 mt-4"
               disabled={loginMutation.isPending}
             >
@@ -116,12 +186,21 @@ const LoginPage = () => {
           </div>
         </form>
       </Card>
-      
+
       <div className="mt-8 text-center text-sm">
         <p className="font-medium text-gray-700 mb-1">Demo Credentials</p>
         <div className="bg-white p-3 rounded-md shadow-sm inline-block">
-          <p className="mb-1"><span className="font-semibold">Contractor:</span> john.doe / password123</p>
-          <p><span className="font-semibold">Supplier:</span> admin / admin123</p>
+          <p className="mb-1">
+            <span className="font-semibold">Contractor:</span> john.doe /
+            password123
+          </p>
+          <p>
+            <span className="font-semibold">Supplier:</span> admin / admin123
+          </p>
+          <p>
+            <span className="font-semibold">Project Manager:</span> pm /
+            manager123
+          </p>
         </div>
       </div>
     </div>
