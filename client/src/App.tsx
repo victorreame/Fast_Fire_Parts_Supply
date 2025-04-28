@@ -104,10 +104,13 @@ function App() {
     // Skip during loading to avoid premature redirects
     if (isLoading) return;
 
-    // For security - redirect unauthenticated supplier route access to login
-    if (!user && isSupplierRoute) {
-      navigate('/login');
-      return;
+    // For security - redirect unauthenticated protected route access to login
+    if (!user) {
+      // If trying to access a protected route without auth
+      if (isSupplierRoute || location.startsWith('/pm/')) {
+        navigate('/login');
+        return;
+      }
     }
     
     // Handle login and home page routing based on authentication status
@@ -127,6 +130,14 @@ function App() {
           navigate('/login');
         }
       }
+      return;
+    }
+    
+    // Check if session storage has a last route to prevent browser back issues
+    const shouldForceLogout = sessionStorage.getItem('loggedOut') === 'true';
+    if (shouldForceLogout && (isSupplierRoute || location.startsWith('/pm/'))) {
+      sessionStorage.removeItem('loggedOut');
+      navigate('/login');
       return;
     }
 

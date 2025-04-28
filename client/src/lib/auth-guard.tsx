@@ -3,6 +3,7 @@ import { useLocation, useRoute } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import SessionExpired from '@/components/session-expired';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -104,8 +105,13 @@ export function AuthGuard({
     );
   }
   
+  // Show the SessionExpired component if not authenticated
+  if (!isAuthenticated) {
+    return <SessionExpired />;
+  }
+  
   // If authenticated, render children
-  return isAuthenticated ? <>{children}</> : null;
+  return <>{children}</>;
 }
 
 /**

@@ -1,5 +1,5 @@
-import { ReactNode, useState } from "react";
-import { useLocation, Link } from "wouter";
+import { ReactNode, useState, useEffect } from "react";
+import { useLocation, Link, useRoute } from "wouter";
 import Logo from "../ui/logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -31,10 +31,50 @@ interface PMLayoutProps {
 }
 
 const PMLayout: React.FC<PMLayoutProps> = ({ children }) => {
-  const [location] = useLocation();
-  const { user, logoutMutation } = useAuth();
+  const [location, navigate] = useLocation();
+  const { user, logoutMutation, refetchUser } = useAuth();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Effect to check authentication status when component mounts and on window focus
+  useEffect(() => {
+    // Function to validate auth
+    const validateAuth = async () => {
+      try {
+        const currentUser = await refetchUser();
+        if (!currentUser || currentUser.role !== 'project_manager') {
+          toast({
+            title: "Authentication Error",
+            description: "Your session has expired or you're not authorized. Please log in again.",
+            variant: "destructive",
+          });
+          // Redirect to login
+          window.location.replace("/login");
+        }
+      } catch (error) {
+        console.error("Auth validation error:", error);
+        // On error, redirect to login
+        toast({
+          title: "Authentication Error",
+          description: "Please log in again to continue.",
+          variant: "destructive",
+        });
+        window.location.replace("/login");
+      }
+    };
+    
+    // Validate on mount
+    validateAuth();
+    
+    // Set up event listener for when window regains focus
+    const handleFocus = () => validateAuth();
+    window.addEventListener('focus', handleFocus);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [refetchUser, toast, navigate]);
 
   // Get unread notifications
   const { data: unreadNotifications } = useQuery<{ count: number }>({

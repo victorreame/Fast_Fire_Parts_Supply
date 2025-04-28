@@ -127,13 +127,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      // Add cache-busting parameter to the logout request
+      const timestamp = new Date().getTime();
+      const response = await apiRequest("POST", `/api/logout?_=${timestamp}`);
+      return response.json();
     },
     onSuccess: () => {
+      // Clear all queries and cache
       queryClient.clear();
+      queryClient.resetQueries();
       queryClient.setQueryData(["/api/user"], null);
-      // Redirect to login page instead of non-existent /auth
-      window.location.href = "/login";
+      
+      // Force clear localStorage of any sensitive data
+      try {
+        localStorage.removeItem('lastRoute');
+        sessionStorage.clear();
+      } catch (e) {
+        console.error("Failed to clear storage:", e);
+      }
+      
+      // Use replacement instead of regular navigation to prevent back button issues
+      window.location.replace("/login");
     },
     onError: (error: Error) => {
       toast({
@@ -141,6 +155,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: error.message || "Could not log out",
         variant: "destructive",
       });
+      
+      // Even on error, attempt to force logout on the client side
+      queryClient.clear();
+      queryClient.setQueryData(["/api/user"], null);
+      window.location.replace("/login");
     },
   });
 

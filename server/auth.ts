@@ -175,8 +175,13 @@ export function setupAuth(app: Express) {
     res.status(200).json(req.user);
   });
 
-  // Logout route
+  // Enhanced logout route with security headers
   app.post("/api/logout", (req, res, next) => {
+    // Set cache control headers to prevent caching
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     // Log out the user from Passport
     req.logout((err) => {
       if (err) return next(err);
@@ -188,16 +193,33 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ error: "Failed to completely logout" });
         }
         
-        // Clear the cookie on the client side
-        res.clearCookie('connect.sid');
-        return res.status(200).json({ success: true, message: "Logged out successfully" });
+        // Clear the cookie on the client side with secure attributes
+        res.clearCookie('connect.sid', {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict'
+        });
+        
+        return res.status(200).json({ 
+          success: true, 
+          message: "Logged out successfully",
+          timestamp: new Date().getTime() // Add timestamp to prevent caching
+        });
       });
     });
   });
 
-  // Current user route
+  // Current user route with cache control headers to prevent back button issues
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    // Set cache control headers to prevent caching
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
     res.json(req.user);
   });
 
