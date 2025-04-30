@@ -13,7 +13,7 @@ import {
   insertJobPartSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword } from "./auth";
 import multer from "multer";
 import path from "path";
 import fs from "fs";

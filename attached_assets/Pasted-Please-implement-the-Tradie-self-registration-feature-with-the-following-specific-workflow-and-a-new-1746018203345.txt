@@ -1,0 +1,53 @@
+Please implement the Tradie self-registration feature with the following specific workflow and a new mobile notifications page:
+
+1. Create a Tradie Self-Registration Page:
+   - Add a "Sign Up as Tradie" option on the main login page
+   - Design a mobile-friendly registration form that collects:
+     * First Name
+     * Last Name
+     * Username
+     * Email
+     * Password (with confirmation)
+     * Phone number (mobile)
+     * Terms of service acceptance (To be generated)
+   - Allow Tradies to complete registration and create their account independently (no invitation link required)
+
+2. Implement Backend Registration Logic:
+   - Create API endpoints to handle direct Tradie registration
+   - Store new Tradie accounts in an "unassigned" or "available" status (not connected to any PM yet)
+   - Implement email verification to confirm account
+   - Apply proper password security (hashing, validation)
+   - Allow Tradies to log in to their account after verification, but with limited access
+
+3. PM-Tradie Connection Process:
+   - In the PM interface, create a "Tradie Management" section
+   - Add functionality for PMs to invite existing Tradies by entering their email address
+   - PM does not need to send an invitation link - they simply enter the email of an already-registered Tradie
+   - System matches the email to existing Tradie accounts and sends a connection request
+
+4. Create Mobile Notifications Page:
+   - Implement a new notifications page at the "/mobile" route
+   - Design a clean, mobile-optimized notification center
+   - Show all pending PM connection requests prominently
+   - Include action buttons for Tradies to "Accept" or "Reject" each PM invitation
+   - Display notification history and status updates
+   - Implement real-time or push notifications if possible
+
+5. Notification System:
+   - Send confirmation email when Tradie completes self-registration
+   - Create in-app notification when a PM sends connection request to a Tradie
+   - Send email alert about new connection request (with link to mobile notifications page)
+   - Notify PM when Tradie accepts or rejects their connection request
+
+6. Access Controls:
+   - Allow Tradies to log in after registration, but only access their profile and notifications
+   - After accepting a PM connection, grant Tradie access to that PM's jobs and parts ordering
+   - Implement proper status indicators showing connection status
+   - Allow a Tradie to be connected to multiple PMs if needed
+
+7. PM Dashboard Updates:
+   - Show status of Tradie connection requests (pending, accepted, rejected)
+   - Allow PMs to manage connected Tradies and their job access
+   - Enable PMs to disconnect Tradies if needed
+
+Ensure the entire system is mobile-responsive and follows the existing design language of the Fast Fire Parts platform.
