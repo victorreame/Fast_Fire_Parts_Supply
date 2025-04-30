@@ -17,7 +17,8 @@ import { setupAuth, hashPassword } from "./auth";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import tradieRoutes from "./tradie-routes";
+import tradieRouter from "./tradie-routes";
+import notificationRouter from "./notification-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication and session management
@@ -1714,8 +1715,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Register notification routes
+  apiRouter.use('/notifications', notificationRouter);
+  
   // Register tradie routes
-  apiRouter.use('/tradie', tradieRoutes);
+  apiRouter.use('/tradies', tradieRouter);
   
   const httpServer = createServer(app);
   return httpServer;
