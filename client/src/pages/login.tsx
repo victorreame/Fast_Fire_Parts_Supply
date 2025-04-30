@@ -117,12 +117,16 @@ const LoginPage = () => {
         </form>
         
         <div className="p-4 text-center border-t">
-          <p className="text-sm text-gray-600">
-            Are you a tradie invited by a project manager?{" "}
-            <span className="text-red-600 font-medium">
-              Check your email for an invitation link.
-            </span>
+          <p className="text-sm text-gray-600 mb-3">
+            Are you a tradie looking to join Fast Fire Parts?
           </p>
+          <Button 
+            variant="outline" 
+            className="border-red-600 text-red-600 hover:bg-red-50"
+            onClick={() => navigate("/register/tradie")}
+          >
+            Sign Up as Tradie
+          </Button>
         </div>
       </Card>
 

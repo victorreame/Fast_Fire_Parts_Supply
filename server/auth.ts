@@ -138,14 +138,41 @@ export function setupAuth(app: Express) {
       return res.status(400).send("Username already exists");
     }
 
+    // Check for existing email
+    if (req.body.email) {
+      const existingEmail = await storage.getUserByEmail(req.body.email);
+      if (existingEmail) {
+        return res.status(400).send("Email already registered");
+      }
+    }
+
     // Set isApproved based on role
     const isSupplier = req.body.role === 'supplier';
     
-    const user = await storage.createUser({
+    // Handle self-registering tradies with status
+    let userData = {
       ...req.body,
       password: await hashPassword(req.body.password),
       isApproved: isSupplier, // Auto-approve suppliers, others need approval
-    });
+    };
+    
+    // Generate verification token for email verification
+    if (req.body.email && req.body.role === 'contractor') {
+      const verificationToken = randomBytes(32).toString('hex');
+      const tokenExpiry = new Date();
+      tokenExpiry.setHours(tokenExpiry.getHours() + 24); // 24 hour expiry
+      
+      userData = {
+        ...userData,
+        verificationToken,
+        tokenExpiry,
+        emailVerified: false,
+        // For self-registered tradies use the status from the request or default to "unassigned"
+        status: req.body.status || "unassigned"
+      };
+    }
+    
+    const user = await storage.createUser(userData);
 
     // Create notifications for suppliers about the new registration (if not a supplier)
     if (!isSupplier) {

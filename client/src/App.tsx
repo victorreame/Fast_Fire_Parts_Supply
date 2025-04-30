@@ -231,8 +231,9 @@ function App() {
         <Route path="/login" component={LoginPage} />
         <Route path="/session-expired" component={SessionExpired} />
         <Route path="/pending-approval" component={PendingApprovalPage} />
+        <Route path="/register/tradie" component={() => import("@/pages/register/tradie").then(module => ({ default: module.default }))} />
         <Route path="/tradie/register/:token" component={TradieRegisterPage} />
-        <Route path="/tradie/registration-success" component={TradieRegistrationSuccess} />
+        <Route path="/tradie-registration-success" component={TradieRegistrationSuccess} />
         <Route path="/tradie/verify-email/:token" component={TradieVerifyEmail} />
         
         {/* Mobile client routes - protected with AuthGuardMobile */}
