@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import SessionExpired from './session-expired';
+import { User } from '@/App';
 
 interface AuthGuardMobileProps {
   children: ReactNode;
@@ -55,9 +56,9 @@ export function AuthGuardMobile({ children, redirectPath = '/login' }: AuthGuard
         return;
       }
       
-      // Check approval status for contractors/tradies
+      // Check approval status for tradies
       const currentPath = window.location.pathname;
-      if (user.role === 'contractor' && !user.isApproved) {
+      if (user.role === 'tradie' && (user.status === 'unassigned' || user.status === 'pending_invitation')) {
         // Allow access only to specific pages for unapproved tradies
         const allowedPaths = ['/mobile', '/account', '/notifications'];
         const isAllowedPath = allowedPaths.some(path => currentPath === path || currentPath.startsWith(path + '/'));
