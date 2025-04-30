@@ -1,0 +1,40 @@
+Please create a new self-registration functionality for Tradies to sign up directly to the Fast Fire Parts platform without requiring a PM invitation. This will allow Tradies to create their own accounts and later be assigned to projects.
+
+Implement the following:
+
+1. Create a new "Sign Up as Tradie" option on the login/authentication page:
+   - Add a clear button or link on the main login page for Tradie registration
+   - Design a simple and intuitive registration flow optimized for mobile users
+   - Ensure the sign-up option is visually distinct from PM and Supplier login options
+
+2. Develop a Tradie self-registration form that collects:
+   - Full name
+   - Email address (to be used as username)
+   - Password (with confirmation)
+   - Mobile phone number
+   - Trade/skill specialization (dropdown with common trades)
+   - Optional: Years of experience, certifications, or areas served
+   - Terms of service acceptance checkbox
+
+3. Implement backend functionality:
+   - Create necessary API endpoints to handle Tradie self-registration
+   - Store new Tradie accounts with a "pending" or "unassigned" status
+   - Send email verification to confirm account creation
+   - Implement proper password hashing and security measures
+
+4. Add admin approval workflow (if required):
+   - Create a section in the Admin dashboard to review new Tradie sign-ups
+   - Allow admins to approve, reject, or mark Tradies for further verification
+   - Implement email notifications for approval status changes
+
+5. Update the PM dashboard:
+   - Add ability for PMs to search and find self-registered Tradies
+   - Allow PMs to add these Tradies to their projects
+   - Show Tradie registration status (new, verified, experienced, etc.)
+
+6. Create success and onboarding experience:
+   - After registration, show next steps for Tradies (complete profile, wait for verification, etc.)
+   - Provide a simple tutorial on how to use the mobile interface
+   - Explain how Tradies get assigned to projects
+
+Ensure the entire self-registration process is secure, mobile-responsive, and follows the existing design language of the Fast Fire Parts platform.

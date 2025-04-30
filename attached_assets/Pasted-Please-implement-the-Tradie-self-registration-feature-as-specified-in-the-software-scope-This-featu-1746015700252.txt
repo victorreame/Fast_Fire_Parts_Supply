@@ -1,0 +1,42 @@
+Please implement the Tradie self-registration feature as specified in the software scope. This feature should allow Tradies to create their own accounts, which will then require PM approval before they can access jobs or place orders.
+
+Specifically, implement the following:
+
+1. Create a Tradie Registration Page:
+   - Add a "Sign Up as Tradie" option on the main login page
+   - Design a mobile-friendly registration form that collects:
+     * Full name
+     * Email (to be used as username/login)
+     * Password (with confirmation)
+     * Mobile phone number
+     * Optional profile information (skills, qualifications, etc.)
+     * Terms of service acceptance
+
+2. Implement Backend Registration Logic:
+   - Create API endpoints to handle Tradie registration submissions
+   - Store new Tradie accounts with a "pending approval" status
+   - Implement email verification to confirm email ownership
+   - Apply proper password security (hashing, validation)
+
+3. Add PM Approval Workflow:
+   - Create a section in the PM dashboard to view pending Tradie registrations
+   - Allow PMs to review and approve/reject Tradie accounts
+   - Enable PMs to assign approved Tradies to specific jobs
+   - Send notifications to Tradies when their accounts are approved/rejected
+
+4. Create Notification System:
+   - Send email to the Tradie confirming registration and explaining the approval process
+   - Notify relevant PMs when new Tradies register
+   - Send email to Tradie when their account is approved/rejected
+
+5. Update Access Controls:
+   - Ensure Tradies cannot access jobs or place orders until approved
+   - Show appropriate status messages for pending accounts
+   - Implement proper redirection for unapproved accounts attempting to access restricted areas
+
+6. Enhance the PM Dashboard:
+   - Add a counter/indicator showing pending Tradie approvals
+   - Allow filtering of Tradies by approval status
+   - Enable PMs to manage which jobs each Tradie can access
+
+This implementation should align with the existing UI/UX design of the Fast Fire Parts platform and be fully responsive for both mobile and desktop use.

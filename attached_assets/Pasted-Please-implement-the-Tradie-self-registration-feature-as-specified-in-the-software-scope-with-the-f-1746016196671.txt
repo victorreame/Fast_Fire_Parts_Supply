@@ -1,0 +1,45 @@
+Please implement the Tradie self-registration feature as specified in the software scope, with the following specific requirements:
+
+1. Create a Tradie Registration Page:
+   - Add a "Sign Up as Tradie" option on the main login page
+   - Design a mobile-friendly registration form that collects:
+     * First Name
+     * Last Name
+     * Username (validate in database)
+     * Email (validate in database)
+     * Password (with confirmation)
+     * Phone number (mobile) (validate in database)
+     * Terms of service acceptance (To be generated)
+
+2. Implement Backend Registration Logic:
+   - Create API endpoints to handle Tradie registration submissions
+   - Store new Tradie accounts in an "unassigned" or "available" status (not yet connected to any PM)
+   - Implement email verification to confirm email ownership
+   - Apply proper password security (hashing, validation)
+
+3. Implement PM-Tradie Connection Workflow:
+   - PMs do NOT automatically see newly registered Tradies
+   - PMs must specifically invite Tradies by entering the email address the Tradie used to register
+   - When a PM invites a Tradie, the Tradie's status changes to "pending invitation"
+   - Tradie receives notification of the PM's invitation
+   - Tradie can choose to accept or reject the PM's invitation
+   - Upon acceptance, Tradie becomes associated with that PM and gains access to relevant jobs
+
+4. Create Notification System:
+   - Send email to Tradie confirming successful registration
+   - Send invitation notification to Tradie when a PM invites them
+   - Notify PM when Tradie accepts or rejects their invitation
+   - Include clear instructions in all notifications
+
+5. Update Access Controls:
+   - Ensure Tradies cannot access jobs or place orders until they accept a PM invitation
+   - Show appropriate status messages for uninvited/pending accounts
+   - Implement proper redirection for unapproved accounts attempting to access restricted areas
+
+6. Enhance the PM Dashboard:
+   - Add a section for inviting Tradies by email
+   - Show pending invitations with status (sent, accepted, rejected)
+   - Allow PMs to manage which jobs each connected Tradie can access
+   - Enable PMs to revoke access or remove Tradies if needed
+
+This implementation should align with the existing UI/UX design of the Fast Fire Parts platform and be fully responsive for both mobile and desktop use.
