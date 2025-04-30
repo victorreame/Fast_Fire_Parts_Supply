@@ -1,112 +1,96 @@
-import { Router, Request, Response } from "express";
-import { db } from "./db";
-import { notifications } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import express, { Request, Response, NextFunction } from 'express';
+import { storage } from './storage';
+import { insertNotificationSchema } from '@shared/schema';
+import { z } from 'zod';
 
-// Create router for notification-specific routes
-const notificationRouter = Router();
+const notificationRouter = express.Router();
+
+// Middleware to check if user is authenticated
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  next();
+};
 
 // Get all notifications for the current user
-notificationRouter.get('/', async (req: Request, res: Response) => {
+notificationRouter.get('/', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
-    const userId = req.user.id;
-    
-    const userNotifications = await db.select()
-      .from(notifications)
-      .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt));
-    
-    return res.json(userNotifications);
+    const notifications = await storage.getUserNotifications(req.user!.id);
+    res.json(notifications);
   } catch (error) {
-    console.error("Error fetching notifications:", error);
-    return res.status(500).json({ message: "Failed to retrieve notifications" });
+    console.error("Error getting notifications:", error);
+    res.status(500).json({ message: "Failed to get notifications" });
   }
 });
 
-// Get the count of unread notifications for current user
-notificationRouter.get('/unread/count', async (req: Request, res: Response) => {
+// Get unread notification count
+notificationRouter.get('/unread/count', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
-    const userId = req.user.id;
-    
-    const unreadCount = await db.select({ count: notifications.id })
-      .from(notifications)
-      .where(
-        and(
-          eq(notifications.userId, userId),
-          eq(notifications.isRead, false)
-        )
-      )
-      .then(result => result.length);
-    
-    return res.json(unreadCount);
+    const count = await storage.getUnreadNotificationCount(req.user!.id);
+    res.json({ count });
   } catch (error) {
-    console.error("Error counting unread notifications:", error);
-    return res.status(500).json({ message: "Failed to count unread notifications" });
+    console.error("Error getting unread notification count:", error);
+    res.status(500).json({ message: "Failed to get unread notification count" });
   }
 });
 
 // Mark a notification as read
-notificationRouter.put('/:id/read', async (req: Request, res: Response) => {
+notificationRouter.put('/:id/read', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+    const notificationId = parseInt(req.params.id);
+    
+    if (isNaN(notificationId)) {
+      return res.status(400).json({ message: "Invalid notification ID" });
     }
     
-    const notificationId = parseInt(req.params.id);
-    const userId = req.user.id;
-    
-    // Verify the notification belongs to the user
-    const [notification] = await db.select()
-      .from(notifications)
-      .where(
-        and(
-          eq(notifications.id, notificationId),
-          eq(notifications.userId, userId)
-        )
-      );
+    const notification = await storage.getNotification(notificationId);
     
     if (!notification) {
       return res.status(404).json({ message: "Notification not found" });
     }
     
-    // Update notification to read
-    await db.update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.id, notificationId));
+    // Check if notification belongs to the requesting user
+    if (notification.userId !== req.user!.id) {
+      return res.status(403).json({ message: "Not authorized to update this notification" });
+    }
     
-    return res.status(200).json({ message: "Notification marked as read" });
+    const updatedNotification = await storage.markNotificationAsRead(notificationId);
+    res.json(updatedNotification);
   } catch (error) {
     console.error("Error marking notification as read:", error);
-    return res.status(500).json({ message: "Failed to update notification" });
+    res.status(500).json({ message: "Failed to mark notification as read" });
   }
 });
 
-// Mark all notifications as read
-notificationRouter.put('/all/read', async (req: Request, res: Response) => {
+// Mark all notifications as read for the current user
+notificationRouter.put('/all/read', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
-    const userId = req.user.id;
-    
-    // Update all user's notifications to read
-    await db.update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.userId, userId));
-    
-    return res.status(200).json({ message: "All notifications marked as read" });
+    await storage.markAllNotificationsAsRead(req.user!.id);
+    res.json({ message: "All notifications marked as read" });
   } catch (error) {
     console.error("Error marking all notifications as read:", error);
-    return res.status(500).json({ message: "Failed to update notifications" });
+    res.status(500).json({ message: "Failed to mark all notifications as read" });
+  }
+});
+
+// Create a notification (admin or system only)
+notificationRouter.post('/', async (req: Request, res: Response) => {
+  try {
+    // Only allow authenticated users with admin role or internal system calls
+    if (req.isAuthenticated() && req.user.role !== 'admin' && req.ip !== '127.0.0.1') {
+      return res.status(403).json({ message: "Not authorized to create notifications" });
+    }
+    
+    const notificationData = insertNotificationSchema.parse(req.body);
+    const notification = await storage.createNotification(notificationData);
+    res.status(201).json(notification);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid notification data", errors: error.errors });
+    }
+    console.error("Error creating notification:", error);
+    res.status(500).json({ message: "Failed to create notification" });
   }
 });
 

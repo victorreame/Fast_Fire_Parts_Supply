@@ -1,167 +1,150 @@
-import { Router, Request, Response, NextFunction } from "express";
-import { db } from "./db";
-import { storage } from "./storage";
-import { notifications, users, tradieInvitations } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import express, { Request, Response, NextFunction } from 'express';
+import { storage } from './storage';
+import { insertTradieInvitationSchema, insertNotificationSchema } from '@shared/schema';
+import { z } from 'zod';
 
-// Create router for tradie-specific routes
-const tradieRouter = Router();
+const tradieRouter = express.Router();
 
-// Middleware to check if the user is a tradie
+// Middleware to check if user is authenticated and is a tradie
 const isTradie = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated() && req.user && req.user.role === 'contractor') {
-    return next();
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
   }
-  return res.status(403).json({ message: "Access denied. Tradie role required." });
+  
+  if (!req.user || req.user.role !== 'tradie') {
+    return res.status(403).json({ message: "Not authorized. Tradie role required." });
+  }
+  
+  next();
 };
 
-// Get pending invitations for the current tradie
+// Get all invitations for the authenticated tradie
 tradieRouter.get('/invitations', isTradie, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const invitations = await storage.getTradieInvitations(req.user!.id);
     
-    const invitations = await db.select({
-      id: tradieInvitations.id,
-      projectManagerId: tradieInvitations.projectManagerId,
-      status: tradieInvitations.status,
-      notes: tradieInvitations.notes,
-      invitationDate: tradieInvitations.createdAt,
-      projectManagerName: users.firstName
-    })
-    .from(tradieInvitations)
-    .leftJoin(users, eq(tradieInvitations.projectManagerId, users.id))
-    .where(
-      and(
-        eq(tradieInvitations.tradieId, userId)
-      )
-    )
-    .orderBy(desc(tradieInvitations.createdAt));
-
-    return res.json(invitations);
+    // Enhance invitations with PM names
+    const enhancedInvitations = await Promise.all(
+      invitations.map(async invitation => {
+        const pm = await storage.getUser(invitation.projectManagerId);
+        return {
+          ...invitation,
+          projectManagerName: pm ? `${pm.firstName} ${pm.lastName}` : 'Unknown Project Manager'
+        };
+      })
+    );
+    
+    res.json(enhancedInvitations);
   } catch (error) {
-    console.error("Error fetching tradie invitations:", error);
-    return res.status(500).json({ message: "Failed to retrieve invitations" });
+    console.error("Error getting tradie invitations:", error);
+    res.status(500).json({ message: "Failed to get invitations" });
   }
 });
 
-// Accept an invitation from a project manager
+// Accept an invitation
 tradieRouter.post('/invitations/:id/accept', isTradie, async (req: Request, res: Response) => {
   try {
     const invitationId = parseInt(req.params.id);
-    const userId = req.user!.id;
     
-    // Get the invitation
-    const [invitation] = await db.select()
-      .from(tradieInvitations)
-      .where(
-        and(
-          eq(tradieInvitations.id, invitationId),
-          eq(tradieInvitations.tradieId, userId)
-        )
-      );
+    if (isNaN(invitationId)) {
+      return res.status(400).json({ message: "Invalid invitation ID" });
+    }
+    
+    const invitation = await storage.getTradieInvitation(invitationId);
     
     if (!invitation) {
       return res.status(404).json({ message: "Invitation not found" });
     }
     
-    if (invitation.status !== 'pending') {
-      return res.status(400).json({ message: "This invitation has already been processed" });
+    // Check if invitation belongs to the requesting tradie
+    if (invitation.tradieId !== req.user!.id) {
+      return res.status(403).json({ message: "Not authorized to accept this invitation" });
     }
     
-    // Update invitation status
-    await db.update(tradieInvitations)
-      .set({ 
-        status: 'accepted',
-        responseDate: new Date()
-      })
-      .where(eq(tradieInvitations.id, invitationId));
+    // Only allow accepting pending invitations
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ message: "This invitation cannot be accepted" });
+    }
     
-    // Update user approval status
-    await db.update(users)
-      .set({ 
-        isApproved: true,
-        status: 'active',
-        approvalDate: new Date()
-      })
-      .where(eq(users.id, userId));
+    // Accept the invitation and update the tradie status
+    const acceptedInvitation = await storage.acceptTradieInvitation(invitationId);
     
-    // Create notifications for both parties
+    // Update the tradie's status to active
+    await storage.updateUserStatus(req.user!.id, 'active');
+    
+    // Create notifications for both tradie and PM
+    const tradieNotification = {
+      userId: req.user!.id,
+      title: "Invitation Accepted",
+      message: "You have accepted the project manager's invitation. You now have full access to the platform.",
+      type: "invitation_accepted",
+      relatedId: invitationId,
+      relatedType: "tradie_invitation"
+    };
+    
     const pmNotification = {
       userId: invitation.projectManagerId,
-      type: 'connection_accepted',
-      title: 'Connection Request Accepted',
-      message: `${req.user!.firstName || req.user!.username} has accepted your connection request.`,
-      isRead: false,
-      createdAt: new Date()
+      title: "Invitation Accepted",
+      message: `${req.user!.firstName} ${req.user!.lastName} has accepted your invitation.`,
+      type: "invitation_accepted",
+      relatedId: invitationId,
+      relatedType: "tradie_invitation"
     };
     
-    const tradieNotification = {
-      userId: userId,
-      type: 'connection_accepted',
-      title: 'Connection Established',
-      message: `You've accepted the connection request. You now have full access to the system.`,
-      isRead: false,
-      createdAt: new Date()
-    };
+    await storage.createNotification(tradieNotification);
+    await storage.createNotification(pmNotification);
     
-    await db.insert(notifications).values(pmNotification);
-    await db.insert(notifications).values(tradieNotification);
-    
-    return res.status(200).json({ message: "Invitation accepted successfully" });
+    res.json(acceptedInvitation);
   } catch (error) {
     console.error("Error accepting invitation:", error);
-    return res.status(500).json({ message: "Failed to accept invitation" });
+    res.status(500).json({ message: "Failed to accept invitation" });
   }
 });
 
-// Reject an invitation from a project manager
+// Reject an invitation
 tradieRouter.post('/invitations/:id/reject', isTradie, async (req: Request, res: Response) => {
   try {
     const invitationId = parseInt(req.params.id);
-    const userId = req.user!.id;
     
-    // Get the invitation
-    const [invitation] = await db.select()
-      .from(tradieInvitations)
-      .where(
-        and(
-          eq(tradieInvitations.id, invitationId),
-          eq(tradieInvitations.tradieId, userId)
-        )
-      );
+    if (isNaN(invitationId)) {
+      return res.status(400).json({ message: "Invalid invitation ID" });
+    }
+    
+    const invitation = await storage.getTradieInvitation(invitationId);
     
     if (!invitation) {
       return res.status(404).json({ message: "Invitation not found" });
     }
     
-    if (invitation.status !== 'pending') {
-      return res.status(400).json({ message: "This invitation has already been processed" });
+    // Check if invitation belongs to the requesting tradie
+    if (invitation.tradieId !== req.user!.id) {
+      return res.status(403).json({ message: "Not authorized to reject this invitation" });
     }
     
-    // Update invitation status
-    await db.update(tradieInvitations)
-      .set({ 
-        status: 'rejected',
-        responseDate: new Date()
-      })
-      .where(eq(tradieInvitations.id, invitationId));
+    // Only allow rejecting pending invitations
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ message: "This invitation cannot be rejected" });
+    }
+    
+    // Reject the invitation
+    const rejectedInvitation = await storage.rejectTradieInvitation(invitationId);
     
     // Create notification for PM
     const pmNotification = {
       userId: invitation.projectManagerId,
-      type: 'connection_rejected',
-      title: 'Connection Request Declined',
-      message: `${req.user!.firstName || req.user!.username} has declined your connection request.`,
-      isRead: false,
-      createdAt: new Date()
+      title: "Invitation Rejected",
+      message: `${req.user!.firstName} ${req.user!.lastName} has declined your invitation.`,
+      type: "invitation_rejected",
+      relatedId: invitationId,
+      relatedType: "tradie_invitation"
     };
     
-    await db.insert(notifications).values(pmNotification);
+    await storage.createNotification(pmNotification);
     
-    return res.status(200).json({ message: "Invitation rejected successfully" });
+    res.json(rejectedInvitation);
   } catch (error) {
     console.error("Error rejecting invitation:", error);
-    return res.status(500).json({ message: "Failed to reject invitation" });
+    res.status(500).json({ message: "Failed to reject invitation" });
   }
 });
 

@@ -1,17 +1,14 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { Card } from "@/components/ui/card";
+import MobileLayout from "@/components/mobile/layout";
 import { Button } from "@/components/ui/button";
-import { Loader2, BellRing, Check, X, User } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import MobileNavbar from "@/components/mobile/navbar";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
+import { BellRing, Check, X, User, Bell, Loader2 } from "lucide-react";
 
 interface Notification {
   id: number;
@@ -33,52 +30,49 @@ interface TradieInvitation {
   projectManagerName?: string;
 }
 
-const MobileNotificationsPage = () => {
+const NotificationsPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("all");
-  const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("invitations");
 
-  // Fetch notifications
-  const { data: notifications, isLoading: notificationsLoading, refetch: refetchNotifications } = useQuery<Notification[]>({
+  // Get all notifications for the current user
+  const { data: notifications, isLoading: notificationsLoading, refetch: refetchNotifications } = useQuery({
     queryKey: ['/api/notifications'],
-    staleTime: 30000 // 30 seconds
+    enabled: !!user,
   });
 
-  // Fetch PM invitations
-  const { data: invitations, isLoading: invitationsLoading, refetch: refetchInvitations } = useQuery<TradieInvitation[]>({
+  // Get tradie invitations
+  const { data: invitations, isLoading: invitationsLoading, refetch: refetchInvitations } = useQuery({
     queryKey: ['/api/tradies/invitations'],
-    staleTime: 30000, // 30 seconds
-    enabled: user?.role === 'contractor', // Only fetch if user is a tradie
-  });
-
-  // Mark notification as read
-  const markAsReadMutation = useMutation({
-    mutationFn: async (notificationId: number) => {
-      return apiRequest("PUT", `/api/notifications/${notificationId}/read`, {});
-    },
-    onSuccess: () => {
-      refetchNotifications();
+    enabled: !!user && user.role === 'tradie',
+    onError: (error: Error) => {
+      toast({
+        title: "Error loading invitations",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
 
   // Accept invitation mutation
   const acceptInvitationMutation = useMutation({
     mutationFn: async (invitationId: number) => {
-      return apiRequest("POST", `/api/tradies/invitations/${invitationId}/accept`, {});
+      return await apiRequest('POST', `/api/tradies/invitations/${invitationId}/accept`);
     },
     onSuccess: () => {
       toast({
-        title: "Invitation Accepted",
-        description: "You've accepted the Project Manager's invitation. Your access has been expanded.",
+        title: "Invitation accepted",
+        description: "You've accepted the invitation from the project manager.",
       });
       refetchInvitations();
+      refetchNotifications();
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to Accept",
-        description: error.message || "An error occurred while processing your request.",
+        title: "Error accepting invitation",
+        description: error.message,
         variant: "destructive",
       });
     }
@@ -87,241 +81,269 @@ const MobileNotificationsPage = () => {
   // Reject invitation mutation
   const rejectInvitationMutation = useMutation({
     mutationFn: async (invitationId: number) => {
-      return apiRequest("POST", `/api/tradies/invitations/${invitationId}/reject`, {});
+      return await apiRequest('POST', `/api/tradies/invitations/${invitationId}/reject`);
     },
     onSuccess: () => {
       toast({
-        title: "Invitation Declined",
-        description: "You've declined the Project Manager's invitation.",
+        title: "Invitation rejected",
+        description: "You've rejected the invitation from the project manager.",
       });
       refetchInvitations();
+      refetchNotifications();
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to Decline",
-        description: error.message || "An error occurred while processing your request.",
+        title: "Error rejecting invitation",
+        description: error.message,
         variant: "destructive",
       });
     }
   });
 
-  // Auto-refresh notifications every minute
-  useEffect(() => {
-    const interval = setInterval(() => {
+  // Mark notification as read mutation
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: number) => {
+      return await apiRequest('PUT', `/api/notifications/${notificationId}/read`);
+    },
+    onSuccess: () => {
       refetchNotifications();
-      refetchInvitations();
-    }, 60000); // 1 minute
+    }
+  });
 
-    return () => clearInterval(interval);
-  }, [refetchNotifications, refetchInvitations]);
+  // Mark all notifications as read mutation
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('PUT', '/api/notifications/all/read');
+    },
+    onSuccess: () => {
+      refetchNotifications();
+      toast({
+        title: "All notifications marked as read",
+      });
+    }
+  });
 
-  // Handle notification click
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.isRead) {
       markAsReadMutation.mutate(notification.id);
     }
-
-    // Navigate based on notification type
-    if (notification.type === 'order_status' && notification.relatedId) {
-      navigate(`/order/${notification.relatedId}`);
-    } else if (notification.type === 'job_assignment' && notification.relatedId) {
-      navigate(`/job/${notification.relatedId}`);
-    }
   };
 
-  // Filter notifications based on active tab
-  const filteredNotifications = activeTab === 'all' 
-    ? notifications 
-    : activeTab === 'unread'
-      ? notifications?.filter(n => !n.isRead)
-      : activeTab === 'connections'
-        ? notifications?.filter(n => n.type === 'connection_request' || n.type === 'connection_accepted')
-        : notifications?.filter(n => n.type === activeTab);
+  const handleAcceptInvitation = (invitationId: number) => {
+    acceptInvitationMutation.mutate(invitationId);
+  };
+
+  const handleRejectInvitation = (invitationId: number) => {
+    rejectInvitationMutation.mutate(invitationId);
+  };
 
   const pendingInvitations = invitations?.filter(inv => inv.status === 'pending') || [];
+  const acceptedInvitations = invitations?.filter(inv => inv.status === 'accepted') || [];
+  const rejectedInvitations = invitations?.filter(inv => inv.status === 'rejected') || [];
+  
+  const unreadNotifications = notifications?.filter(n => !n.isRead) || [];
+  const readNotifications = notifications?.filter(n => n.isRead) || [];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
-      <div className="bg-white p-4 shadow-sm">
-        <h1 className="text-xl font-bold">Notifications</h1>
-      </div>
-
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-        <div className="px-4 pt-4">
-          <TabsList className="w-full">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="unread">
-              Unread
-              {notifications?.filter(n => !n.isRead).length > 0 && (
-                <Badge className="ml-2 bg-red-500">{notifications.filter(n => !n.isRead).length}</Badge>
+    <MobileLayout title="Notifications" showBackButton>
+      <div className="container pb-16">
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="invitations">
+              Invitations
+              {pendingInvitations.length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {pendingInvitations.length}
+                </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="connections">
-              Connections
-              {pendingInvitations.length > 0 && (
-                <Badge className="ml-2 bg-red-500">{pendingInvitations.length}</Badge>
+            <TabsTrigger value="notifications">
+              Notifications
+              {unreadNotifications.length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {unreadNotifications.length}
+                </Badge>
               )}
             </TabsTrigger>
           </TabsList>
-        </div>
 
-        <TabsContent value="all" className="p-4">
-          {notificationsLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            </div>
-          ) : notifications?.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">
-              <BellRing className="h-10 w-10 mx-auto mb-2 text-gray-400" />
-              <p>No notifications yet</p>
-            </div>
-          ) : (
-            <ScrollArea className="h-[calc(100vh-180px)]">
-              {pendingInvitations.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="font-medium text-sm mb-2 text-gray-500">CONNECTION REQUESTS</h3>
-                  {pendingInvitations.map((invitation) => (
-                    <InvitationCard
-                      key={invitation.id}
-                      invitation={invitation}
-                      onAccept={() => acceptInvitationMutation.mutate(invitation.id)}
-                      onReject={() => rejectInvitationMutation.mutate(invitation.id)}
-                      isPending={acceptInvitationMutation.isPending || rejectInvitationMutation.isPending}
-                    />
-                  ))}
-                </div>
-              )}
-              <div>
-                <h3 className="font-medium text-sm mb-2 text-gray-500">NOTIFICATIONS</h3>
-                {filteredNotifications?.map((notification) => (
-                  <NotificationCard
-                    key={notification.id}
-                    notification={notification}
-                    onClick={() => handleNotificationClick(notification)}
-                  />
-                ))}
+          {/* Invitations Tab */}
+          <TabsContent value="invitations" className="mt-4">
+            {invitationsLoading ? (
+              <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            </ScrollArea>
-          )}
-        </TabsContent>
+            ) : pendingInvitations.length === 0 && acceptedInvitations.length === 0 && rejectedInvitations.length === 0 ? (
+              <div className="text-center p-8 bg-muted rounded-lg">
+                <User className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">No invitations</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You don't have any invitations from project managers yet.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingInvitations.length > 0 && (
+                  <div>
+                    <h3 className="font-medium text-lg mb-3">Pending Invitations</h3>
+                    <div className="space-y-3">
+                      {pendingInvitations.map(invitation => (
+                        <InvitationCard 
+                          key={invitation.id} 
+                          invitation={invitation} 
+                          onAccept={() => handleAcceptInvitation(invitation.id)}
+                          onReject={() => handleRejectInvitation(invitation.id)}
+                          isPending={acceptInvitationMutation.isPending || rejectInvitationMutation.isPending}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-        <TabsContent value="unread" className="p-4">
-          {notificationsLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            </div>
-          ) : filteredNotifications?.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">
-              <Check className="h-10 w-10 mx-auto mb-2 text-gray-400" />
-              <p>No unread notifications</p>
-            </div>
-          ) : (
-            <ScrollArea className="h-[calc(100vh-180px)]">
-              {filteredNotifications?.map((notification) => (
-                <NotificationCard
-                  key={notification.id}
-                  notification={notification}
-                  onClick={() => handleNotificationClick(notification)}
-                />
-              ))}
-            </ScrollArea>
-          )}
-        </TabsContent>
+                {acceptedInvitations.length > 0 && (
+                  <div>
+                    <h3 className="font-medium text-lg mb-3">Accepted Invitations</h3>
+                    <div className="space-y-3">
+                      {acceptedInvitations.map(invitation => (
+                        <Card key={invitation.id} className="bg-green-50">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base flex items-center">
+                              <Check className="h-4 w-4 mr-2 text-green-600" />
+                              Connected with {invitation.projectManagerName || 'Project Manager'}
+                            </CardTitle>
+                            <CardDescription className="text-xs">
+                              Accepted on {new Date(invitation.invitationDate).toLocaleDateString()}
+                            </CardDescription>
+                          </CardHeader>
+                          {invitation.notes && (
+                            <CardContent className="pt-0">
+                              <p className="text-sm">{invitation.notes}</p>
+                            </CardContent>
+                          )}
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-        <TabsContent value="connections" className="p-4">
-          {invitationsLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            </div>
-          ) : pendingInvitations.length === 0 && !notifications?.find(n => n.type === 'connection_request' || n.type === 'connection_accepted') ? (
-            <div className="text-center py-10 text-gray-500">
-              <User className="h-10 w-10 mx-auto mb-2 text-gray-400" />
-              <p>No connection requests</p>
-            </div>
-          ) : (
-            <ScrollArea className="h-[calc(100vh-180px)]">
-              {pendingInvitations.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="font-medium text-sm mb-2 text-gray-500">PENDING REQUESTS</h3>
-                  {pendingInvitations.map((invitation) => (
-                    <InvitationCard
-                      key={invitation.id}
-                      invitation={invitation}
-                      onAccept={() => acceptInvitationMutation.mutate(invitation.id)}
-                      onReject={() => rejectInvitationMutation.mutate(invitation.id)}
-                      isPending={acceptInvitationMutation.isPending || rejectInvitationMutation.isPending}
-                    />
-                  ))}
-                </div>
-              )}
-              {notifications?.filter(n => n.type === 'connection_request' || n.type === 'connection_accepted').length > 0 && (
-                <div>
-                  <h3 className="font-medium text-sm mb-2 text-gray-500">CONNECTION HISTORY</h3>
-                  {notifications
-                    .filter(n => n.type === 'connection_request' || n.type === 'connection_accepted')
-                    .map((notification) => (
-                      <NotificationCard
-                        key={notification.id}
-                        notification={notification}
-                        onClick={() => handleNotificationClick(notification)}
-                      />
-                    ))}
-                </div>
-              )}
-            </ScrollArea>
-          )}
-        </TabsContent>
-      </Tabs>
+                {rejectedInvitations.length > 0 && (
+                  <div>
+                    <h3 className="font-medium text-lg mb-3">Rejected Invitations</h3>
+                    <div className="space-y-3">
+                      {rejectedInvitations.map(invitation => (
+                        <Card key={invitation.id} className="bg-red-50">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base flex items-center">
+                              <X className="h-4 w-4 mr-2 text-red-600" />
+                              Declined {invitation.projectManagerName || 'Project Manager'}
+                            </CardTitle>
+                            <CardDescription className="text-xs">
+                              Rejected on {new Date(invitation.invitationDate).toLocaleDateString()}
+                            </CardDescription>
+                          </CardHeader>
+                          {invitation.notes && (
+                            <CardContent className="pt-0">
+                              <p className="text-sm">{invitation.notes}</p>
+                            </CardContent>
+                          )}
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
 
-      <MobileNavbar />
-    </div>
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="mt-4">
+            {notificationsLoading ? (
+              <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : unreadNotifications.length === 0 && readNotifications.length === 0 ? (
+              <div className="text-center p-8 bg-muted rounded-lg">
+                <Bell className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">No notifications</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You don't have any notifications yet.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {unreadNotifications.length > 0 && (
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-medium text-lg">Unread Notifications</h3>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => markAllAsReadMutation.mutate()}
+                        disabled={markAllAsReadMutation.isPending}
+                      >
+                        {markAllAsReadMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : null}
+                        Mark all as read
+                      </Button>
+                    </div>
+                    <div className="space-y-3">
+                      {unreadNotifications.map(notification => (
+                        <NotificationCard 
+                          key={notification.id} 
+                          notification={notification} 
+                          onClick={() => handleNotificationClick(notification)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {readNotifications.length > 0 && (
+                  <div>
+                    <h3 className="font-medium text-lg mb-3">Previous Notifications</h3>
+                    <div className="space-y-3">
+                      {readNotifications.map(notification => (
+                        <NotificationCard 
+                          key={notification.id} 
+                          notification={notification} 
+                          onClick={() => handleNotificationClick(notification)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </MobileLayout>
   );
 };
 
-// Notification Card Component
 const NotificationCard = ({ notification, onClick }: { notification: Notification, onClick: () => void }) => {
-  // Get icon based on notification type
-  const getIcon = () => {
-    switch (notification.type) {
-      case 'order_status':
-        return <Badge className="h-8 w-8 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">OS</Badge>;
-      case 'connection_request':
-      case 'connection_accepted':
-        return <User className="h-6 w-6 text-green-600" />;
-      case 'job_assignment':
-        return <Badge className="h-8 w-8 flex items-center justify-center rounded-full bg-purple-100 text-purple-600">JA</Badge>;
-      default:
-        return <BellRing className="h-6 w-6 text-gray-600" />;
-    }
-  };
-
   return (
-    <Card
-      className={`mb-3 p-3 cursor-pointer transition-colors ${notification.isRead ? 'bg-white' : 'bg-blue-50'}`}
+    <Card 
+      className={`${notification.isRead ? 'bg-white' : 'bg-blue-50'} cursor-pointer`}
       onClick={onClick}
     >
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 mt-1">
-          {getIcon()}
-        </div>
-        <div className="flex-1">
-          <div className="flex justify-between items-start">
-            <h3 className={`font-semibold text-sm ${notification.isRead ? 'text-gray-800' : 'text-black'}`}>{notification.title}</h3>
-            <span className="text-xs text-gray-500">
-              {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-            </span>
-          </div>
-          <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-        </div>
-      </div>
-      {!notification.isRead && (
-        <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500"></div>
-      )}
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="text-base flex items-center">
+          <BellRing className="h-4 w-4 mr-2 text-blue-600" />
+          {notification.title}
+        </CardTitle>
+        <CardDescription className="text-xs">
+          {new Date(notification.createdAt).toLocaleString()}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
+        <p className="text-sm">{notification.message}</p>
+      </CardContent>
     </Card>
   );
 };
 
-// Invitation Card Component
 const InvitationCard = ({ 
   invitation, 
   onAccept, 
@@ -334,40 +356,44 @@ const InvitationCard = ({
   isPending: boolean
 }) => {
   return (
-    <Card className="mb-3 p-4 border-l-4 border-l-yellow-500">
-      <div className="flex flex-col">
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="font-semibold">Connection Request</h3>
-          <span className="text-xs text-gray-500">
-            {formatDistanceToNow(new Date(invitation.invitationDate), { addSuffix: true })}
-          </span>
-        </div>
-        <p className="text-sm mb-4">
-          {invitation.projectManagerName || `Project Manager (ID: ${invitation.projectManagerId})`} is requesting to connect with you. 
-          {invitation.notes && <span className="block mt-2 italic">"${invitation.notes}"</span>}
+    <Card className="bg-blue-50">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">
+          Request from {invitation.projectManagerName || 'Project Manager'}
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Received on {new Date(invitation.invitationDate).toLocaleDateString()}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {invitation.notes && (
+          <p className="text-sm mb-3">{invitation.notes}</p>
+        )}
+        <p className="text-sm">
+          Do you want to connect with this project manager? This will allow them to assign you to jobs and manage your orders.
         </p>
-        <div className="flex gap-3 justify-end">
-          <Button 
-            variant="outline" 
-            className="border-red-200 text-red-600 hover:bg-red-50"
-            onClick={onReject}
-            disabled={isPending}
-          >
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4 mr-1" />}
-            Decline
-          </Button>
-          <Button 
-            className="bg-green-600 hover:bg-green-700"
-            onClick={onAccept}
-            disabled={isPending}
-          >
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
-            Accept
-          </Button>
-        </div>
-      </div>
+      </CardContent>
+      <CardFooter className="flex gap-2">
+        <Button 
+          className="flex-1" 
+          onClick={onAccept}
+          disabled={isPending}
+        >
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+          Accept
+        </Button>
+        <Button 
+          variant="outline" 
+          className="flex-1" 
+          onClick={onReject}
+          disabled={isPending}
+        >
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <X className="h-4 w-4 mr-2" />}
+          Decline
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
 
-export default MobileNotificationsPage;
+export default NotificationsPage;
