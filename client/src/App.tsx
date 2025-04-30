@@ -52,8 +52,8 @@ import TradieVerifyEmail from "@/pages/tradie-verify-email";
 // Not found
 import NotFound from "@/pages/not-found";
 
-// Define User type outside the component
-interface User {
+// Define User type outside the component to be used across the app
+export interface User {
   id: number;
   username: string;
   role: string;
@@ -62,6 +62,8 @@ interface User {
   lastName?: string;
   email?: string;
   phone?: string;
+  isApproved?: boolean;
+  status?: string; // unassigned, pending_invitation, invited, active
 }
 
 function App() {

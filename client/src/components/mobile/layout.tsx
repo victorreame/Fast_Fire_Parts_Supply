@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { User } from "@/App";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -82,7 +83,16 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
               <Logo size={40} linkTo="/" />
             </div>
           )}
-          <h1 className="text-xl font-bold flex items-center">{title || "FastFire Parts"}</h1>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold flex items-center">{title || "FastFire Parts"}</h1>
+            
+            {/* Show status badge for unapproved tradies */}
+            {user?.role === 'tradie' && (user?.status === 'unassigned' || user?.status === 'pending_invitation') && (
+              <Badge variant="outline" className="text-xs bg-yellow-800 text-white border-yellow-700 mt-1">
+                Limited Access Mode
+              </Badge>
+            )}
+          </div>
         </div>
         <div className="flex items-center">
           {showCart && (
@@ -171,25 +181,34 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
           }`}>
             <div className="relative">
               <FaBell className="text-lg mb-1" />
-              {/* Notification indicator dot - update this when there are notifications */}
-              {user?.role === 'contractor' && !user?.isApproved && (
+              {/* Notification indicator dot for unread notifications */}
+              {user?.role === 'tradie' && (user?.status === 'unassigned' || user?.status === 'pending_invitation') && (
                 <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></span>
               )}
             </div>
             <span>Alerts</span>
           </Link>
-          <Link href="/orders" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
-            location === '/orders' ? 'text-red-600' : 'text-neutral-500'
-          }`}>
-            <FaClipboardList className="text-lg mb-1" />
-            <span>Orders</span>
-          </Link>
-          <Link href="/favorites" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
-            location === '/favorites' ? 'text-red-600' : 'text-neutral-500'
-          }`}>
-            <FaStar className="text-lg mb-1" />
-            <span>Favorites</span>
-          </Link>
+          
+          {/* Only show Orders tab for approved tradies */}
+          {(!user?.role || user?.role !== 'tradie' || user?.status === 'active') && (
+            <Link href="/orders" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
+              location === '/orders' ? 'text-red-600' : 'text-neutral-500'
+            }`}>
+              <FaClipboardList className="text-lg mb-1" />
+              <span>Orders</span>
+            </Link>
+          )}
+          
+          {/* Only show Favorites tab for approved tradies */}
+          {(!user?.role || user?.role !== 'tradie' || user?.status === 'active') && (
+            <Link href="/favorites" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
+              location === '/favorites' ? 'text-red-600' : 'text-neutral-500'
+            }`}>
+              <FaStar className="text-lg mb-1" />
+              <span>Favorites</span>
+            </Link>
+          )}
+          
           <Link href="/account" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
             location === '/account' ? 'text-red-600' : 'text-neutral-500'
           }`}>
