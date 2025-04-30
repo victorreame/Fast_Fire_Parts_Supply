@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMobile } from "@/hooks/use-mobile";
 import { AuthProvider } from "@/hooks/use-auth";
 import { AuthGuard } from "@/lib/auth-guard";
+import { AuthGuardMobile } from "@/components/auth-guard-mobile";
 import SessionExpired from "@/components/session-expired";
 
 // Mobile pages
@@ -228,18 +229,62 @@ function App() {
         <Route path="/session-expired" component={SessionExpired} />
         <Route path="/pending-approval" component={PendingApprovalPage} />
         
-        {/* Mobile client routes */}
-        <Route path="/mobile" component={MobileHome} />
-        <Route path="/jobs" component={JobSearchPage} />
-        <Route path="/parts" component={PartListPage} />
-        <Route path="/parts/popular" component={() => <PartListPage key="popular" />} />
-        <Route path="/search" component={SearchPage} />
-        <Route path="/cart" component={CartPage} />
-        <Route path="/job/:id" component={JobDetailsPage} />
-        <Route path="/orders" component={OrdersPage} />
-        <Route path="/order/:id" component={OrderDetailsPage} />
-        <Route path="/favorites" component={FavoritesPage} />
-        <Route path="/account" component={AccountPage} />
+        {/* Mobile client routes - protected with AuthGuardMobile */}
+        <Route path="/mobile">
+          <AuthGuardMobile>
+            <MobileHome />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/jobs">
+          <AuthGuardMobile>
+            <JobSearchPage />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/parts">
+          <AuthGuardMobile>
+            <PartListPage />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/parts/popular">
+          <AuthGuardMobile>
+            <PartListPage key="popular" />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/search">
+          <AuthGuardMobile>
+            <SearchPage />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/cart">
+          <AuthGuardMobile>
+            <CartPage />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/job/:id">
+          <AuthGuardMobile>
+            <JobDetailsPage />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/orders">
+          <AuthGuardMobile>
+            <OrdersPage />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/order/:id">
+          <AuthGuardMobile>
+            <OrderDetailsPage />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/favorites">
+          <AuthGuardMobile>
+            <FavoritesPage />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/account">
+          <AuthGuardMobile>
+            <AccountPage />
+          </AuthGuardMobile>
+        </Route>
         
         {/* Supplier dashboard routes - only accessible if role is supplier */}
         <Route path="/supplier/dashboard">
@@ -298,11 +343,11 @@ function App() {
           </AuthGuard>
         </Route>
         
-        {/* Job details page for suppliers */}
+        {/* Job details page - role-specific with auth guards */}
         <Route path="/job/:id">
           {user?.role === 'supplier' || user?.role === 'admin' 
-            ? <SupplierJobDetailsPage /> 
-            : <JobDetailsPage />
+            ? <AuthGuard><SupplierJobDetailsPage /></AuthGuard> 
+            : <AuthGuardMobile><JobDetailsPage /></AuthGuardMobile>
           }
         </Route>
         

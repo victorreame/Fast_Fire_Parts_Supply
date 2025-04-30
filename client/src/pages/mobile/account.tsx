@@ -9,18 +9,30 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 
+// Define business type
+interface Business {
+  id: number;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  priceTier?: string;
+}
+
 const AccountPage = () => {
   const [_, navigate] = useLocation();
   const { user, isLoading: authLoading, logoutMutation } = useAuth();
 
-  const { data: business } = useQuery({
+  // Fetch business data for the user's business if they have one
+  const { data: businesses = [] } = useQuery<Business[]>({
     queryKey: ['/api/businesses'],
-    select: (businesses) => {
-      if (!user?.businessId) return null;
-      return businesses.find((b: any) => b.id === user.businessId);
-    },
     enabled: !!user?.businessId,
   });
+
+  // Find the user's business in the businesses array
+  const business = user?.businessId 
+    ? businesses.find(b => b.id === user.businessId) 
+    : null;
 
   // Handle logout using the standardized logout mutation from auth context
   const handleLogout = () => {
