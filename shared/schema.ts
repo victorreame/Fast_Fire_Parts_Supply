@@ -10,8 +10,8 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
-  phone: text("phone"),
+  email: text("email").notNull().unique(),
+  phone: text("phone").unique(),
   // Updated roles to include project manager
   role: text("role").notNull().default("tradie"), // tradie, project_manager, or supplier
   businessId: integer("business_id").references(() => businesses.id),
@@ -19,12 +19,20 @@ export const users = pgTable("users", {
   approvedBy: integer("approved_by"), // User who approved this user
   approvalDate: timestamp("approval_date"), // When the user was approved
   createdAt: timestamp("created_at").defaultNow(), // When the user was created
+  // For tradie self-registration
+  status: text("status").default("unassigned"), // unassigned, pending_invitation, invited, active
+  emailVerified: boolean("email_verified").default(false), // Email verification status
+  verificationToken: text("verification_token"), // Token for email verification
+  tokenExpiry: timestamp("token_expiry"), // Expiry time for verification token
+  termsAccepted: boolean("terms_accepted").default(false), // Whether the user has accepted the terms
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   approvalDate: true,
   createdAt: true,
+  tokenExpiry: true,
+  verificationToken: true,
 });
 
 // Businesses table
@@ -281,6 +289,25 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+// Tradie Invitations table (new)
+export const tradieInvitations = pgTable("tradie_invitations", {
+  id: serial("id").primaryKey(),
+  tradieId: integer("tradie_id").references(() => users.id).notNull(), // Tradie being invited
+  projectManagerId: integer("project_manager_id").references(() => users.id).notNull(), // PM sending the invitation
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected
+  email: text("email").notNull(), // Email used for the invitation
+  invitationDate: timestamp("invitation_date").defaultNow(),
+  responseDate: timestamp("response_date"), // When the tradie responded
+  expiryDate: timestamp("expiry_date"), // When the invitation expires
+  notes: text("notes"), // Additional notes or message
+});
+
+export const insertTradieInvitationSchema = createInsertSchema(tradieInvitations).omit({
+  id: true,
+  invitationDate: true,
+  responseDate: true,
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   business: one(businesses, {
@@ -295,6 +322,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   jobsAssigned: many(jobUsers),
   ordersRequested: many(orders, { relationName: "requester" }),
   ordersApproved: many(orders, { relationName: "approver" }),
+  invitationsReceived: many(tradieInvitations, { relationName: "tradie" }),
+  invitationsSent: many(tradieInvitations, { relationName: "projectManager" }),
 }));
 
 export const businessesRelations = relations(businesses, ({ many }) => ({
@@ -468,6 +497,19 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   }),
 }));
 
+export const tradieInvitationsRelations = relations(tradieInvitations, ({ one }) => ({
+  tradie: one(users, {
+    fields: [tradieInvitations.tradieId],
+    references: [users.id],
+    relationName: "tradie",
+  }),
+  projectManager: one(users, {
+    fields: [tradieInvitations.projectManagerId],
+    references: [users.id],
+    relationName: "projectManager",
+  }),
+}));
+
 // Type definitions
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -510,3 +552,6 @@ export type InsertOrderHistory = z.infer<typeof insertOrderHistorySchema>;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type TradieInvitation = typeof tradieInvitations.$inferSelect;
+export type InsertTradieInvitation = z.infer<typeof insertTradieInvitationSchema>;

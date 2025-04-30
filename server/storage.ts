@@ -12,7 +12,8 @@ import {
   contractPricing, type ContractPricing, type InsertContractPricing,
   jobUsers, type JobUser, type InsertJobUser,
   notifications, type Notification, type InsertNotification,
-  orderHistory, type OrderHistory, type InsertOrderHistory
+  orderHistory, type OrderHistory, type InsertOrderHistory,
+  tradieInvitations, type TradieInvitation, type InsertTradieInvitation
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -150,6 +151,15 @@ export interface IStorage {
   markNotificationAsRead(id: number): Promise<Notification | undefined>;
   markAllNotificationsAsRead(userId: number): Promise<boolean>;
   deleteNotification(id: number): Promise<boolean>;
+  
+  // Tradie Invitations
+  getTradieInvitation(id: number): Promise<TradieInvitation | undefined>;
+  getTradieInvitationsByPM(pmId: number): Promise<TradieInvitation[]>;
+  getTradieInvitationsByTradie(tradieId: number): Promise<TradieInvitation[]>;
+  getTradieInvitationByEmail(email: string): Promise<TradieInvitation | undefined>;
+  createTradieInvitation(invitation: InsertTradieInvitation): Promise<TradieInvitation>;
+  updateTradieInvitationStatus(id: number, status: string, responseDate?: Date): Promise<TradieInvitation | undefined>;
+  deleteTradieInvitation(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -1902,6 +1912,66 @@ export class DatabaseStorage implements IStorage {
   
   async deleteNotification(id: number): Promise<boolean> {
     await db.delete(notifications).where(eq(notifications.id, id));
+    return true;
+  }
+  
+  // Tradie Invitation Methods
+  async getTradieInvitation(id: number): Promise<TradieInvitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(tradieInvitations)
+      .where(eq(tradieInvitations.id, id));
+    return invitation;
+  }
+
+  async getTradieInvitationsByPM(pmId: number): Promise<TradieInvitation[]> {
+    return db
+      .select()
+      .from(tradieInvitations)
+      .where(eq(tradieInvitations.projectManagerId, pmId));
+  }
+
+  async getTradieInvitationsByTradie(tradieId: number): Promise<TradieInvitation[]> {
+    return db
+      .select()
+      .from(tradieInvitations)
+      .where(eq(tradieInvitations.tradieId, tradieId));
+  }
+
+  async getTradieInvitationByEmail(email: string): Promise<TradieInvitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(tradieInvitations)
+      .where(eq(tradieInvitations.email, email));
+    return invitation;
+  }
+
+  async createTradieInvitation(invitation: InsertTradieInvitation): Promise<TradieInvitation> {
+    const [newInvitation] = await db
+      .insert(tradieInvitations)
+      .values(invitation)
+      .returning();
+    return newInvitation;
+  }
+
+  async updateTradieInvitationStatus(id: number, status: string, responseDate?: Date): Promise<TradieInvitation | undefined> {
+    const updateData: { status: string, responseDate?: Date } = { status };
+    if (responseDate) {
+      updateData.responseDate = responseDate;
+    }
+    
+    const [updatedInvitation] = await db
+      .update(tradieInvitations)
+      .set(updateData)
+      .where(eq(tradieInvitations.id, id))
+      .returning();
+    return updatedInvitation;
+  }
+
+  async deleteTradieInvitation(id: number): Promise<boolean> {
+    await db
+      .delete(tradieInvitations)
+      .where(eq(tradieInvitations.id, id));
     return true;
   }
 }
