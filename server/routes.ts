@@ -17,6 +17,7 @@ import { setupAuth } from "./auth";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import tradieRoutes from "./tradie-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication and session management
@@ -1712,6 +1713,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to recommend part" });
     }
   });
+  
+  // Register tradie routes
+  apiRouter.use('/tradie', tradieRoutes);
   
   const httpServer = createServer(app);
   return httpServer;
