@@ -528,9 +528,19 @@ const TradieManagement = () => {
           <DialogHeader>
             <DialogTitle>Invite New Tradie</DialogTitle>
             <DialogDescription>
-              Send an invitation to a tradie to join the platform
+              Send an invitation to a tradie to join the platform.
+              They will receive an email with a registration link.
             </DialogDescription>
           </DialogHeader>
+
+          <div className="bg-amber-50 border border-amber-200 rounded p-3 mb-4 text-sm">
+            <p className="flex items-start">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 mr-2 mt-0.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+              <span>
+                The tradie will need to complete their registration and verify their email before they can access the system. You'll need to approve their account after they complete these steps.
+              </span>
+            </p>
+          </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleInviteSubmit)} className="space-y-6">
@@ -569,6 +579,9 @@ const TradieManagement = () => {
                     <FormControl>
                       <Input placeholder="Enter email address" type="email" {...field} />
                     </FormControl>
+                    <FormDescription>
+                      An invitation link will be sent to this email address
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
