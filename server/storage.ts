@@ -19,7 +19,7 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { db } from "./db";
-import { eq, and, desc, asc, gt, lt, like, or, not, isNull } from "drizzle-orm";
+import { eq, and, desc, asc, gt, lt, like, or, not, isNull, count } from "drizzle-orm";
 import { pool } from "./db";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -45,6 +45,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  updateUserStatus(userId: number, status: string): Promise<User | undefined>;
   
   // Businesses
   getBusiness(id: number): Promise<Business | undefined>;
@@ -147,6 +148,8 @@ export interface IStorage {
   getNotification(id: number): Promise<Notification | undefined>;
   getNotificationsByUser(userId: number): Promise<Notification[]>;
   getUnreadNotificationsByUser(userId: number): Promise<Notification[]>;
+  getUserNotifications(userId: number): Promise<Notification[]>;
+  getUnreadNotificationCount(userId: number): Promise<number>;
   createNotification(notification: InsertNotification): Promise<Notification>;
   markNotificationAsRead(id: number): Promise<Notification | undefined>;
   markAllNotificationsAsRead(userId: number): Promise<boolean>;
@@ -159,6 +162,8 @@ export interface IStorage {
   getTradieInvitationByEmail(email: string): Promise<TradieInvitation | undefined>;
   createTradieInvitation(invitation: InsertTradieInvitation): Promise<TradieInvitation>;
   updateTradieInvitationStatus(id: number, status: string, responseDate?: Date): Promise<TradieInvitation | undefined>;
+  acceptTradieInvitation(invitationId: number): Promise<TradieInvitation | undefined>;
+  rejectTradieInvitation(invitationId: number): Promise<TradieInvitation | undefined>;
   deleteTradieInvitation(id: number): Promise<boolean>;
 }
 
