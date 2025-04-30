@@ -44,6 +44,7 @@ import SupplierJobDetailsPage from "@/pages/job/[id]";
 import LoginPage from "@/pages/login";
 import PendingApprovalPage from "@/pages/pending-approval";
 import TradieRegisterPage from "@/pages/tradie-register";
+import SelfRegisterTradieForm from "@/pages/register/tradie";
 import TradieRegistrationSuccess from "@/pages/tradie-registration-success";
 import TradieVerifyEmail from "@/pages/tradie-verify-email";
 
@@ -231,7 +232,7 @@ function App() {
         <Route path="/login" component={LoginPage} />
         <Route path="/session-expired" component={SessionExpired} />
         <Route path="/pending-approval" component={PendingApprovalPage} />
-        <Route path="/register/tradie" component={() => import("@/pages/register/tradie").then(module => ({ default: module.default }))} />
+        <Route path="/register/tradie" component={SelfRegisterTradieForm} />
         <Route path="/tradie/register/:token" component={TradieRegisterPage} />
         <Route path="/tradie-registration-success" component={TradieRegistrationSuccess} />
         <Route path="/tradie/verify-email/:token" component={TradieVerifyEmail} />
