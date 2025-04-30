@@ -115,6 +115,15 @@ const LoginPage = () => {
             </Button>
           </div>
         </form>
+        
+        <div className="p-4 text-center border-t">
+          <p className="text-sm text-gray-600">
+            Are you a tradie invited by a project manager?{" "}
+            <span className="text-red-600 font-medium">
+              Check your email for an invitation link.
+            </span>
+          </p>
+        </div>
       </Card>
 
       <div className="mt-8 text-center text-sm">

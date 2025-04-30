@@ -43,6 +43,9 @@ import SupplierJobDetailsPage from "@/pages/job/[id]";
 // Auth pages
 import LoginPage from "@/pages/login";
 import PendingApprovalPage from "@/pages/pending-approval";
+import TradieRegisterPage from "@/pages/tradie-register";
+import TradieRegistrationSuccess from "@/pages/tradie-registration-success";
+import TradieVerifyEmail from "@/pages/tradie-verify-email";
 
 // Not found
 import NotFound from "@/pages/not-found";
@@ -228,6 +231,9 @@ function App() {
         <Route path="/login" component={LoginPage} />
         <Route path="/session-expired" component={SessionExpired} />
         <Route path="/pending-approval" component={PendingApprovalPage} />
+        <Route path="/tradie/register/:token" component={TradieRegisterPage} />
+        <Route path="/tradie/registration-success" component={TradieRegistrationSuccess} />
+        <Route path="/tradie/verify-email/:token" component={TradieVerifyEmail} />
         
         {/* Mobile client routes - protected with AuthGuardMobile */}
         <Route path="/mobile">
