@@ -6,18 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 const AccountPage = () => {
   const [_, navigate] = useLocation();
-  const { toast } = useToast();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['/api/user'],
-  });
+  const { user, isLoading: authLoading, logoutMutation } = useAuth();
 
   const { data: business } = useQuery({
     queryKey: ['/api/businesses'],
@@ -28,39 +22,16 @@ const AccountPage = () => {
     enabled: !!user?.businessId,
   });
 
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      await apiRequest('POST', '/api/logout', {});
-      
-      // Clear all application cache to ensure no user data remains
-      import("@/lib/queryClient").then(({ queryClient }) => {
-        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
-      });
-      
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
-      
-      // Redirect to the login page explicitly
-      window.location.href = "/login";
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to logout. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoggingOut(false);
-    }
+  // Handle logout using the standardized logout mutation from auth context
+  const handleLogout = () => {
+    logoutMutation.mutate();
+    // All handling (API call, cache clearing, redirect, etc.) is done by the mutation
   };
 
   return (
     <MobileLayout title="Account" showBackButton={false}>
       <div className="p-4">
-        {isLoading ? (
+        {authLoading ? (
           <Card>
             <CardHeader className="pb-4">
               <Skeleton className="h-24 w-full" />
@@ -147,9 +118,9 @@ const AccountPage = () => {
                 variant="destructive" 
                 className="w-full" 
                 onClick={handleLogout}
-                disabled={isLoggingOut}
+                disabled={logoutMutation.isPending}
               >
-                {isLoggingOut ? "Logging out..." : "Logout"}
+                {logoutMutation.isPending ? "Logging out..." : "Logout"}
               </Button>
             </div>
           </>

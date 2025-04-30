@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -27,17 +27,8 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
   const { toast } = useToast();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // Define user type
-  interface User {
-    id: number;
-    username: string;
-    role: string;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    phone?: string;
-    businessId?: number;
-  }
+  // Use auth hook for user data and logout functionality
+  const { user, logoutMutation } = useAuth();
 
   // Define cart item type
   interface CartItem {
@@ -47,39 +38,26 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
     quantity: number;
   }
 
-  const { data: user } = useQuery<User>({
-    queryKey: ['/api/user'],
-    staleTime: 300000, // 5 minutes
-  });
-
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ['/api/cart'],
-    enabled: true, // Always fetch cart items for mobile
+    enabled: !!user, // Only fetch cart items when user is authenticated
   });
 
-  const handleLogout = async () => {
+  // Use the standardized logout function
+  const handleLogout = () => {
     try {
-      // Send logout request to server - skip error handling for logout requests
-      const response = await apiRequest('POST', '/api/logout', {}, true);
-      
-      // Clear all application cache to ensure no user data remains
-      queryClient.clear();
-      
-      // Specifically invalidate auth-related queries
-      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
-      
-      // Close user menu
+      // Close the user menu first
       setIsUserMenuOpen(false);
       
-      // Redirect to the home/login page
-      navigate('/');
+      // Use the proper logout mutation from auth context
+      logoutMutation.mutate();
       
-      // Notify user
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
+      // The logoutMutation handles:
+      // 1. API request to server
+      // 2. Clearing query cache
+      // 3. Setting sessionStorage flags to prevent back button issues
+      // 4. Redirecting to login page
+      // 5. Showing toast notification
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -145,14 +123,19 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
                         <AvatarFallback>{user?.firstName?.charAt(0) || "U"}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{`${user.firstName} ${user.lastName}`}</p>
+                        <p className="font-medium">{`${user.firstName || ''} ${user.lastName || ''}`}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
                     <div className="border-t pt-4">
-                      <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start" 
+                        onClick={handleLogout}
+                        disabled={logoutMutation.isPending}
+                      >
                         <i className="fas fa-sign-out-alt mr-2"></i>
-                        Logout
+                        {logoutMutation.isPending ? "Logging out..." : "Logout"}
                       </Button>
                     </div>
                   </div>

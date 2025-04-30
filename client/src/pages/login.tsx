@@ -121,7 +121,7 @@ const LoginPage = () => {
         <p className="font-medium text-gray-700 mb-1">Demo Credentials</p>
         <div className="bg-white p-3 rounded-md shadow-sm inline-block">
           <p className="mb-1">
-            <span className="font-semibold">Contractor:</span> john.doe /
+            <span className="font-semibold">Contractor:</span> tradie /
             password123
           </p>
           <p>
