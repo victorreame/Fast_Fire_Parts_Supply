@@ -55,7 +55,26 @@ export function AuthGuardMobile({ children, redirectPath = '/login' }: AuthGuard
         return;
       }
       
-      // User is authenticated
+      // Check approval status for contractors/tradies
+      const currentPath = window.location.pathname;
+      if (user.role === 'contractor' && !user.isApproved) {
+        // Allow access only to specific pages for unapproved tradies
+        const allowedPaths = ['/mobile', '/account', '/notifications'];
+        const isAllowedPath = allowedPaths.some(path => currentPath === path || currentPath.startsWith(path + '/'));
+        
+        if (!isAllowedPath) {
+          setIsAuthenticated(false);
+          toast({
+            title: "Limited Access",
+            description: "You need to accept a Project Manager invitation to access this feature.",
+            variant: "destructive",
+          });
+          navigate('/mobile');
+          return;
+        }
+      }
+      
+      // User is authenticated and has access to the current path
       setIsAuthenticated(true);
     };
     

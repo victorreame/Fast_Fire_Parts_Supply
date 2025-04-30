@@ -1,6 +1,6 @@
 import { useState, ReactNode } from "react";
 import { useLocation, Link } from "wouter";
-import { FaHome, FaClipboardList, FaStar, FaUser } from "react-icons/fa";
+import { FaHome, FaClipboardList, FaStar, FaUser, FaBell } from "react-icons/fa";
 import Logo from "../ui/logo";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
@@ -160,25 +160,37 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
       {/* Bottom Navigation */}
       <nav className="bg-white border-t border-neutral-200 sticky bottom-0">
         <div className="flex justify-around">
-          <Link href="/" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
+          <Link href="/" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
             location === '/' ? 'text-red-600' : 'text-neutral-500'
           }`}>
             <FaHome className="text-lg mb-1" />
             <span>Home</span>
           </Link>
-          <Link href="/orders" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
+          <Link href="/notifications" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
+            location === '/notifications' ? 'text-red-600' : 'text-neutral-500'
+          }`}>
+            <div className="relative">
+              <FaBell className="text-lg mb-1" />
+              {/* Notification indicator dot - update this when there are notifications */}
+              {user?.role === 'contractor' && !user?.isApproved && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+              )}
+            </div>
+            <span>Alerts</span>
+          </Link>
+          <Link href="/orders" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
             location === '/orders' ? 'text-red-600' : 'text-neutral-500'
           }`}>
             <FaClipboardList className="text-lg mb-1" />
             <span>Orders</span>
           </Link>
-          <Link href="/favorites" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
+          <Link href="/favorites" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
             location === '/favorites' ? 'text-red-600' : 'text-neutral-500'
           }`}>
             <FaStar className="text-lg mb-1" />
             <span>Favorites</span>
           </Link>
-          <Link href="/account" className={`py-3 px-4 flex flex-col items-center text-xs font-medium ${
+          <Link href="/account" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
             location === '/account' ? 'text-red-600' : 'text-neutral-500'
           }`}>
             <FaUser className="text-lg mb-1" />
