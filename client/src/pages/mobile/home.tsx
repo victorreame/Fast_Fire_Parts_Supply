@@ -8,7 +8,7 @@ import { FaStar, FaList, FaSearch, FaHardHat, FaFireExtinguisher, FaListAlt, FaT
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info, ShieldAlert } from "lucide-react";
-import { User } from "@/App";
+import { User } from "@/hooks/use-auth";
 
 const MobileHome = () => {
   const [_, navigate] = useLocation();

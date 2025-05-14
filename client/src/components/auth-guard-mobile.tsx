@@ -1,10 +1,9 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, User } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import SessionExpired from './session-expired';
-import { User } from '@/App';
 
 interface AuthGuardMobileProps {
   children: ReactNode;

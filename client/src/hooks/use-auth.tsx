@@ -18,6 +18,7 @@ export interface User {
   phone?: string;
   businessId?: number;
   isApproved?: boolean;
+  status?: string; // Added for tradie approval workflow: unassigned, pending_invitation, invited, active
 }
 
 export type LoginData = {
