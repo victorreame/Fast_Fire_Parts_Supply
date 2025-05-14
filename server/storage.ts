@@ -421,6 +421,30 @@ export class MemStorage implements IStorage {
     this.users.set(id, newUser);
     return newUser;
   }
+  
+  async updateUserStatus(userId: number, status: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, status };
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+  
+  async updateUserApproval(userId: number, isApproved: boolean, approvedBy?: number): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    const updatedUser = { 
+      ...user, 
+      isApproved,
+      approvedBy: isApproved ? approvedBy : user.approvedBy,
+      approvalDate: isApproved ? new Date() : user.approvalDate
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
 
   // Business Methods
   async getBusiness(id: number): Promise<Business | undefined> {
@@ -1988,6 +2012,26 @@ export class DatabaseStorage implements IStorage {
       .set({ status })
       .where(eq(users.id, userId))
       .returning();
+    return user;
+  }
+  
+  async updateUserApproval(userId: number, isApproved: boolean, approvedBy?: number): Promise<User | undefined> {
+    const updateData: any = { 
+      isApproved,
+    };
+    
+    // If approving, also set the approval date and approver
+    if (isApproved && approvedBy) {
+      updateData.approvedBy = approvedBy;
+      updateData.approvalDate = new Date();
+    }
+    
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+    
     return user;
   }
 
