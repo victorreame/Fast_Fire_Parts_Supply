@@ -8,8 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import { User } from "@/App";
+import { useAuth, User } from "@/hooks/use-auth";
 
 interface MobileLayoutProps {
   children: ReactNode;
