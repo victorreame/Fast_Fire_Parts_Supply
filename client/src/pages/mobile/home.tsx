@@ -8,23 +8,12 @@ import { FaStar, FaList, FaSearch, FaHardHat, FaFireExtinguisher, FaListAlt, FaT
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info, ShieldAlert } from "lucide-react";
+import { User } from "@/App";
 
 const MobileHome = () => {
   const [_, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
-
-  // Define User type
-  interface User {
-    id: number;
-    username: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: string;
-    status: string;
-    isApproved: boolean;
-  }
 
   const { data: user } = useQuery<User>({
     queryKey: ['/api/user'],

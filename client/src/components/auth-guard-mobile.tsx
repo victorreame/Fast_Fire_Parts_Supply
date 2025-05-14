@@ -58,7 +58,7 @@ export function AuthGuardMobile({ children, redirectPath = '/login' }: AuthGuard
       
       // Check approval status for tradies
       const currentPath = window.location.pathname;
-      if (user.role === 'tradie' && (user.status === 'unassigned' || user.status === 'pending_invitation')) {
+      if (user?.role === 'tradie' && (user?.status === 'unassigned' || user?.status === 'pending_invitation')) {
         // Allow access only to specific pages for unapproved tradies
         const allowedPaths = [
           '/mobile', 
