@@ -60,7 +60,14 @@ export function AuthGuardMobile({ children, redirectPath = '/login' }: AuthGuard
       const currentPath = window.location.pathname;
       if (user.role === 'tradie' && (user.status === 'unassigned' || user.status === 'pending_invitation')) {
         // Allow access only to specific pages for unapproved tradies
-        const allowedPaths = ['/mobile', '/account', '/notifications'];
+        const allowedPaths = [
+          '/mobile', 
+          '/account', 
+          '/notifications',
+          '/search',
+          '/parts',
+          '/parts/popular'
+        ];
         const isAllowedPath = allowedPaths.some(path => currentPath === path || currentPath.startsWith(path + '/'));
         
         if (!isAllowedPath) {
