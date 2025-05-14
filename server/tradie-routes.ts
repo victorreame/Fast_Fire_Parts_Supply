@@ -21,7 +21,7 @@ const isTradie = (req: Request, res: Response, next: NextFunction) => {
 // Get all invitations for the authenticated tradie
 tradieRouter.get('/invitations', isTradie, async (req: Request, res: Response) => {
   try {
-    const invitations = await storage.getTradieInvitations(req.user!.id);
+    const invitations = await storage.getTradieInvitationsByTradie(req.user!.id);
     
     // Enhance invitations with PM names
     const enhancedInvitations = await Promise.all(
