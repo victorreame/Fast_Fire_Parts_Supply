@@ -46,6 +46,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   updateUserStatus(userId: number, status: string): Promise<User | undefined>;
+  updateUserApproval(userId: number, isApproved: boolean, approvedBy?: number): Promise<User | undefined>;
   
   // Businesses
   getBusiness(id: number): Promise<Business | undefined>;

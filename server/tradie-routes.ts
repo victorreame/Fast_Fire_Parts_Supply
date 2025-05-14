@@ -69,8 +69,9 @@ tradieRouter.post('/invitations/:id/accept', isTradie, async (req: Request, res:
     // Accept the invitation and update the tradie status
     const acceptedInvitation = await storage.acceptTradieInvitation(invitationId);
     
-    // Update the tradie's status to active
+    // Update the tradie's status to active and set isApproved to true
     await storage.updateUserStatus(req.user!.id, 'active');
+    await storage.updateUserApproval(req.user!.id, true, invitation.projectManagerId);
     
     // Create notifications for both tradie and PM
     const tradieNotification = {
