@@ -71,9 +71,9 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col">
       {/* Limited Access Banner */}
-      {user?.role === 'tradie' && (user?.status === 'unassigned' || user?.status === 'pending_invitation') && (
+      {user?.role === 'tradie' && !user?.isApproved && (
         <div className="bg-amber-500 text-white text-xs py-1 text-center font-medium">
-          Limited Access Mode - Check Notifications for PM Invitations
+          Limited Access Mode - Contact a Project Manager for approval
         </div>
       )}
       
@@ -93,7 +93,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
             <h1 className="text-xl font-bold flex items-center">{title || "FastFire Parts"}</h1>
             
             {/* Show status badge for unapproved tradies */}
-            {user?.role === 'tradie' && (user?.status === 'unassigned' || user?.status === 'pending_invitation') && (
+            {user?.role === 'tradie' && !user?.isApproved && (
               <Badge variant="outline" className="text-xs bg-yellow-800 text-white border-yellow-700 mt-1">
                 Limited Access Mode
               </Badge>
@@ -196,7 +196,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
             <div className="relative">
               <FaBell className="text-lg mb-1" />
               {/* Notification indicator dot for unread notifications */}
-              {user?.role === 'tradie' && (user?.status === 'unassigned' || user?.status === 'pending_invitation') && (
+              {user?.role === 'tradie' && !user?.isApproved && (
                 <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></span>
               )}
             </div>
@@ -204,7 +204,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
           </Link>
           
           {/* Only show Orders tab for approved tradies */}
-          {(!user?.role || user?.role !== 'tradie' || user?.status === 'active') && (
+          {(!user?.role || user?.role !== 'tradie' || user?.isApproved) && (
             <Link href="/orders" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
               location === '/orders' ? 'text-red-600' : 'text-neutral-500'
             }`}>

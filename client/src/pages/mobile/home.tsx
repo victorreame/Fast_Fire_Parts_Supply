@@ -20,8 +20,7 @@ const MobileHome = () => {
   });
 
   // Check if user is a tradie with restricted access
-  const isRestrictedTradie = user?.role === 'tradie' && 
-    (user?.status === 'unassigned' || user?.status === 'pending_invitation');
+  const isRestrictedTradie = user?.role === 'tradie' && !user?.isApproved;
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
