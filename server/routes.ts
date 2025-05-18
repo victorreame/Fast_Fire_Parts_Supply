@@ -195,6 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const checkTradieApproved = (req: Request, res: Response, next: NextFunction) => {
     if (req.isAuthenticated() && req.user) {
       if (req.user.role === 'tradie' && !req.user.isApproved) {
+        console.log(`Cart access attempt by unapproved tradie: ${req.user.id} (${req.user.username}) - ${req.method} ${req.path}`);
         return res.status(403).json({ 
           error: "Access restricted", 
           message: "Account pending approval. Contact your Project Manager for access."

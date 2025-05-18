@@ -47,12 +47,21 @@ const MobileHome = () => {
             <AlertTitle className="text-amber-800 font-bold">Account Pending Approval</AlertTitle>
             <AlertDescription className="text-amber-700">
               <p className="font-medium mb-1">Your account requires Project Manager approval before accessing jobs or placing orders.</p>
-              <p className="mb-2">Until approved, you can only browse the parts catalog. Job listings, cart functionality, and order submission are restricted.</p>
-              {user?.createdAt && (
-                <div className="mt-1 text-xs border-t border-amber-200 pt-2">
-                  Registration date: {new Date(user.createdAt).toLocaleString()}
-                </div>
-              )}
+              <p className="mb-2">Until approved, you can only browse the parts catalog. The following features are restricted:</p>
+              <ul className="list-disc pl-5 mb-2 text-sm">
+                <li>Job listings and search</li>
+                <li>Adding items to cart</li>
+                <li>Order submission</li>
+                <li>Order history access</li>
+              </ul>
+              <p className="text-sm border-t border-amber-200 pt-2 mt-2">
+                Please contact your Project Manager to request approval.
+                {user?.createdAt && (
+                  <span className="block mt-1 text-xs">
+                    Registration date: {new Date(user.createdAt).toLocaleString()}
+                  </span>
+                )}
+              </p>
             </AlertDescription>
           </Alert>
         )}

@@ -22,7 +22,7 @@ const CartPage = () => {
     if (user?.role === 'tradie' && !user?.isApproved) {
       toast({
         title: "Access Restricted",
-        description: "Your account is pending approval from a Project Manager. You cannot access cart functionality.",
+        description: "Your account requires Project Manager approval before accessing cart functionality. Please contact your Project Manager for approval.",
         variant: "destructive",
       });
       navigate('/mobile');

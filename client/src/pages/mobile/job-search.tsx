@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MobileLayout from "@/components/mobile/layout";
 import JobCard from "@/components/mobile/job-card";
 import { Input } from "@/components/ui/input";
@@ -62,6 +61,25 @@ const JobSearchPage = () => {
           return 0;
         })
     : [];
+
+  const { user } = useAuth();
+  const isRestrictedTradie = user?.role === 'tradie' && !user?.isApproved;
+
+  // Use effect to redirect unapproved tradies
+  useEffect(() => {
+    if (isRestrictedTradie) {
+      toast({
+        title: "Access Restricted",
+        description: "Your account requires Project Manager approval before accessing jobs.",
+        variant: "destructive",
+      });
+      navigate('/mobile');
+    }
+  }, [isRestrictedTradie, navigate, toast]);
+
+  if (isRestrictedTradie) {
+    return null; // Prevent flicker while redirecting
+  }
 
   return (
     <MobileLayout title="Job Search" showBackButton={true}>
