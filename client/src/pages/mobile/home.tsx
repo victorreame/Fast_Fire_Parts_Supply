@@ -44,16 +44,19 @@ const MobileHome = () => {
         {isRestrictedTradie && (
           <Alert className="mb-4 bg-amber-50 border-amber-200 border-l-4 border-l-amber-600">
             <ShieldAlert className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="text-amber-800 font-bold">Account Pending Approval</AlertTitle>
+            <AlertTitle className="text-amber-800 font-bold">ACCOUNT PENDING APPROVAL</AlertTitle>
             <AlertDescription className="text-amber-700">
               <p className="font-medium mb-1">Your account requires Project Manager approval before accessing jobs or placing orders.</p>
-              <p className="mb-2">Until approved, you can only browse the parts catalog. The following features are restricted:</p>
-              <ul className="list-disc pl-5 mb-2 text-sm">
-                <li>Job listings and search</li>
-                <li>Adding items to cart</li>
-                <li>Order submission</li>
-                <li>Order history access</li>
+              <p className="mb-2">Until approved, you can only browse the parts catalog. The following features are RESTRICTED:</p>
+              <ul className="list-disc pl-5 mb-3 text-sm">
+                <li><strong>Job listings and search</strong> - Not accessible</li>
+                <li><strong>Adding items to cart</strong> - Buttons disabled</li>
+                <li><strong>Order submission</strong> - Not allowed</li>
+                <li><strong>Order history access</strong> - Not accessible</li>
               </ul>
+              <div className="bg-amber-100 p-3 rounded-md border border-amber-300 my-2">
+                <p className="font-medium text-amber-800">Your approval status: <span className="text-red-600 font-bold">NOT APPROVED</span></p>
+              </div>
               <p className="text-sm border-t border-amber-200 pt-2 mt-2">
                 Please contact your Project Manager to request approval.
                 {user?.createdAt && (

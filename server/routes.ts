@@ -195,7 +195,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const checkTradieApproved = (req: Request, res: Response, next: NextFunction) => {
     if (req.isAuthenticated() && req.user) {
       if (req.user.role === 'tradie' && !req.user.isApproved) {
-        console.log(`Cart access attempt by unapproved tradie: ${req.user.id} (${req.user.username}) - ${req.method} ${req.path}`);
+        console.log(`BLOCKED: Cart access attempt by unapproved tradie: ${req.user.id} (${req.user.username}) - ${req.method} ${req.path}`);
+        console.log(`User approval status: ${req.user.isApproved === false ? 'NOT APPROVED' : 'APPROVED'}`);
         return res.status(403).json({ 
           error: "Access restricted", 
           message: "Account pending approval. Contact your Project Manager for access."
@@ -469,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cart routes - mobile interface allows guest users
+  // Cart routes - mobile interface allows guest users except unapproved tradies
   apiRouter.get("/cart", checkTradieApproved, async (req: Request, res: Response) => {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
@@ -515,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  apiRouter.put("/cart/:id", async (req: Request, res: Response) => {
+  apiRouter.put("/cart/:id", checkTradieApproved, async (req: Request, res: Response) => {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
@@ -552,7 +553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  apiRouter.delete("/cart/:id", async (req: Request, res: Response) => {
+  apiRouter.delete("/cart/:id", checkTradieApproved, async (req: Request, res: Response) => {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
@@ -581,6 +582,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.isAuthenticated() && req.user) {
         // Verify user approval status for tradies - prevent order submission
         if (req.user.role === 'tradie' && !req.user.isApproved) {
+          console.log(`BLOCKED ORDER: Unapproved tradie ${req.user.id} (${req.user.username}) attempted to place order`);
+          console.log(`User approval status: ${req.user.isApproved === false ? 'NOT APPROVED' : 'APPROVED'}`);
           return res.status(403).json({
             message: "Access restricted",
             details: "Your account is pending approval from a Project Manager. You cannot place orders until approved."

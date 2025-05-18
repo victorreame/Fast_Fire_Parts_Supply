@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { FaMinus, FaPlus } from "react-icons/fa";
+import { ShieldAlert } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 interface PartCardProps {
   part: Part;
@@ -18,6 +20,10 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   const [cartItemId, setCartItemId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Check if user is an unapproved tradie
+  const isUnapprovedTradie = user?.role === 'tradie' && !user?.isApproved;
 
   // Get cart items to check if this part is already in cart
   const { data: cartItems } = useQuery({ 
@@ -42,6 +48,11 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   // Add to cart mutation
   const addToCartMutation = useMutation({
     mutationFn: async (newQuantity: number) => {
+      // Block cart operations for unapproved tradies at the client level
+      if (isUnapprovedTradie) {
+        throw new Error("Account pending approval. You cannot add items to cart until approved.");
+      }
+      
       const response = await apiRequest("POST", "/api/cart", {
         partId: part.id,
         jobId: jobId || null,
@@ -187,6 +198,12 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
 
   return (
     <div className="p-4 border-b border-neutral-200">
+      {isUnapprovedTradie && (
+        <div className="mb-3 p-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-md flex items-center text-sm">
+          <ShieldAlert className="h-4 w-4 text-amber-600 mr-2 flex-shrink-0" />
+          <span>Account pending approval. Cannot add to cart.</span>
+        </div>
+      )}
       <div className="flex justify-between">
         <div className="w-3/4 flex">
           <div className="mr-3 flex-shrink-0">
@@ -240,7 +257,8 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
               size="icon"
               className={`h-8 w-8 rounded-r-none border-r-0 ${quantity > 0 ? "text-white" : ""}`}
               onClick={handleDecrement}
-              disabled={isPending || quantity <= 0}
+              disabled={isPending || quantity <= 0 || isUnapprovedTradie}
+              title={isUnapprovedTradie ? "Account pending approval" : ""}
             >
               <FaMinus className="h-3 w-3" />
             </Button>
@@ -254,6 +272,8 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
                 quantity > 0 ? "bg-secondary-50 font-medium border-secondary" : ""
               }`}
               min={0}
+              disabled={isUnapprovedTradie}
+              title={isUnapprovedTradie ? "Account pending approval" : ""}
             />
 
             <Button
@@ -261,7 +281,8 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
               size="icon"
               className={`h-8 w-8 rounded-l-none border-l-0 ${quantity > 0 ? "text-white" : ""}`}
               onClick={handleIncrement}
-              disabled={isPending}
+              disabled={isPending || isUnapprovedTradie}
+              title={isUnapprovedTradie ? "Account pending approval" : ""}
             >
               <FaPlus className="h-3 w-3" />
             </Button>

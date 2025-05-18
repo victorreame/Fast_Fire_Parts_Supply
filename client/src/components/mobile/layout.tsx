@@ -38,9 +38,12 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
     quantity: number;
   }
 
+  // Check if user is an unapproved tradie
+  const isUnapprovedTradie = user?.role === 'tradie' && !user?.isApproved;
+
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ['/api/cart'],
-    enabled: !!user, // Only fetch cart items when user is authenticated
+    enabled: showCart && !isUnapprovedTradie // Don't fetch cart data for unapproved tradies
   });
 
   // Use the standardized logout function
@@ -48,10 +51,10 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
     try {
       // Close the user menu first
       setIsUserMenuOpen(false);
-      
+
       // Use the proper logout mutation from auth context
       logoutMutation.mutate();
-      
+
       // The logoutMutation handles:
       // 1. API request to server
       // 2. Clearing query cache
@@ -76,7 +79,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
           Limited Access Mode - Contact a Project Manager for approval
         </div>
       )}
-      
+
       {/* Header */}
       <header className="bg-gradient-to-r from-red-700 to-red-800 text-white py-3 px-4 flex items-center justify-between shadow-md">
         <div className="flex items-center">
@@ -91,7 +94,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
           )}
           <div className="flex flex-col">
             <h1 className="text-xl font-bold flex items-center">{title || "FastFire Parts"}</h1>
-            
+
             {/* Show status badge for unapproved tradies */}
             {user?.role === 'tradie' && !user?.isApproved && (
               <Badge variant="outline" className="text-xs bg-yellow-800 text-white border-yellow-700 mt-1">
@@ -101,7 +104,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
           </div>
         </div>
         <div className="flex items-center">
-          {showCart && (
+          {showCart && !isUnapprovedTradie && (
             <Button
               variant="ghost"
               size="icon"
@@ -202,7 +205,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
             </div>
             <span>Alerts</span>
           </Link>
-          
+
           {/* Only show Orders tab for approved tradies */}
           {(!user?.role || user?.role !== 'tradie' || user?.isApproved) && (
             <Link href="/orders" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
@@ -212,7 +215,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
               <span>Orders</span>
             </Link>
           )}
-          
+
           {/* Only show Favorites tab for approved tradies */}
           {(!user?.role || user?.role !== 'tradie' || user?.status === 'active') && (
             <Link href="/favorites" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
@@ -222,7 +225,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
               <span>Favorites</span>
             </Link>
           )}
-          
+
           <Link href="/account" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
             location === '/account' ? 'text-red-600' : 'text-neutral-500'
           }`}>

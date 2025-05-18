@@ -50,6 +50,11 @@ const JobSearchPage = () => {
         })
     : [];
 
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const isRestrictedTradie = user?.role === 'tradie' && !user?.isApproved;
+
   // Use effect to redirect unapproved tradies
   useEffect(() => {
     if (isRestrictedTradie) {
