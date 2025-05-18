@@ -24,13 +24,19 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId, showWarningBanner = tr
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Check if user is an unapproved tradie or contractor - explicitly check for false to be safe
+  // Check if user is an unapproved tradie or contractor
   const isUnapprovedTradie = (user?.role === 'tradie' || user?.role === 'contractor') && user?.isApproved !== true;
   
   // Check if part is in favorites
   const { data: favorites } = useQuery({
     queryKey: ['/api/favorites'],
     enabled: !!user,
+  });
+  
+  // Get cart items to check if this part is already in cart - don't fetch for unapproved tradies
+  const { data: cartItems } = useQuery({ 
+    queryKey: ['/api/cart'],
+    enabled: !isUnapprovedTradie && !!user
   });
   
   // Set initial favorite state
@@ -40,28 +46,6 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId, showWarningBanner = tr
       setIsFavorite(isFav);
     }
   }, [favorites, part.id]);
-  
-  console.log(`Part card render - User approval status: ${user?.isApproved === true ? 'APPROVED' : 'NOT APPROVED'}`);
-  console.log(`Raw isApproved value from DB: ${user?.isApproved}`);
-  
-  // COMPLETELY BLOCK CART ACTIONS for unapproved tradies
-  if (isUnapprovedTradie) {
-    // No-op function to completely disable cart actions
-    const noOp = () => {
-      toast({
-        title: "Access Restricted",
-        description: "Your account must be approved by a Project Manager before using cart functionality.",
-        variant: "destructive"
-      });
-      return false;
-    };
-  }
-
-  // Get cart items to check if this part is already in cart - don't fetch for unapproved tradies
-  const { data: cartItems } = useQuery({ 
-    queryKey: ['/api/cart'],
-    enabled: !isUnapprovedTradie
-  });
 
   // Find this part in the cart (if it exists)
   useEffect(() => {
@@ -167,6 +151,52 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId, showWarningBanner = tr
     },
   });
 
+  // Toggle favorite mutation
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async () => {
+      if (isFavorite) {
+        // Remove from favorites
+        return apiRequest("DELETE", `/api/favorites/${part.id}`, {});
+      } else {
+        // Add to favorites
+        return apiRequest("POST", `/api/favorites`, { partId: part.id });
+      }
+    },
+    onSuccess: () => {
+      setIsFavorite(!isFavorite);
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      toast({
+        title: isFavorite ? "Removed from favorites" : "Added to favorites",
+        description: isFavorite 
+          ? `${part.description} has been removed from your favorites.`
+          : `${part.description} has been added to your favorites.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to use favorites",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toggleFavoriteMutation.mutate();
+  };
+
   const handleIncrement = () => {
     const newQuantity = quantity + 1;
     setQuantity(newQuantity);
@@ -224,36 +254,6 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId, showWarningBanner = tr
     }
   };
 
-  // Toggle favorite mutation
-  const toggleFavoriteMutation = useMutation({
-    mutationFn: async () => {
-      if (isFavorite) {
-        // Remove from favorites
-        return apiRequest("DELETE", `/api/favorites/${part.id}`, {});
-      } else {
-        // Add to favorites
-        return apiRequest("POST", `/api/favorites`, { partId: part.id });
-      }
-    },
-    onSuccess: () => {
-      setIsFavorite(!isFavorite);
-      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
-      toast({
-        title: isFavorite ? "Removed from favorites" : "Added to favorites",
-        description: isFavorite 
-          ? `${part.description} has been removed from your favorites.`
-          : `${part.description} has been added to your favorites.`,
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update favorites. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const isPending = addToCartMutation.isPending || 
                    updateQuantityMutation.isPending || 
                    removeItemMutation.isPending || 
@@ -261,7 +261,6 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId, showWarningBanner = tr
 
   return (
     <div className="p-4 border-b border-neutral-200">
-
       <div className="flex justify-between">
         <div className="w-3/4 flex">
           <div className="mr-3 flex-shrink-0">
