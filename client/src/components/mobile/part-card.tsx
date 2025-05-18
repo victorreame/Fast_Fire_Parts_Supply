@@ -223,21 +223,48 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId, showWarningBanner = tr
     }
   };
 
+  // Toggle favorite mutation
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async () => {
+      if (isFavorite) {
+        // Remove from favorites
+        return apiRequest("DELETE", `/api/favorites/${part.id}`, {});
+      } else {
+        // Add to favorites
+        return apiRequest("POST", `/api/favorites`, { partId: part.id });
+      }
+    },
+    onSuccess: () => {
+      setIsFavorite(!isFavorite);
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      toast({
+        title: isFavorite ? "Removed from favorites" : "Added to favorites",
+        description: isFavorite 
+          ? `${part.description} has been removed from your favorites.`
+          : `${part.description} has been added to your favorites.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleToggleFavorite = () => {
+    toggleFavoriteMutation.mutate();
+  };
+
   const isPending = addToCartMutation.isPending || 
                    updateQuantityMutation.isPending || 
-                   removeItemMutation.isPending;
+                   removeItemMutation.isPending || 
+                   toggleFavoriteMutation.isPending;
 
   return (
     <div className="p-4 border-b border-neutral-200">
-      {isUnapprovedTradie && (
-        <div className="mb-3 p-3 bg-red-100 border-2 border-red-500 text-red-800 rounded-md flex items-center text-sm">
-          <ShieldAlert className="h-6 w-6 text-red-600 mr-2 flex-shrink-0" />
-          <div>
-            <span className="font-bold block">CART ACCESS BLOCKED</span>
-            <span>Your account must be approved by a Project Manager before using cart functionality. Contact your PM for immediate approval.</span>
-          </div>
-        </div>
-      )}
+
       <div className="flex justify-between">
         <div className="w-3/4 flex">
           <div className="mr-3 flex-shrink-0">

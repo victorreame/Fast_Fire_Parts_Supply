@@ -13,7 +13,8 @@ import {
   jobUsers, type JobUser, type InsertJobUser,
   notifications, type Notification, type InsertNotification,
   orderHistory, type OrderHistory, type InsertOrderHistory,
-  tradieInvitations, type TradieInvitation, type InsertTradieInvitation
+  tradieInvitations, type TradieInvitation, type InsertTradieInvitation,
+  favorites, type InsertFavorite
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -166,6 +167,11 @@ export interface IStorage {
   acceptTradieInvitation(invitationId: number): Promise<TradieInvitation | undefined>;
   rejectTradieInvitation(invitationId: number): Promise<TradieInvitation | undefined>;
   deleteTradieInvitation(id: number): Promise<boolean>;
+  
+  // Favorites
+  getFavoritesByUser(userId: number): Promise<{ id: number, userId: number, partId: number }[]>;
+  addFavorite(favorite: InsertFavorite): Promise<{ id: number, userId: number, partId: number, addedAt: Date }>;
+  removeFavorite(userId: number, partId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -702,6 +708,17 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Session store for authentication
+  public sessionStore: session.Store;
+  
+  constructor() {
+    // Initialize PostgreSQL session store
+    const PostgresSessionStore = connectPg(session);
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      createTableIfMissing: true
+    });
+  }
   public sessionStore: session.Store;
   
   constructor() {

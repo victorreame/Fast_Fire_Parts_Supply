@@ -510,6 +510,9 @@ export const insertFavoriteSchema = createInsertSchema(favorites).omit({
   addedAt: true,
 });
 
+export type Favorite = typeof favorites.$inferSelect;
+export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
+
 export const tradieInvitationsRelations = relations(tradieInvitations, ({ one }) => ({
   tradie: one(users, {
     fields: [tradieInvitations.tradieId],
