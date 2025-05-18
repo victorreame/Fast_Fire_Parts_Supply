@@ -27,6 +27,19 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   
   console.log(`Part card render - User approval status: ${user?.isApproved === true ? 'APPROVED' : 'NOT APPROVED'}`);
   console.log(`Raw isApproved value from DB: ${user?.isApproved}`);
+  
+  // COMPLETELY BLOCK CART ACTIONS for unapproved tradies
+  if (isUnapprovedTradie) {
+    // No-op function to completely disable cart actions
+    const noOp = () => {
+      toast({
+        title: "Access Restricted",
+        description: "Your account must be approved by a Project Manager before using cart functionality.",
+        variant: "destructive"
+      });
+      return false;
+    };
+  }
 
   // Get cart items to check if this part is already in cart - don't fetch for unapproved tradies
   const { data: cartItems } = useQuery({ 
@@ -202,11 +215,11 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   return (
     <div className="p-4 border-b border-neutral-200">
       {isUnapprovedTradie && (
-        <div className="mb-3 p-3 bg-amber-100 border-l-4 border-amber-600 text-amber-800 rounded-md flex items-center text-sm">
-          <ShieldAlert className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0" />
+        <div className="mb-3 p-3 bg-red-100 border-2 border-red-500 text-red-800 rounded-md flex items-center text-sm">
+          <ShieldAlert className="h-6 w-6 text-red-600 mr-2 flex-shrink-0" />
           <div>
-            <span className="font-bold block">RESTRICTED ACCESS</span>
-            <span>Your account requires PM approval before adding items to cart.</span>
+            <span className="font-bold block">CART ACCESS BLOCKED</span>
+            <span>Your account must be approved by a Project Manager before using cart functionality. Contact your PM for immediate approval.</span>
           </div>
         </div>
       )}
