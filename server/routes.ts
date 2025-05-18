@@ -489,8 +489,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Hard block for unapproved users for all cart routes
   apiRouter.use('/cart*', (req: Request, res: Response, next: NextFunction) => {
-    // STRICT BLOCK: Completely block cart access for unapproved tradies
-    if (req.isAuthenticated() && req.user?.role === 'tradie' && req.user.isApproved !== true) {
+    // STRICT BLOCK: Completely block cart access for ANY unapproved user (tradie or contractor)
+    if (req.isAuthenticated() && 
+        (req.user?.role === 'tradie' || req.user?.role === 'contractor') && 
+        req.user.isApproved !== true) {
       console.log(`SECURITY: Blocked unapproved tradie ${req.user.id} (${req.user.username}) from accessing cart endpoint: ${req.originalUrl}`);
       return res.status(403).json({ 
         error: "Access Denied", 

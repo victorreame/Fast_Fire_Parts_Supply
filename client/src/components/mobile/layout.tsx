@@ -38,8 +38,8 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
     quantity: number;
   }
 
-  // Check if user is an unapproved tradie - extra explicit check
-  const isUnapprovedTradie = user?.role === 'tradie' && user?.isApproved !== true;
+  // Check if user is an unapproved tradie or contractor - extra explicit check
+  const isUnapprovedTradie = (user?.role === 'tradie' || user?.role === 'contractor') && user?.isApproved !== true;
   
   console.log(`Mobile layout - User approval status check:`);
   console.log(`Role: ${user?.role}, isApproved value: ${user?.isApproved}`);

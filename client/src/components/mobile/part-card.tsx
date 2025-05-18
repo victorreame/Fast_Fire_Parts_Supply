@@ -22,8 +22,8 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Check if user is an unapproved tradie - explicitly check for false to be safe
-  const isUnapprovedTradie = user?.role === 'tradie' && user?.isApproved !== true;
+  // Check if user is an unapproved tradie or contractor - explicitly check for false to be safe
+  const isUnapprovedTradie = (user?.role === 'tradie' || user?.role === 'contractor') && user?.isApproved !== true;
   
   console.log(`Part card render - User approval status: ${user?.isApproved === true ? 'APPROVED' : 'NOT APPROVED'}`);
   console.log(`Raw isApproved value from DB: ${user?.isApproved}`);
