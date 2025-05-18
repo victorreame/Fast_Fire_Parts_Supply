@@ -40,7 +40,7 @@ const MobileHome = () => {
 
   return (
     <MobileLayout>
-      <div className="p-4 flex flex-col h-[calc(100vh-80px)]">
+      <div className="p-4 flex flex-col h-[calc(100vh-120px)] overflow-hidden">
         {isRestrictedTradie && (
           <Alert className="mb-4 bg-amber-50 border-amber-200 border-l-4 border-l-amber-600">
             <ShieldAlert className="h-4 w-4 text-amber-600" />
@@ -57,7 +57,7 @@ const MobileHome = () => {
           </Alert>
         )}
 
-        <form onSubmit={handleSearch} className="mb-6">
+        <form onSubmit={handleSearch} className="mb-4">
           <div className="relative">
             <Input
               type="text"
@@ -78,7 +78,8 @@ const MobileHome = () => {
           </div>
         </form>
 
-        <div className="grid grid-cols-2 gap-4 mt-auto mb-auto">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
           {/* Job Number Button */}
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
             <Button
@@ -152,6 +153,7 @@ const MobileHome = () => {
               </Button>
             )}
           </div>
+        </div>
         </div>
       </div>
     </MobileLayout>
