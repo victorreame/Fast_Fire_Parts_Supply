@@ -13,17 +13,32 @@ import { useAuth } from "@/hooks/use-auth";
 interface PartCardProps {
   part: Part;
   jobId?: number;
+  showWarningBanner?: boolean;
 }
 
-const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
+const PartCard: React.FC<PartCardProps> = ({ part, jobId, showWarningBanner = true }) => {
   const [quantity, setQuantity] = useState(0);
   const [cartItemId, setCartItemId] = useState<number | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
   
   // Check if user is an unapproved tradie or contractor - explicitly check for false to be safe
   const isUnapprovedTradie = (user?.role === 'tradie' || user?.role === 'contractor') && user?.isApproved !== true;
+  
+  // Check if part is in favorites
+  const { data: favorites } = useQuery({
+    queryKey: ['/api/favorites'],
+    enabled: !!user,
+  });
+  
+  // Set initial favorite state
+  useEffect(() => {
+    if (favorites && Array.isArray(favorites)) {
+      setIsFavorite(favorites.some((fav: any) => fav.partId === part.id));
+    }
+  }, [favorites, part.id]);
   
   console.log(`Part card render - User approval status: ${user?.isApproved === true ? 'APPROVED' : 'NOT APPROVED'}`);
   console.log(`Raw isApproved value from DB: ${user?.isApproved}`);
