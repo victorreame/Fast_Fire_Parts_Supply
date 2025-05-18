@@ -46,7 +46,12 @@ const MobileHome = () => {
             <ShieldAlert className="h-4 w-4 text-amber-600" />
             <AlertTitle className="text-amber-800">Limited Access Mode</AlertTitle>
             <AlertDescription className="text-amber-700">
-              Your account has restricted access. You can only search for parts until a Project Manager sends you an invitation.
+              Your account is pending approval from a Project Manager. You can only browse the parts catalog.
+              {user?.createdAt && (
+                <div className="mt-1 text-xs">
+                  Registration date: {new Date(user.createdAt).toLocaleString()}
+                </div>
+              )}
             </AlertDescription>
           </Alert>
         )}

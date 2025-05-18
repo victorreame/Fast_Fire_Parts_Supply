@@ -127,7 +127,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   const handleIncrement = () => {
     const newQuantity = quantity + 1;
     setQuantity(newQuantity);
-    
+
     if (cartItemId) {
       // Update existing cart item
       updateQuantityMutation.mutate({ id: cartItemId, newQuantity });
@@ -139,10 +139,10 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
 
   const handleDecrement = () => {
     if (quantity <= 0) return;
-    
+
     const newQuantity = quantity - 1;
     setQuantity(newQuantity);
-    
+
     if (cartItemId) {
       if (newQuantity === 0) {
         // Remove item if quantity becomes zero
@@ -156,15 +156,15 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newValue = parseInt(e.target.value);
-    
+
     // Ensure value is not NaN and is at least 0
     if (isNaN(newValue)) {
       newValue = 0;
     }
-    
+
     // Ensure quantity is never negative
     newValue = Math.max(0, newValue);
-    
+
     setQuantity(newValue);
   };
 
@@ -244,7 +244,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
             >
               <FaMinus className="h-3 w-3" />
             </Button>
-            
+
             <Input
               type="text"
               value={quantity}
@@ -255,7 +255,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
               }`}
               min={0}
             />
-            
+
             <Button
               variant={quantity > 0 ? "secondary" : "outline"}
               size="icon"

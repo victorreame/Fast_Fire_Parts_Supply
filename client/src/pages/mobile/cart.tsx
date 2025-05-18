@@ -152,24 +152,26 @@ const CartPage = () => {
               />
             </div>
             
-            <div>
-              <Label className="block text-sm font-medium text-neutral-700">
-                Assign to Job (Optional)
-              </Label>
-              <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select a job" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No job selected</SelectItem>
-                  {jobs.map((job: any) => (
-                    <SelectItem key={job.id} value={job.id.toString()}>
-                      {job.name} ({job.jobNumber})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {(!user || user.role !== 'tradie' || user.isApproved) && (
+              <div>
+                <Label className="block text-sm font-medium text-neutral-700">
+                  Assign to Job (Optional)
+                </Label>
+                <Select value={selectedJobId} onValueChange={setSelectedJobId}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select a job" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No job selected</SelectItem>
+                    {jobs.map((job: any) => (
+                      <SelectItem key={job.id} value={job.id.toString()}>
+                        {job.name} ({job.jobNumber})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             <Button
               className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium transition mt-2"

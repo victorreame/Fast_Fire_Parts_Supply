@@ -63,15 +63,34 @@ export function AuthGuardMobile({ children, redirectPath = '/login' }: AuthGuard
           '/mobile', 
           '/account', 
           '/parts',
-          '/parts/popular'
+          '/parts/popular',
+          '/search'
         ];
-        const isAllowedPath = allowedPaths.some(path => currentPath === path || currentPath.startsWith(path + '/'));
+        const restrictedPaths = [
+          '/mobile/cart',
+          '/mobile/orders',
+          '/mobile/job',
+          '/mobile/jobs',
+          '/mobile/job-search',
+          '/mobile/job-details',
+          '/orders'
+        ];
         
-        if (!isAllowedPath) {
+        // Check if current path is explicitly restricted
+        const isRestrictedPath = restrictedPaths.some(path => 
+          currentPath === path || currentPath.startsWith(path + '/')
+        );
+        
+        // Only allow specifically approved paths
+        const isAllowedPath = allowedPaths.some(path => 
+          currentPath === path || currentPath.startsWith(path + '/')
+        );
+        
+        if (isRestrictedPath || !isAllowedPath) {
           setIsAuthenticated(false);
           toast({
-            title: "Limited Access",
-            description: "You need to accept a Project Manager invitation to access this feature.",
+            title: "Access Restricted",
+            description: "Your account is pending approval from a Project Manager. Limited access mode is active.",
             variant: "destructive",
           });
           navigate('/mobile');
