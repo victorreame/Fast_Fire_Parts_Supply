@@ -6,11 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { Job } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocation } from "wouter";
 
 const JobSearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("recent");
-  const [_, navigate] = useLocation();
+  const [location] = useLocation();
   const { toast } = useToast();
 
   // Get user data to check approval status
@@ -24,7 +25,7 @@ const JobSearchPage = () => {
           description: "Your account is pending approval from a Project Manager. You cannot access job listings.",
           variant: "destructive",
         });
-        navigate('/mobile');
+        location('/mobile');
       }
     },
   });
