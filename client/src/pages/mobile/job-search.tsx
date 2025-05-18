@@ -15,10 +15,22 @@ const JobSearchPage = () => {
   const [sortBy, setSortBy] = useState("recent");
   const [_, navigate] = useLocation();
   const { toast } = useToast();
-
-  // Get user data from auth context
   const { user } = useAuth();
+  
+  // Check if user is a tradie with restricted access
   const isRestrictedTradie = user?.role === 'tradie' && !user?.isApproved;
+
+  // Redirect unapproved tradies
+  useEffect(() => {
+    if (isRestrictedTradie) {
+      toast({
+        title: "Access Restricted",
+        description: "Your account requires Project Manager approval before accessing jobs.",
+        variant: "destructive",
+      });
+      navigate('/mobile');
+    }
+  }, [isRestrictedTradie, navigate, toast]);
 
   const { data: jobs, isLoading } = useQuery<Job[]>({
     queryKey: ['/api/jobs'],
@@ -50,23 +62,7 @@ const JobSearchPage = () => {
         })
     : [];
 
-  const { user } = useAuth();
-  const [, navigate] = useLocation();
-  const { toast } = useToast();
-  const isRestrictedTradie = user?.role === 'tradie' && !user?.isApproved;
-
-  // Use effect to redirect unapproved tradies
-  useEffect(() => {
-    if (isRestrictedTradie) {
-      toast({
-        title: "Access Restricted",
-        description: "Your account requires Project Manager approval before accessing jobs.",
-        variant: "destructive",
-      });
-      navigate('/mobile');
-    }
-  }, [isRestrictedTradie, navigate, toast]);
-
+  // Prevent rendering if the user is restricted
   if (isRestrictedTradie) {
     return null; // Prevent flicker while redirecting
   }
