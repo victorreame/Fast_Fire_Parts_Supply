@@ -254,6 +254,22 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId, showWarningBanner = tr
     },
   });
 
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to use favorites",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toggleFavoriteMutation.mutate();
+  };
+
   const isPending = addToCartMutation.isPending || 
                    updateQuantityMutation.isPending || 
                    removeItemMutation.isPending || 
@@ -305,7 +321,7 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId, showWarningBanner = tr
 
         <div className="flex items-center gap-2">
           <button
-            onClick={handleToggleFavorite}
+            onClick={(e) => handleToggleFavorite(e)}
             className={`flex items-center justify-center h-8 w-8 rounded-full ${
               isFavorite 
                 ? 'text-yellow-500 hover:text-yellow-600' 

@@ -719,10 +719,9 @@ export class DatabaseStorage implements IStorage {
       createTableIfMissing: true
     });
   }
-  public sessionStore: session.Store;
   
-  // Seed the database with initial data if it's empty
-  private async seedDataIfNeeded() {
+  // Initialize and seed the database with initial data if needed
+  async seedDataIfNeeded() {
     // Check if any users exist
     const existingUsers = await db.select().from(users).limit(1);
     
