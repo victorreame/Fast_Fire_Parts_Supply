@@ -27,6 +27,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // API routes
   const apiRouter = express.Router();
+  // Set up favorites router
+  const favoritesRouter = express.Router();
+  
+  // Get user's favorites
+  favoritesRouter.get("/", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const favorites = await db
+        .select({
+          id: favorites.id,
+          partId: favorites.partId,
+          userId: favorites.userId
+        })
+        .from(favorites)
+        .where(eq(favorites.userId, userId));
+      
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      res.status(500).json({ error: "Failed to fetch favorites" });
+    }
+  });
+  
+  // Add to favorites
+  favoritesRouter.post("/", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { partId } = req.body;
+      
+      if (!partId) {
+        return res.status(400).json({ error: "Part ID is required" });
+      }
+      
+      // Check if already in favorites
+      const existingFavorite = await db
+        .select()
+        .from(favorites)
+        .where(and(
+          eq(favorites.userId, userId),
+          eq(favorites.partId, partId)
+        ));
+      
+      if (existingFavorite.length > 0) {
+        return res.status(200).json(existingFavorite[0]);
+      }
+      
+      // Add to favorites
+      const [favorite] = await db
+        .insert(favorites)
+        .values({
+          userId,
+          partId
+        })
+        .returning();
+      
+      res.status(201).json(favorite);
+    } catch (error) {
+      console.error("Error adding favorite:", error);
+      res.status(500).json({ error: "Failed to add favorite" });
+    }
+  });
+  
+  // Remove from favorites
+  favoritesRouter.delete("/:partId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const partId = parseInt(req.params.partId);
+      
+      await db
+        .delete(favorites)
+        .where(and(
+          eq(favorites.userId, userId),
+          eq(favorites.partId, partId)
+        ));
+      
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+      res.status(500).json({ error: "Failed to remove favorite" });
+    }
+  });
+  
+  app.use("/api/favorites", favoritesRouter);
   app.use("/api", apiRouter);
 
   // PM middleware to check if user is a project manager

@@ -306,7 +306,20 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId, showWarningBanner = tr
           </div>
         </div>
 
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleToggleFavorite}
+            className={`flex items-center justify-center h-8 w-8 rounded-full ${
+              isFavorite 
+                ? 'text-yellow-500 hover:text-yellow-600' 
+                : 'text-gray-400 hover:text-gray-500'
+            } ${toggleFavoriteMutation.isPending ? 'opacity-50' : ''}`}
+            disabled={toggleFavoriteMutation.isPending}
+            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            <FaStar className="h-5 w-5" />
+          </button>
+          
           <div className={`flex items-center relative ${isPending ? 'opacity-70' : ''}`}>
             {isPending && (
               <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-30 z-10 rounded-md">
