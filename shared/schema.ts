@@ -497,6 +497,19 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   }),
 }));
 
+// Favorites table (new)
+export const favorites = pgTable("favorites", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  partId: integer("part_id").references(() => parts.id).notNull(),
+  addedAt: timestamp("added_at").defaultNow(),
+});
+
+export const insertFavoriteSchema = createInsertSchema(favorites).omit({
+  id: true,
+  addedAt: true,
+});
+
 export const tradieInvitationsRelations = relations(tradieInvitations, ({ one }) => ({
   tradie: one(users, {
     fields: [tradieInvitations.tradieId],

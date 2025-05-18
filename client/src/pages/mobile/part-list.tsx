@@ -7,12 +7,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearch } from "wouter";
 import { Part } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ShieldAlert } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const PartListPage = () => {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const isPopular = params.get("popular") === "true";
   const searchQuery = params.get("q") || "";
+  const { user } = useAuth();
+  
+  // Check if user is an unapproved tradie or contractor
+  const isUnapprovedTradie = (user?.role === 'tradie' || user?.role === 'contractor') && user?.isApproved !== true;
   
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const [filterType, setFilterType] = useState("");
@@ -98,6 +104,17 @@ const PartListPage = () => {
         </div>
       </div>
 
+      {/* Show a global warning banner for unapproved tradies */}
+      {isUnapprovedTradie && (
+        <div className="mx-4 mt-4 p-4 bg-red-100 border-2 border-red-500 text-red-800 rounded-md flex items-center">
+          <ShieldAlert className="h-6 w-6 text-red-600 mr-3 flex-shrink-0" />
+          <div>
+            <span className="font-bold block text-base">CART ACCESS BLOCKED</span>
+            <span>Your account must be approved by a Project Manager before using cart functionality. Contact your PM for immediate approval.</span>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-y-auto">
         {isLoading ? (
           // Loading skeleton
@@ -119,7 +136,7 @@ const PartListPage = () => {
               </div>
             ))
         ) : filteredAndSortedParts.length > 0 ? (
-          filteredAndSortedParts.map((part) => <PartCard key={part.id} part={part} />)
+          filteredAndSortedParts.map((part) => <PartCard key={part.id} part={part} showWarningBanner={false} />)
         ) : (
           <div className="p-8 text-center">
             <p className="text-neutral-500">No parts found matching your criteria.</p>
