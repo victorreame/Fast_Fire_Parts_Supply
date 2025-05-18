@@ -487,8 +487,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Hard block for unapproved users for all cart routes
+  apiRouter.use('/cart*', (req: Request, res: Response, next: NextFunction) => {
+    if (req.isAuthenticated() && req.user?.role === 'tradie' && req.user.isApproved !== true) {
+      console.log(`HARD BLOCK: Unapproved tradie ${req.user.id} (${req.user.username}) attempted cart access`);
+      return res.status(403).json({
+        error: "Account not approved",
+        message: "Your account must be approved by a Project Manager before using cart functionality."
+      });
+    }
+    next();
+  });
+
   // Cart routes - mobile interface allows guest users except unapproved tradies
-  apiRouter.get("/cart", checkTradieApproved, async (req: Request, res: Response) => {
+  apiRouter.get("/cart", async (req: Request, res: Response) => {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
@@ -510,7 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  apiRouter.post("/cart", checkTradieApproved, async (req: Request, res: Response) => {
+  apiRouter.post("/cart", async (req: Request, res: Response) => {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
@@ -533,7 +545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  apiRouter.put("/cart/:id", checkTradieApproved, async (req: Request, res: Response) => {
+  apiRouter.put("/cart/:id", async (req: Request, res: Response) => {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
@@ -570,7 +582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  apiRouter.delete("/cart/:id", checkTradieApproved, async (req: Request, res: Response) => {
+  apiRouter.delete("/cart/:id", async (req: Request, res: Response) => {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
