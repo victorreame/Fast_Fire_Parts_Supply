@@ -10,7 +10,8 @@ import {
   insertOrderSchema,
   insertOrderItemSchema,
   insertCartItemSchema,
-  insertJobPartSchema
+  insertJobPartSchema,
+  favorites
 } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth, hashPassword } from "./auth";
