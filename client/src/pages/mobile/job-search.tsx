@@ -16,25 +16,13 @@ const JobSearchPage = () => {
   const [_, navigate] = useLocation();
   const { toast } = useToast();
 
-  // Get user data to check approval status
-  const { data: user } = useQuery({
-    queryKey: ['/api/user'],
-    onSuccess: (data) => {
-      // Redirect unapproved tradies
-      if (data?.role === 'tradie' && !data?.isApproved) {
-        toast({
-          title: "Access Restricted",
-          description: "Your account is pending approval from a Project Manager. You cannot access job listings.",
-          variant: "destructive",
-        });
-        navigate('/mobile');
-      }
-    },
-  });
+  // Get user data from auth context
+  const { user } = useAuth();
+  const isRestrictedTradie = user?.role === 'tradie' && !user?.isApproved;
 
   const { data: jobs, isLoading } = useQuery<Job[]>({
     queryKey: ['/api/jobs'],
-    enabled: !user || user.role !== 'tradie' || user.isApproved, // Only fetch if user is approved
+    enabled: !isRestrictedTradie, // Only fetch if user is not restricted
   });
 
   // Filter and sort jobs
@@ -61,9 +49,6 @@ const JobSearchPage = () => {
           return 0;
         })
     : [];
-
-  const { user } = useAuth();
-  const isRestrictedTradie = user?.role === 'tradie' && !user?.isApproved;
 
   // Use effect to redirect unapproved tradies
   useEffect(() => {
