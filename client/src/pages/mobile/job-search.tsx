@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import MobileLayout from "@/components/mobile/layout";
 import JobCard from "@/components/mobile/job-card";
@@ -7,11 +8,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Job } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 const JobSearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("recent");
-  const [location] = useLocation();
+  const [_, navigate] = useLocation();
   const { toast } = useToast();
 
   // Get user data to check approval status
@@ -25,7 +27,7 @@ const JobSearchPage = () => {
           description: "Your account is pending approval from a Project Manager. You cannot access job listings.",
           variant: "destructive",
         });
-        location('/mobile');
+        navigate('/mobile');
       }
     },
   });

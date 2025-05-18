@@ -42,13 +42,14 @@ const MobileHome = () => {
     <MobileLayout>
       <div className="p-4 flex flex-col h-[calc(100vh-80px)]">
         {isRestrictedTradie && (
-          <Alert className="mb-4 bg-amber-50 border-amber-200">
+          <Alert className="mb-4 bg-amber-50 border-amber-200 border-l-4 border-l-amber-600">
             <ShieldAlert className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="text-amber-800">Limited Access Mode</AlertTitle>
+            <AlertTitle className="text-amber-800 font-bold">Account Pending Approval</AlertTitle>
             <AlertDescription className="text-amber-700">
-              Your account is pending approval from a Project Manager. You can only browse the parts catalog.
+              <p className="font-medium mb-1">Your account requires Project Manager approval before accessing jobs or placing orders.</p>
+              <p className="mb-2">Until approved, you can only browse the parts catalog. Job listings, cart functionality, and order submission are restricted.</p>
               {user?.createdAt && (
-                <div className="mt-1 text-xs">
+                <div className="mt-1 text-xs border-t border-amber-200 pt-2">
                   Registration date: {new Date(user.createdAt).toLocaleString()}
                 </div>
               )}

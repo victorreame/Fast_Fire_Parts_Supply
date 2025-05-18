@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MobileLayout from "@/components/mobile/layout";
 import CartItem from "@/components/mobile/cart-item";
 import { Button } from "@/components/ui/button";
@@ -10,25 +10,37 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/lib/auth";
 
 const CartPage = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+
+  // Check if user is an unapproved tradie
+  useEffect(() => {
+    if (user?.role === 'tradie' && !user?.isApproved) {
+      toast({
+        title: "Access Restricted",
+        description: "Your account is pending approval from a Project Manager. You cannot access cart functionality.",
+        variant: "destructive",
+      });
+      navigate('/mobile');
+    }
+  }, [user, toast, navigate]);
+
   const [selectedJobId, setSelectedJobId] = useState<string>("none");
   const [orderNumber, setOrderNumber] = useState<string>("");
   const [customerName, setCustomerName] = useState<string>("");
-  const [_, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const { data: cartItems = [], isLoading: isLoadingCart } = useQuery({
     queryKey: ['/api/cart'],
+    enabled: !user || user.role !== 'tradie' || user.isApproved, // Only fetch for approved users
   });
 
   const { data: jobs = [], isLoading: isLoadingJobs } = useQuery({
     queryKey: ['/api/jobs'],
-  });
-
-  const { data: user } = useQuery({
-    queryKey: ['/api/user'],
   });
 
   const createOrderMutation = useMutation({
@@ -138,7 +150,7 @@ const CartPage = () => {
                 required
               />
             </div>
-            
+
             <div>
               <Label htmlFor="orderNumber" className="text-sm font-medium text-neutral-700">
                 Order/PO Number (Optional)
@@ -151,7 +163,7 @@ const CartPage = () => {
                 className="mt-1"
               />
             </div>
-            
+
             {(!user || user.role !== 'tradie' || user.isApproved) && (
               <div>
                 <Label className="block text-sm font-medium text-neutral-700">
@@ -172,7 +184,7 @@ const CartPage = () => {
                 </Select>
               </div>
             )}
-            
+
             <Button
               className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium transition mt-2"
               onClick={handleSubmitOrder}

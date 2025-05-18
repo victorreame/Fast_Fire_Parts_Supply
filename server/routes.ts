@@ -191,6 +191,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Middleware to check if tradie is approved
+  const checkTradieApproved = (req: Request, res: Response, next: NextFunction) => {
+    if (req.isAuthenticated() && req.user) {
+      if (req.user.role === 'tradie' && !req.user.isApproved) {
+        return res.status(403).json({ 
+          error: "Access restricted", 
+          message: "Account pending approval. Contact your Project Manager for access."
+        });
+      }
+    }
+    next();
+  };
+
   // Helper to get or create a guest user ID for cart functionality
   const getGuestUserId = (req: Request): number => {
     // If already authenticated with passport, use that user ID
@@ -301,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Jobs routes
-  apiRouter.get("/jobs", async (req: Request, res: Response) => {
+  apiRouter.get("/jobs", checkTradieApproved, async (req: Request, res: Response) => {
     try {
       // Check if user is authenticated
       const userId = req.isAuthenticated() ? req.user.id : getGuestUserId(req);
@@ -456,7 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cart routes - mobile interface allows guest users
-  apiRouter.get("/cart", async (req: Request, res: Response) => {
+  apiRouter.get("/cart", checkTradieApproved, async (req: Request, res: Response) => {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
@@ -478,7 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  apiRouter.post("/cart", async (req: Request, res: Response) => {
+  apiRouter.post("/cart", checkTradieApproved, async (req: Request, res: Response) => {
     try {
       // Use getGuestUserId to handle both authenticated and guest users
       const userId = getGuestUserId(req);
@@ -558,7 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Orders routes
-  apiRouter.post("/orders", async (req: Request, res: Response) => {
+  apiRouter.post("/orders", checkTradieApproved, async (req: Request, res: Response) => {
     try {
       let userId = 0;
       let businessId = 0;
