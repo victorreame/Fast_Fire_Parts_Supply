@@ -721,17 +721,7 @@ export class DatabaseStorage implements IStorage {
   }
   public sessionStore: session.Store;
   
-  constructor() {
-    const PostgresSessionStore = connectPg(session);
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true
-    });
-    
-    // Seed the database with initial data if it's empty
-    this.seedDataIfNeeded();
-  }
-  
+  // Seed the database with initial data if it's empty
   private async seedDataIfNeeded() {
     // Check if any users exist
     const existingUsers = await db.select().from(users).limit(1);
