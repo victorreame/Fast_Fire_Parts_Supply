@@ -60,7 +60,7 @@ export function AuthGuardMobile({ children, redirectPath = '/login' }: AuthGuard
       console.log(`Auth guard checking path: ${currentPath}`);
       console.log(`User role: ${user?.role}, approval status: ${user?.isApproved === true ? 'APPROVED' : 'NOT APPROVED'}`);
       
-      if (user?.role === 'tradie' && user?.isApproved !== true) {
+      if ((user?.role === 'tradie' || user?.role === 'contractor') && user?.isApproved !== true) {
         console.log(`SECURITY: Restricting unapproved tradie access to path: ${currentPath}`);
         
         // Allow access only to specific pages for unapproved tradies

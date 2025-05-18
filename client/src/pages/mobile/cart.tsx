@@ -17,9 +17,9 @@ const CartPage = () => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
-  // COMPLETE BLOCK: Check if user is an unapproved tradie and immediately redirect
+  // COMPLETE BLOCK: Check if user is an unapproved tradie or contractor and immediately redirect
   useEffect(() => {
-    if (user?.role === 'tradie' && user?.isApproved !== true) {
+    if ((user?.role === 'tradie' || user?.role === 'contractor') && user?.isApproved !== true) {
       console.log('SECURITY: Blocking unapproved tradie from accessing cart page');
       toast({
         title: "Access Blocked",
@@ -39,7 +39,7 @@ const CartPage = () => {
 
   const { data: cartItems = [], isLoading: isLoadingCart } = useQuery({
     queryKey: ['/api/cart'],
-    enabled: !user || user.role !== 'tradie' || user.isApproved, // Only fetch for approved users
+    enabled: !user || !(user.role === 'tradie' || user.role === 'contractor') || user.isApproved === true, // Only fetch for approved users
   });
 
   const { data: jobs = [], isLoading: isLoadingJobs } = useQuery({

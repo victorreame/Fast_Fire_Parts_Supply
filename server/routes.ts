@@ -487,18 +487,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Hard block for unapproved users for all cart routes
+  // URGENT FIX: Hard block for unapproved users for all cart routes
   apiRouter.use('/cart*', (req: Request, res: Response, next: NextFunction) => {
-    // STRICT BLOCK: Completely block cart access for ANY unapproved user (tradie or contractor)
-    if (req.isAuthenticated() && 
-        (req.user?.role === 'tradie' || req.user?.role === 'contractor') && 
-        req.user.isApproved !== true) {
-      console.log(`SECURITY: Blocked unapproved tradie ${req.user.id} (${req.user.username}) from accessing cart endpoint: ${req.originalUrl}`);
-      return res.status(403).json({ 
-        error: "Access Denied", 
-        message: "Your account requires Project Manager approval before using cart functionality."
-      });
+    // Immediately log all cart access attempts regardless of authentication
+    console.log(`CART ACCESS ATTEMPT: ${req.originalUrl} by ${req.isAuthenticated() ? `user ${req.user?.id} (${req.user?.username})` : 'unauthenticated user'}`);
+    
+    // STRICT BLOCK: Completely block cart access for ANY unapproved user (including contractors)
+    if (req.isAuthenticated()) {
+      console.log(`CART CHECK: User ${req.user?.id} (${req.user?.username}) role: ${req.user?.role}, approval status: ${req.user?.isApproved === true ? 'APPROVED' : 'NOT APPROVED'}`);
+      
+      // Block ANY user that does not have isApproved=true (tradie, contractor, etc.)
+      if ((req.user?.role === 'tradie' || req.user?.role === 'contractor') && req.user?.isApproved !== true) {
+        console.log(`SECURITY BLOCK: Denied cart access to unapproved user ${req.user.id} (${req.user.username}) with role ${req.user.role}`);
+        return res.status(403).json({ 
+          error: "Access Denied", 
+          message: "Your account requires Project Manager approval before using cart functionality."
+        });
+      }
     }
+    
+    // Allow access for approved users
     next();
   });
 
