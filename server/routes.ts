@@ -489,11 +489,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Hard block for unapproved users for all cart routes
   apiRouter.use('/cart*', (req: Request, res: Response, next: NextFunction) => {
+    // STRICT BLOCK: Completely block cart access for unapproved tradies
     if (req.isAuthenticated() && req.user?.role === 'tradie' && req.user.isApproved !== true) {
-      console.log(`HARD BLOCK: Unapproved tradie ${req.user.id} (${req.user.username}) attempted cart access`);
-      return res.status(403).json({
-        error: "Account not approved",
-        message: "Your account must be approved by a Project Manager before using cart functionality."
+      console.log(`SECURITY: Blocked unapproved tradie ${req.user.id} (${req.user.username}) from accessing cart endpoint: ${req.originalUrl}`);
+      return res.status(403).json({ 
+        error: "Access Denied", 
+        message: "Your account requires Project Manager approval before using cart functionality."
       });
     }
     next();

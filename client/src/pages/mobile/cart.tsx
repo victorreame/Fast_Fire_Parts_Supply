@@ -17,15 +17,18 @@ const CartPage = () => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
-  // Check if user is an unapproved tradie
+  // COMPLETE BLOCK: Check if user is an unapproved tradie and immediately redirect
   useEffect(() => {
-    if (user?.role === 'tradie' && !user?.isApproved) {
+    if (user?.role === 'tradie' && user?.isApproved !== true) {
+      console.log('SECURITY: Blocking unapproved tradie from accessing cart page');
       toast({
-        title: "Access Restricted",
-        description: "Your account requires Project Manager approval before accessing cart functionality. Please contact your Project Manager for approval.",
+        title: "Access Blocked",
+        description: "Your account requires Project Manager approval before accessing cart functionality. Please contact your Project Manager for immediate approval.",
         variant: "destructive",
       });
-      navigate('/mobile');
+      // Immediate redirect to home page
+      navigate('/');
+      return;
     }
   }, [user, toast, navigate]);
 
