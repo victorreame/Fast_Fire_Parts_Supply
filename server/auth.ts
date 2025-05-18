@@ -188,8 +188,27 @@ export function setupAuth(app: Express) {
 
   // Login route
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    // Check if the user is approved (except for suppliers who don't need approval)
-    if (req.user.role !== 'supplier' && !req.user.isApproved) {
+    // Extra validation and logging for tradie approval status
+    if (req.user.role === 'tradie') {
+      // Log the raw value from database for debugging
+      console.log(`LOGIN - Tradie ${req.user.id} (${req.user.username}) approval status:`);
+      console.log(`Raw database value: isApproved = ${req.user.isApproved}`);
+      console.log(`Boolean conversion: ${req.user.isApproved === true}`);
+      
+      // Check if the isApproved field exists and is explicitly true
+      if (req.user.isApproved !== true) {
+        console.log(`RESTRICTED LOGIN: Unapproved tradie ${req.user.id} (${req.user.username})`);
+        return res.status(403).json({ 
+          id: req.user.id,
+          username: req.user.username,
+          role: req.user.role,
+          isApproved: false,
+          message: "Your account is pending approval."
+        });
+      }
+    } else if (req.user.role !== 'supplier' && req.user.isApproved !== true) {
+      // For other roles (except suppliers who don't need approval)
+      console.log(`RESTRICTED LOGIN: Unapproved user ${req.user.id} (${req.user.username}) role: ${req.user.role}`);
       return res.status(403).json({ 
         id: req.user.id,
         username: req.user.username,

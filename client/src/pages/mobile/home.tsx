@@ -42,12 +42,17 @@ const MobileHome = () => {
     <MobileLayout>
       <div className="p-4 flex flex-col h-[calc(100vh-120px)] overflow-hidden">
         {isRestrictedTradie && (
-          <Alert className="mb-4 bg-amber-50 border-amber-200 border-l-4 border-l-amber-600">
-            <ShieldAlert className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="text-amber-800 font-bold">ACCOUNT PENDING APPROVAL</AlertTitle>
-            <AlertDescription className="text-amber-700">
-              <p className="font-medium mb-1">Your account requires Project Manager approval before accessing jobs or placing orders.</p>
-              <p className="mb-2">Until approved, you can only browse the parts catalog. The following features are RESTRICTED:</p>
+          <Alert className="mb-4 bg-amber-50 border-amber-200 border-l-4 border-l-red-600">
+            <ShieldAlert className="h-5 w-5 text-red-600" />
+            <AlertTitle className="text-red-800 font-bold text-lg">ACCOUNT PENDING APPROVAL</AlertTitle>
+            <AlertDescription className="text-amber-800">
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-3">
+                <p className="font-bold text-red-700 mb-1">IMPORTANT: Your account requires Project Manager approval</p>
+                <p className="text-sm text-red-700">You cannot add items to cart or place orders until approved</p>
+              </div>
+              
+              <p className="font-medium mb-1">Until approved, you can only browse the parts catalog.</p>
+              <p className="mb-2 font-bold">The following features are RESTRICTED:</p>
               <ul className="list-disc pl-5 mb-3 text-sm">
                 <li><strong>Job listings and search</strong> - Not accessible</li>
                 <li><strong>Adding items to cart</strong> - Buttons disabled</li>
@@ -56,6 +61,7 @@ const MobileHome = () => {
               </ul>
               <div className="bg-amber-100 p-3 rounded-md border border-amber-300 my-2">
                 <p className="font-medium text-amber-800">Your approval status: <span className="text-red-600 font-bold">NOT APPROVED</span></p>
+                <p className="text-xs mt-1">Database value: isApproved = {String(user?.isApproved)}</p>
               </div>
               <p className="text-sm border-t border-amber-200 pt-2 mt-2">
                 Please contact your Project Manager to request approval.

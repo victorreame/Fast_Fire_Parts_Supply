@@ -194,13 +194,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to check if tradie is approved
   const checkTradieApproved = (req: Request, res: Response, next: NextFunction) => {
     if (req.isAuthenticated() && req.user) {
-      if (req.user.role === 'tradie' && !req.user.isApproved) {
-        console.log(`BLOCKED: Cart access attempt by unapproved tradie: ${req.user.id} (${req.user.username}) - ${req.method} ${req.path}`);
-        console.log(`User approval status: ${req.user.isApproved === false ? 'NOT APPROVED' : 'APPROVED'}`);
-        return res.status(403).json({ 
-          error: "Access restricted", 
-          message: "Account pending approval. Contact your Project Manager for access."
-        });
+      if (req.user.role === 'tradie') {
+        // Explicitly check for false to ensure we're properly checking the database value
+        const isApproved = req.user.isApproved === true;
+        
+        console.log(`USER CHECK: Tradie ${req.user.id} (${req.user.username}) approval status: ${isApproved ? 'APPROVED' : 'NOT APPROVED'}`);
+        console.log(`Database value: isApproved = ${req.user.isApproved}`);
+        
+        if (!isApproved) {
+          console.log(`BLOCKED ACCESS: Unapproved tradie ${req.user.id} (${req.user.username}) attempted ${req.method} ${req.path}`);
+          console.log(`Request details: ${JSON.stringify({
+            userId: req.user.id,
+            username: req.user.username,
+            method: req.method,
+            path: req.path,
+            isApproved: req.user.isApproved,
+            query: req.query,
+            body: req.body
+          })}`);
+          
+          return res.status(403).json({ 
+            error: "Access restricted", 
+            message: "Account pending approval. Contact your Project Manager for access."
+          });
+        }
       }
     }
     next();

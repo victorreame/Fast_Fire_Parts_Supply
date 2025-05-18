@@ -38,8 +38,12 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
     quantity: number;
   }
 
-  // Check if user is an unapproved tradie
-  const isUnapprovedTradie = user?.role === 'tradie' && !user?.isApproved;
+  // Check if user is an unapproved tradie - extra explicit check
+  const isUnapprovedTradie = user?.role === 'tradie' && user?.isApproved !== true;
+  
+  console.log(`Mobile layout - User approval status check:`);
+  console.log(`Role: ${user?.role}, isApproved value: ${user?.isApproved}`);
+  console.log(`isUnapprovedTradie: ${isUnapprovedTradie}`);
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({
     queryKey: ['/api/cart'],
@@ -74,9 +78,10 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col">
       {/* Limited Access Banner */}
-      {user?.role === 'tradie' && !user?.isApproved && (
-        <div className="bg-amber-500 text-white text-xs py-1 text-center font-medium">
-          Limited Access Mode - Contact a Project Manager for approval
+      {user?.role === 'tradie' && user?.isApproved !== true && (
+        <div className="bg-amber-600 text-white text-xs py-2 text-center font-bold flex items-center justify-center">
+          <ShieldAlert className="h-3 w-3 mr-1" />
+          RESTRICTED ACCESS MODE - Approval required for ordering parts
         </div>
       )}
 

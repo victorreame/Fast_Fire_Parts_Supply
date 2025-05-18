@@ -22,13 +22,16 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Check if user is an unapproved tradie
-  const isUnapprovedTradie = user?.role === 'tradie' && !user?.isApproved;
+  // Check if user is an unapproved tradie - explicitly check for false to be safe
+  const isUnapprovedTradie = user?.role === 'tradie' && user?.isApproved !== true;
+  
+  console.log(`Part card render - User approval status: ${user?.isApproved === true ? 'APPROVED' : 'NOT APPROVED'}`);
+  console.log(`Raw isApproved value from DB: ${user?.isApproved}`);
 
-  // Get cart items to check if this part is already in cart
+  // Get cart items to check if this part is already in cart - don't fetch for unapproved tradies
   const { data: cartItems } = useQuery({ 
     queryKey: ['/api/cart'],
-    enabled: true
+    enabled: !isUnapprovedTradie
   });
 
   // Find this part in the cart (if it exists)
@@ -199,9 +202,12 @@ const PartCard: React.FC<PartCardProps> = ({ part, jobId }) => {
   return (
     <div className="p-4 border-b border-neutral-200">
       {isUnapprovedTradie && (
-        <div className="mb-3 p-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-md flex items-center text-sm">
-          <ShieldAlert className="h-4 w-4 text-amber-600 mr-2 flex-shrink-0" />
-          <span>Account pending approval. Cannot add to cart.</span>
+        <div className="mb-3 p-3 bg-amber-100 border-l-4 border-amber-600 text-amber-800 rounded-md flex items-center text-sm">
+          <ShieldAlert className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0" />
+          <div>
+            <span className="font-bold block">RESTRICTED ACCESS</span>
+            <span>Your account requires PM approval before adding items to cart.</span>
+          </div>
         </div>
       )}
       <div className="flex justify-between">

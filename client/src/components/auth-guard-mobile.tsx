@@ -55,25 +55,34 @@ export function AuthGuardMobile({ children, redirectPath = '/login' }: AuthGuard
         return;
       }
       
-      // Check approval status for tradies
+      // Check approval status for tradies - being extra cautious by checking explicitly for true
       const currentPath = window.location.pathname;
-      if (user?.role === 'tradie' && !user?.isApproved) {
+      console.log(`Auth guard checking path: ${currentPath}`);
+      console.log(`User role: ${user?.role}, approval status: ${user?.isApproved === true ? 'APPROVED' : 'NOT APPROVED'}`);
+      
+      if (user?.role === 'tradie' && user?.isApproved !== true) {
+        console.log(`SECURITY: Restricting unapproved tradie access to path: ${currentPath}`);
+        
         // Allow access only to specific pages for unapproved tradies
         const allowedPaths = [
           '/mobile', 
           '/account', 
           '/parts',
           '/parts/popular',
-          '/search'
+          '/search',
+          '/notifications',
+          '/pending-approval'
         ];
         const restrictedPaths = [
           '/mobile/cart',
+          '/cart',
           '/mobile/orders',
           '/mobile/job',
           '/mobile/jobs',
           '/mobile/job-search',
           '/mobile/job-details',
-          '/orders'
+          '/orders',
+          '/favorites'
         ];
         
         // Check if current path is explicitly restricted
