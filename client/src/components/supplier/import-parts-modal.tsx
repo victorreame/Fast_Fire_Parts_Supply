@@ -583,7 +583,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl w-[95vw] max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-4xl w-[95vw] max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Import Parts</DialogTitle>
           <DialogDescription>
@@ -591,8 +591,9 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="flex flex-col h-full">
-          <TabsList className="grid grid-cols-4 mb-2">
+        <div className="overflow-y-auto max-h-[calc(80vh-10rem)]">
+        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+          <TabsList className="grid grid-cols-4 mb-2 sticky top-0 bg-background z-10">
             <TabsTrigger value="upload" disabled={currentStep !== "upload" && currentStep !== "complete"}>
               Upload
             </TabsTrigger>
@@ -606,8 +607,6 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
               Complete
             </TabsTrigger>
           </TabsList>
-          <div className="flex-1 overflow-y-auto pr-1">
-
           <TabsContent value="upload" className="space-y-4">
             <Alert>
               <FaInfoCircle className="h-4 w-4" />
@@ -926,6 +925,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
             )}
           </TabsContent>
         </Tabs>
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
