@@ -382,7 +382,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
           console.log('Validating row:', mappedRow);
           await importPartSchema.parseAsync(mappedRow);
           successful++;
-        } catch (validationError) {
+        } catch (validationError: any) {
           console.error('Error importing row:', validationError);
           if (validationError instanceof z.ZodError) {
             validationError.errors.forEach(err => {
@@ -390,7 +390,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
                 row: rowIndex + 2, // +2 because of 0-indexing and header row
                 field: err.path.join('.'),
                 message: err.message,
-                value: err.path.reduce((obj, key) => obj && obj[key], mappedRow)
+                value: err.path.length > 0 ? mappedRow[err.path[0]] : null
               });
             });
           } else {
@@ -513,7 +513,8 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
                   cost_price: mappedRow.cost_price,
                   in_stock: mappedRow.in_stock,
                   min_stock: mappedRow.min_stock,
-                  is_popular: mappedRow.is_popular
+                  is_popular: mappedRow.is_popular,
+                  image: mappedRow.image
                 });
                 successCount++;
               }
@@ -521,20 +522,21 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
             } else {
               // Create new part
               await apiRequest("POST", "/api/parts", {
-                itemCode: mappedRow.item_code,
-                pipeSize: mappedRow.pipe_size,
+                item_code: mappedRow.item_code,
+                pipe_size: mappedRow.pipe_size,
                 description: mappedRow.description,
                 type: mappedRow.type,
                 category: mappedRow.category,
                 manufacturer: mappedRow.manufacturer,
-                supplierCode: mappedRow.supplier_code,
-                priceT1: mappedRow.price_t1,
-                priceT2: mappedRow.price_t2,
-                priceT3: mappedRow.price_t3,
-                costPrice: mappedRow.cost_price,
-                inStock: mappedRow.in_stock,
-                minStock: mappedRow.min_stock,
-                isPopular: mappedRow.is_popular
+                supplier_code: mappedRow.supplier_code,
+                price_t1: mappedRow.price_t1,
+                price_t2: mappedRow.price_t2,
+                price_t3: mappedRow.price_t3,
+                cost_price: mappedRow.cost_price,
+                in_stock: mappedRow.in_stock,
+                min_stock: mappedRow.min_stock,
+                is_popular: mappedRow.is_popular,
+                image: mappedRow.image
               });
               successCount++;
             }
