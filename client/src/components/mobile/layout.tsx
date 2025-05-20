@@ -221,15 +221,13 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
             </Link>
           )}
 
-          {/* Only show Favorites tab for approved tradies */}
-          {(!user?.role || user?.role !== 'tradie' || user?.status === 'active') && (
+          {/* Show Favorites tab for all users */}
             <Link href="/favorites" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
               location === '/favorites' ? 'text-red-600' : 'text-neutral-500'
             }`}>
               <FaStar className="text-lg mb-1" />
               <span>Favorites</span>
             </Link>
-          )}
 
           <Link href="/account" className={`py-3 px-2 flex flex-col items-center text-xs font-medium ${
             location === '/account' ? 'text-red-600' : 'text-neutral-500'

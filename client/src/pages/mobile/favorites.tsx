@@ -1,62 +1,96 @@
-import { useState } from "react";
-import MobileLayout from "@/components/mobile/layout";
-import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
-// This is a placeholder page as favorites functionality is not in the backend yet
-// In a real implementation, this would connect to an API endpoint to get the user's favorite parts
+import React from 'react';
+import MobileLayout from '@/components/mobile/layout';
+import PartCard from '@/components/mobile/part-card';
+import { useQuery } from '@tanstack/react-query';
+import { Parts } from '@/types/parts';
+import { Favorites } from '@/types/favorites';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
+import { Link } from 'wouter';
 
 const FavoritesPage = () => {
-  // Placeholder state for favorites - would be replaced with API call
-  const [favorites] = useState<any[]>([]);
+  const { user } = useAuth();
+  
+  // Get all favorites for the current user
+  const { 
+    data: favorites, 
+    isLoading: isLoadingFavorites,
+    error: favoritesError 
+  } = useQuery<Favorites[]>({
+    queryKey: ['/api/favorites'],
+    enabled: !!user
+  });
+
+  // Get all parts to match with favorites
+  const { 
+    data: parts, 
+    isLoading: isLoadingParts,
+    error: partsError 
+  } = useQuery<Parts[]>({
+    queryKey: ['/api/parts'],
+    enabled: !!favorites && favorites.length > 0
+  });
+
+  // Filter parts to only show favorited parts
+  const favoritedParts = React.useMemo(() => {
+    if (!parts || !favorites) return [];
+    
+    const favoritePartIds = favorites.map(fav => fav.partId);
+    return parts.filter(part => favoritePartIds.includes(part.id));
+  }, [parts, favorites]);
+
+  const isLoading = isLoadingFavorites || isLoadingParts;
+  const error = favoritesError || partsError;
+
+  if (isLoading) {
+    return (
+      <MobileLayout title="My Favorites">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MobileLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <MobileLayout title="My Favorites">
+        <div className="p-4 text-center">
+          <p className="text-red-500 mb-4">Error loading favorites: {error.message}</p>
+          <Button asChild>
+            <Link href="/mobile/parts">Back to Parts</Link>
+          </Button>
+        </div>
+      </MobileLayout>
+    );
+  }
 
   return (
-    <MobileLayout title="Favorites" showBackButton={false}>
+    <MobileLayout title="My Favorites">
       <div className="p-4">
-        {favorites.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4">
-            {favorites.map((part) => (
-              <Card key={part.id}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between">
-                    <div>
-                      <div className="flex items-start mt-2">
-                        <Badge variant="outline" className="font-semibold bg-neutral-100 text-neutral-800 mr-2">
-                          {part.itemCode}
-                        </Badge>
-                        <Badge variant="secondary" className="bg-primary-100 text-primary-800">
-                          {part.pipeSize}
-                        </Badge>
-                      </div>
-                      <h3 className="font-medium mt-1">{part.description}</h3>
-                      <p className="text-sm text-neutral-500 mt-1">Type: {part.type}</p>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <Button variant="ghost" size="icon" className="text-red-500">
-                        <i className="fas fa-heart text-xl"></i>
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-secondary mt-2">
-                        <i className="fas fa-plus-circle text-xl"></i>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        {(!favorites || favorites.length === 0) ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">You haven't added any favorites yet.</p>
+            <Button asChild>
+              <Link href="/mobile/parts">Browse Parts</Link>
+            </Button>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-[calc(100vh-180px)]">
-            <i className="fas fa-heart text-4xl text-neutral-300 mb-4"></i>
-            <h3 className="text-lg font-medium text-neutral-700 mb-2">No favorites yet</h3>
-            <p className="text-neutral-500 text-center mb-6">
-              Save your favorite parts for quick access
-            </p>
-            <Link href="/parts">
-              <Button>Browse Parts</Button>
-            </Link>
-          </div>
+          <>
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold">Your Favorite Items ({favoritedParts.length})</h2>
+              <p className="text-sm text-muted-foreground">
+                Here are the parts you've marked as favorites
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4">
+              {favoritedParts.map((part) => (
+                <PartCard key={part.id} part={part} />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </MobileLayout>
