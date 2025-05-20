@@ -6,9 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { useSearch } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Part } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { FaSearch, FaFilter, FaSortAmountDown, FaThList, FaExclamationTriangle } from "react-icons/fa";
+import { Parts } from "@/types/parts";
 
 const SearchPage = () => {
   const search = useSearch();
@@ -19,7 +19,7 @@ const SearchPage = () => {
   const [filterType, setFilterType] = useState("");
   const [sortBy, setSortBy] = useState("itemCode");
 
-  const { data: parts, isLoading } = useQuery<Part[]>({
+  const { data: parts, isLoading } = useQuery<Parts[]>({
     queryKey: ['/api/parts'],
   });
 
@@ -43,7 +43,7 @@ const SearchPage = () => {
           // Filter by search query
           const matchesSearch = searchQuery
             ? part.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              part.itemCode.toLowerCase().includes(searchQuery.toLowerCase())
+              part.item_code.toLowerCase().includes(searchQuery.toLowerCase())
             : false; // Only show results if there's a search query
           
           // Filter by type
@@ -54,7 +54,7 @@ const SearchPage = () => {
         .sort((a, b) => {
           // Sort by selected field
           if (sortBy === "itemCode") {
-            return a.itemCode.localeCompare(b.itemCode);
+            return a.item_code.localeCompare(b.item_code);
           } else if (sortBy === "description") {
             return a.description.localeCompare(b.description);
           } else if (sortBy === "type") {
