@@ -1,28 +1,28 @@
 import { Link } from "wouter";
 import SupplierLayout from "@/components/supplier/layout";
 import StatsCard from "@/components/supplier/stats-card";
-import OrdersTable from "@/components/supplier/orders-table";
+import ResponsiveOrdersTable from "@/components/supplier/responsive-orders-table";
 import { useQuery } from "@tanstack/react-query";
 import { FaShoppingCart, FaTruck, FaUsers, FaExclamationTriangle } from "react-icons/fa";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const SupplierDashboard = () => {
-  const { data: stats, isLoading: isLoadingStats } = useQuery({
+  const { data: stats = {}, isLoading: isLoadingStats } = useQuery({
     queryKey: ['/api/stats'],
   });
 
-  const { data: orders, isLoading: isLoadingOrders } = useQuery({
+  const { data: orders = [], isLoading: isLoadingOrders } = useQuery({
     queryKey: ['/api/orders?limit=5'],
   });
 
   return (
     <SupplierLayout>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-neutral-800">Dashboard</h2>
+      <div className="mb-4 md:mb-6">
+        <h2 className="text-xl md:text-2xl font-bold text-neutral-800">Dashboard</h2>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 md:mb-8">
         {isLoadingStats ? (
           // Skeleton loaders for stats
           Array(4)
@@ -85,20 +85,20 @@ const SupplierDashboard = () => {
       </div>
 
       {/* Recent Orders Section */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-neutral-800">Recent Orders</h3>
-          <Link href="/supplier/orders" className="text-primary hover:text-primary-700 text-sm font-medium">
+      <div className="mb-6 md:mb-8">
+        <div className="flex justify-between items-center mb-3 md:mb-4">
+          <h3 className="text-lg md:text-xl font-semibold text-neutral-800">Recent Orders</h3>
+          <Link href="/supplier/orders" className="text-primary hover:text-primary-700 text-xs sm:text-sm font-medium">
               View All Orders
           </Link>
         </div>
         
         {isLoadingOrders ? (
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-8">
-            <Skeleton className="h-64 w-full" />
+          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4 sm:p-8">
+            <Skeleton className="h-48 md:h-64 w-full" />
           </div>
         ) : (
-          <OrdersTable orders={orders || []} />
+          <ResponsiveOrdersTable orders={orders} />
         )}
       </div>
     </SupplierLayout>

@@ -42,20 +42,21 @@ const StatsCard: React.FC<StatsCardProps> = ({
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-neutral-200">
       <div className="flex justify-between items-start">
         <div>
-          <p className="text-neutral-500 text-sm">{title}</p>
-          <h3 className="text-2xl font-bold mt-1">{value}</h3>
+          <p className="text-neutral-500 text-xs sm:text-sm">{title}</p>
+          <h3 className="text-xl sm:text-2xl font-bold mt-1">{value}</h3>
           {change && (
-            <p className={`${getChangeColor()} text-sm mt-1 flex items-center`}>
+            <p className={`${getChangeColor()} text-xs sm:text-sm mt-1 flex items-center`}>
               {getChangeIcon()}
-              {change}
+              <span className="hidden xs:inline">{change}</span>
+              <span className="inline xs:hidden">{change.split(' ')[0]}</span>
             </p>
           )}
         </div>
-        <div className={`${iconBgColor} p-3 rounded-full`}>
-          <span className={`${iconColor}`}>{icon}</span>
+        <div className={`${iconBgColor} p-2 sm:p-3 rounded-full`}>
+          <span className={`${iconColor} text-sm sm:text-base`}>{icon}</span>
         </div>
       </div>
     </div>

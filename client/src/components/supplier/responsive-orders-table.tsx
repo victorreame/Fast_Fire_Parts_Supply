@@ -54,7 +54,7 @@ const ResponsiveOrdersTable: React.FC<OrdersTableProps> = ({ orders }) => {
                   ORD-{order.id.toString().padStart(5, '0')}
                 </h3>
                 <p className="text-sm text-neutral-600 mt-1">
-                  {format(new Date(order.createdAt), "MMM dd, yyyy")}
+                  {order.createdAt ? format(new Date(order.createdAt), "MMM dd, yyyy") : "N/A"}
                 </p>
               </div>
               {getStatusBadge(order.status)}
@@ -128,7 +128,7 @@ const ResponsiveOrdersTable: React.FC<OrdersTableProps> = ({ orders }) => {
                   {order.business?.name || "Unknown"}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                  {format(new Date(order.createdAt), "MMM dd, yyyy")}
+                  {order.createdAt ? format(new Date(order.createdAt), "MMM dd, yyyy") : "N/A"}
                 </TableCell>
                 <TableCell className="px-6 py-4 whitespace-nowrap">
                   {getStatusBadge(order.status)}
