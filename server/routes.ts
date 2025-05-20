@@ -23,7 +23,6 @@ import tradieRouter from "./tradie-routes";
 import notificationRouter from "./notification-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const favoritesRouter = express.Router();
   // Set up authentication and session management
   setupAuth(app);
 
