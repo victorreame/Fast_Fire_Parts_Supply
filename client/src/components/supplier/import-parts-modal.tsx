@@ -468,9 +468,9 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
                   price_t2: mappedRow.price_t2,
                   price_t3: mappedRow.price_t3,
                   cost_price: mappedRow.cost_price,
-                  inStock: mappedRow.in_stock,
-                  minStock: mappedRow.min_stock,
-                  isPopular: mappedRow.is_popular
+                  in_stock: mappedRow.in_stock,
+                  min_stock: mappedRow.min_stock,
+                  is_popular: mappedRow.is_popular
                 });
                 successCount++;
               }
