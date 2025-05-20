@@ -2,6 +2,7 @@ import { useState } from "react";
 import SupplierLayout from "@/components/supplier/layout";
 import PartsTable from "@/components/supplier/parts-table";
 import PartForm from "@/components/supplier/part-form";
+import ImportPartsModal from "@/components/supplier/import-parts-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ const SupplierParts = () => {
   const [typeFilter, setTypeFilter] = useState("all");
   const [sizeFilter, setSizeFilter] = useState("all");
   const [showAddPartDialog, setShowAddPartDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [partToEdit, setPartToEdit] = useState<Part | null>(null);
 
   const { data: parts, isLoading } = useQuery({
@@ -85,6 +87,13 @@ const SupplierParts = () => {
               >
                 <i className="fas fa-plus mr-2"></i>
                 Add Part
+              </Button>
+              <Button
+                className="ml-3 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center"
+                onClick={() => setShowImportDialog(true)}
+              >
+                <i className="fas fa-file-import mr-2"></i>
+                Import Parts
               </Button>
               <Button 
                 className="ml-3 border border-neutral-300 bg-white hover:bg-neutral-50 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center"
@@ -158,6 +167,12 @@ const SupplierParts = () => {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Import Parts Modal */}
+      <ImportPartsModal 
+        open={showImportDialog} 
+        onOpenChange={setShowImportDialog} 
+      />
     </SupplierLayout>
   );
 };
