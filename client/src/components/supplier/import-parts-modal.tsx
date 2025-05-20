@@ -591,22 +591,22 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-y-auto max-h-[calc(80vh-10rem)]">
-        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="grid grid-cols-4 mb-2 sticky top-0 bg-background z-10">
-            <TabsTrigger value="upload" disabled={currentStep !== "upload" && currentStep !== "complete"}>
-              Upload
-            </TabsTrigger>
-            <TabsTrigger value="mapping" disabled={currentStep === "upload" || currentStep === "complete"}>
-              Mapping
-            </TabsTrigger>
-            <TabsTrigger value="validation" disabled={currentStep === "upload" || currentStep === "mapping" || currentStep === "complete"}>
-              Validation
-            </TabsTrigger>
-            <TabsTrigger value="complete" disabled={currentStep !== "complete"}>
-              Complete
-            </TabsTrigger>
-          </TabsList>
+        <div className="overflow-y-auto max-h-[calc(80vh-12rem)] pr-2">
+          <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+            <TabsList className="grid grid-cols-4 mb-2 sticky top-0 bg-background z-10">
+              <TabsTrigger value="upload" disabled={currentStep !== "upload" && currentStep !== "complete"}>
+                Upload
+              </TabsTrigger>
+              <TabsTrigger value="mapping" disabled={currentStep === "upload" || currentStep === "complete"}>
+                Mapping
+              </TabsTrigger>
+              <TabsTrigger value="validation" disabled={currentStep === "upload" || currentStep === "mapping" || currentStep === "complete"}>
+                Validation
+              </TabsTrigger>
+              <TabsTrigger value="complete" disabled={currentStep !== "complete"}>
+                Complete
+              </TabsTrigger>
+            </TabsList>
           <TabsContent value="upload" className="space-y-4">
             <Alert>
               <FaInfoCircle className="h-4 w-4" />
@@ -924,14 +924,14 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
               </>
             )}
           </TabsContent>
-        </Tabs>
-        </div>
+            </Tabs>
+          </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
-            {currentStep === "complete" ? "Done" : "Cancel"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose}>
+              {currentStep === "complete" ? "Done" : "Cancel"}
+            </Button>
+          </DialogFooter>
       </DialogContent>
     </Dialog>
   );
