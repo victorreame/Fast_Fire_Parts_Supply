@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import MobileNav from "./mobile-nav";
 
 // Define user type
 interface User {
@@ -68,12 +69,20 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-primary text-white p-4 flex items-center justify-between shadow-md fixed top-0 left-0 right-0 z-10 h-24">
-        <div className="flex items-center max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mr-4">
-            <Logo size={48} linkTo="/supplier/dashboard" />
+      <header className="bg-primary text-white p-4 flex items-center justify-between shadow-md fixed top-0 left-0 right-0 z-10 h-auto min-h-[5rem]">
+        <div className="flex items-center justify-between max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center">
+            <MobileNav onLogout={handleLogout} />
+            
+            <div className="mr-2 md:mr-4">
+              <Logo size={40} linkTo="/supplier/dashboard" />
+            </div>
+            
+            <h1 className="text-lg md:text-xl font-bold hidden xs:block">
+              <span className="hidden md:inline">FastFire Parts Supply Dashboard</span>
+              <span className="inline md:hidden">FastFire Supply</span>
+            </h1>
           </div>
-          <h1 className="text-xl font-bold">FastFire Parts Supply Dashboard</h1>
           
           <nav className="ml-12 hidden md:flex space-x-8">
             <Link href="/supplier/dashboard" className={`px-3 py-2 text-sm font-medium ${
@@ -113,7 +122,7 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
             </Link>
           </nav>
           
-          <div className="ml-auto flex items-center">
+          <div className="flex items-center">
             <div className="relative">
               <Button variant="ghost" size="icon" className="text-white relative">
                 <i className="fas fa-bell"></i>
@@ -123,17 +132,17 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
               </Button>
             </div>
             
-            <div className="ml-4 flex items-center">
+            <div className="ml-2 md:ml-4 flex items-center">
               <Avatar className="h-8 w-8">
                 <AvatarFallback>{user?.firstName?.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
-              <span className="ml-2 text-sm font-medium text-white">
+              <span className="ml-2 text-sm font-medium text-white hidden md:inline">
                 {user ? `${user.firstName} ${user.lastName}` : "Loading..."}
               </span>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="ml-4 text-xs bg-red-600 hover:bg-red-700 text-white border-none" 
+                className="ml-2 md:ml-4 text-xs bg-red-600 hover:bg-red-700 text-white border-none hidden md:inline-flex" 
                 onClick={handleLogout}
               >
                 Logout
@@ -143,7 +152,7 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <main className="pt-32 pb-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="pt-24 md:pt-32 pb-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>
