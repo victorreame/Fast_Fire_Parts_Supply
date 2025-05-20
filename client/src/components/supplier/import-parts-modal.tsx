@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { read, utils } from "xlsx";
+import { read, utils, write } from "xlsx";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -259,7 +259,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
     utils.book_append_sheet(wb, ws, 'Parts Template');
     
     // Generate and download the file
-    const excelBuffer = utils.write(wb, { bookType: 'xlsx', type: 'array' });
+    const excelBuffer = write(wb, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     
     // Create download link
@@ -564,8 +564,8 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
     const wb = utils.book_new();
     utils.book_append_sheet(wb, ws, 'Import Errors');
     
-    // Generate and download the file
-    const excelBuffer = utils.write(wb, { bookType: 'xlsx', type: 'array' });
+    // Generate and download the file - using write directly imported from xlsx
+    const excelBuffer = write(wb, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     
     // Create download link
@@ -698,7 +698,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
                             <SelectValue placeholder="Select a field" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">-- Ignore this column --</SelectItem>
+                            <SelectItem value="ignore">-- Ignore this column --</SelectItem>
                             {targetFields.map((field) => (
                               <SelectItem key={field.value} value={field.value}>
                                 {field.label} {['item_code', 'pipe_size', 'description', 'type', 'price_t1', 'price_t2', 'price_t3'].includes(field.value) ? '*' : ''}
