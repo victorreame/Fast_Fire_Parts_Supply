@@ -296,16 +296,17 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       let duplicates = 0;
       
       // Get existing parts for duplicate checking
-      const existingParts = await apiRequest("GET", "/api/parts");
-      const existingItemCodes = new Set(existingParts.map((part: Part) => part.itemCode.toLowerCase()));
+      const response = await apiRequest("GET", "/api/parts");
+      const existingParts = Array.isArray(response) ? response : [];
+      const existingItemCodes = new Set(existingParts.map((part: any) => part.item_code.toLowerCase()));
       
       // Validate each row
       for (let rowIndex = 0; rowIndex < rawData.length; rowIndex++) {
-        const rawRow = rawData[rowIndex];
+        const rawRow = rawData[rowIndex] as any;
         const mappedRow: {[key: string]: any} = {};
         
         // Apply field mapping
-        for (const sourceField in rawRow) {
+        for (const sourceField in rawRow as any) {
           const targetField = mapping[sourceField];
           if (targetField) {
             let value = rawRow[sourceField];
@@ -402,9 +403,10 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       const rawData = utils.sheet_to_json(worksheet);
       
       // Get existing parts for update/skip decision
-      const existingParts = await apiRequest("GET", "/api/parts");
+      const response = await apiRequest("GET", "/api/parts");
+      const existingParts = Array.isArray(response) ? response : [];
       const existingPartsByCode = new Map(
-        existingParts.map((part: Part) => [part.itemCode.toLowerCase(), part])
+        existingParts.map((part: any) => [part.item_code.toLowerCase(), part])
       );
       
       // Process in batches of 100
@@ -424,10 +426,10 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
             const mappedRow: {[key: string]: any} = {};
             
             // Apply field mapping
-            for (const sourceField in rawRow) {
+            for (const sourceField in rawRow as any) {
               const targetField = mapping[sourceField];
               if (targetField) {
-                let value = rawRow[sourceField];
+                let value = (rawRow as any)[sourceField];
                 
                 // Convert values to appropriate types
                 if (['price_t1', 'price_t2', 'price_t3', 'cost_price', 'in_stock', 'min_stock'].includes(targetField)) {
@@ -455,17 +457,17 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
               if (updateExisting) {
                 // Update existing part
                 await apiRequest("PUT", `/api/parts/${existingPart.id}`, {
-                  itemCode: mappedRow.item_code,
-                  pipeSize: mappedRow.pipe_size,
+                  item_code: mappedRow.item_code,
+                  pipe_size: mappedRow.pipe_size,
                   description: mappedRow.description,
                   type: mappedRow.type,
                   category: mappedRow.category,
                   manufacturer: mappedRow.manufacturer,
-                  supplierCode: mappedRow.supplier_code,
-                  priceT1: mappedRow.price_t1,
-                  priceT2: mappedRow.price_t2,
-                  priceT3: mappedRow.price_t3,
-                  costPrice: mappedRow.cost_price,
+                  supplier_code: mappedRow.supplier_code,
+                  price_t1: mappedRow.price_t1,
+                  price_t2: mappedRow.price_t2,
+                  price_t3: mappedRow.price_t3,
+                  cost_price: mappedRow.cost_price,
                   inStock: mappedRow.in_stock,
                   minStock: mappedRow.min_stock,
                   isPopular: mappedRow.is_popular
