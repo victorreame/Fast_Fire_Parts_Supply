@@ -111,6 +111,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
     { value: "in_stock", label: "In Stock" },
     { value: "min_stock", label: "Min Stock" },
     { value: "is_popular", label: "Is Popular" },
+    { value: "image", label: "Image URL" },
   ];
 
   // Reset the import state
@@ -311,9 +312,24 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
           if (targetField) {
             let value = rawRow[sourceField];
             
+            // Skip empty or undefined values
+            if (value === undefined || value === null || value === '') {
+              continue;
+            }
+            
             // Convert number-like strings to numbers for numeric fields
             if (['price_t1', 'price_t2', 'price_t3', 'cost_price', 'in_stock', 'min_stock'].includes(targetField)) {
               value = typeof value === 'string' ? parseFloat(value) : value;
+              // Ensure we have valid numbers
+              if (isNaN(value)) {
+                errors.push({
+                  row: rowIndex + 2,
+                  field: targetField,
+                  message: `Invalid number format for ${targetField}`,
+                  value: rawRow[sourceField]
+                });
+                continue;
+              }
             }
             
             // Convert yes/no or 1/0 to boolean for is_popular
@@ -344,11 +360,30 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
           }
         }
         
+        // Check for required fields
+        const requiredFields = ['item_code', 'pipe_size', 'description', 'type', 'price_t1', 'price_t2', 'price_t3'];
+        const missingFields = requiredFields.filter(field => !mappedRow[field]);
+        
+        if (missingFields.length > 0) {
+          missingFields.forEach(field => {
+            errors.push({
+              row: rowIndex + 2, // +2 because of 0-indexing and header row
+              field: field,
+              message: `Missing required field: ${field}`,
+              value: null
+            });
+          });
+          continue; // Skip further validation if required fields are missing
+        }
+        
         // Validate against schema
         try {
+          // Log for debugging
+          console.log('Validating row:', mappedRow);
           await importPartSchema.parseAsync(mappedRow);
           successful++;
         } catch (validationError) {
+          console.error('Error importing row:', validationError);
           if (validationError instanceof z.ZodError) {
             validationError.errors.forEach(err => {
               errors.push({
@@ -357,6 +392,14 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
                 message: err.message,
                 value: err.path.reduce((obj, key) => obj && obj[key], mappedRow)
               });
+            });
+          } else {
+            // Handle non-Zod errors
+            errors.push({
+              row: rowIndex + 2,
+              field: 'unknown',
+              message: validationError.message || 'Unknown validation error',
+              value: null
             });
           }
         }
