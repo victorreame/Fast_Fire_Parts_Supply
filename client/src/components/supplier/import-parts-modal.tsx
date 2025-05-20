@@ -591,39 +591,61 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
 
   // Export error report
   const exportErrorReport = () => {
-    if (!importResult || importResult.errors.length === 0) return;
+    if (!importResult || importResult.errors.length === 0) {
+      toast({
+        title: "No Errors to Export",
+        description: "There are no import errors to export.",
+      });
+      return;
+    }
     
-    // Create worksheet with headers
-    const headers = ['Row', 'Field', 'Error Message', 'Value'];
-    const ws = utils.aoa_to_sheet([headers]);
-    
-    // Add error data
-    const errorData = importResult.errors.map(err => [
-      err.row,
-      err.field,
-      err.message,
-      err.value !== undefined ? String(err.value) : ''
-    ]);
-    
-    utils.sheet_add_aoa(ws, errorData, { origin: 'A2' });
-    
-    // Create workbook and add the worksheet
-    const wb = utils.book_new();
-    utils.book_append_sheet(wb, ws, 'Import Errors');
-    
-    // Generate and download the file - using write directly imported from xlsx
-    const excelBuffer = write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-    // Create download link
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'parts_import_errors.xlsx';
-    link.click();
-    
-    // Clean up
-    URL.revokeObjectURL(url);
+    try {
+      // Create worksheet with headers
+      const headers = ['Row', 'Field', 'Error Message', 'Value'];
+      const ws = utils.aoa_to_sheet([headers]);
+      
+      // Add error data
+      const errorData = importResult.errors.map(err => [
+        err.row,
+        err.field,
+        err.message,
+        err.value !== undefined && err.value !== null ? String(err.value) : ''
+      ]);
+      
+      utils.sheet_add_aoa(ws, errorData, { origin: 'A2' });
+      
+      // Create workbook and add the worksheet
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, 'Import Errors');
+      
+      // Generate and download the file
+      const excelBuffer = write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'parts_import_errors.xlsx';
+      document.body.appendChild(link); // Append to body to ensure it works in all browsers
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export Complete",
+        description: "Error report has been downloaded.",
+      });
+    } catch (error) {
+      console.error("Error exporting report:", error);
+      toast({
+        title: "Export Error",
+        description: "Failed to generate error report. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
