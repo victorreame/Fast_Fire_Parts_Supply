@@ -877,12 +877,12 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       // Get the count from the current importResult (should be 29) as that's what the UI shows
       const failedCount = importResult.failed;
       
-      // Log for verification - both numbers should be exactly 29
-      console.log(`Exporting ${errorData.length} errors - UI shows ${failedCount} records failed/skipped`);
+      // Both numbers should match exactly (29 errors)
+      console.log(`Exporting ${errorData.length} error records out of ${importResult.totalRecords} total`);
       
-      // Verify counts match
-      if (errorData.length !== failedCount) {
-        console.warn(`Error count mismatch: exporting ${errorData.length} errors but UI shows ${failedCount}`);
+      // Verify that error report count matches UI count
+      if (errorData.length !== importResult.failed) {
+        console.warn(`Error count mismatch: Excel has ${errorData.length} errors but UI shows ${importResult.failed}`);
       }
       
       // Create workbook and add the worksheet
