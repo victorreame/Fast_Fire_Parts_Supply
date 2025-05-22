@@ -801,40 +801,37 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
     onOpenChange(false);
   };
 
-  // Prepare error report data - ensures exactly the same number of errors as shown in UI
+  // Prepare error report data
   const prepareErrorReport = (): Array<[number | string, string, string, string]> => {
     if (!importResult || !importResult.errors.length) return [];
     
-    // First process the errors to avoid duplicates
-    const uniqueErrors = new Map<number, ValidationError>();
-    
-    // Group by row to ensure only one error per row (matching UI count)
-    importResult.errors.forEach(err => {
-      const rowNum = err.row;
-      if (!uniqueErrors.has(rowNum)) {
-        uniqueErrors.set(rowNum, err);
-      }
-    });
-    
-    // Final count should exactly match the number shown in the UI
-    const reportErrors = Array.from(uniqueErrors.values());
-    
-    // Process for clear, actionable error messages
+    // Create formatted rows for Excel
     const reportRows: Array<[number | string, string, string, string]> = [];
     
-    // Create one error row per skipped row in the file
-    reportErrors.forEach(err => {
-      let message = err.message;
+    // Group errors by row to avoid duplicate entries
+    const uniqueErrors = new Map<number, ValidationError>();
+    
+    // Process each error and keep only one error per row
+    importResult.errors.forEach(err => {
+      uniqueErrors.set(err.row, err);
+    });
+    
+    // Convert to array for consistent reporting
+    const processedErrors = Array.from(uniqueErrors.values());
+    
+    // Create one row per error with clear, actionable messages
+    processedErrors.forEach(err => {
       let field = err.field || 'unknown';
+      let message = err.message || 'Unknown error';
       
-      // Clean up field names
+      // Improve field names
       if (field === 'unknown') {
         if (message.includes('Duplicate') || message.includes('item code')) {
           field = 'item_code';
         }
       }
       
-      // Make error messages clearer and more consistent
+      // Improve error messages
       if (message.includes('Duplicate item code in file')) {
         message = `Duplicate item code in imported file: ${err.value}`;
       }
@@ -877,8 +874,16 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       // Add rows to worksheet
       utils.sheet_add_aoa(ws, errorData, { origin: 'A2' });
       
-      // Add debug log - should always match UI count now
-      console.log(`Exporting ${errorData.length} errors - this should match UI count of ${importResult.failed}`);
+      // Get the count from the current importResult (should be 29) as that's what the UI shows
+      const failedCount = importResult.failed;
+      
+      // Log for verification - both numbers should be exactly 29
+      console.log(`Exporting ${errorData.length} errors - UI shows ${failedCount} records failed/skipped`);
+      
+      // Verify counts match
+      if (errorData.length !== failedCount) {
+        console.warn(`Error count mismatch: exporting ${errorData.length} errors but UI shows ${failedCount}`);
+      }
       
       // Create workbook and add the worksheet
       const wb = utils.book_new();
