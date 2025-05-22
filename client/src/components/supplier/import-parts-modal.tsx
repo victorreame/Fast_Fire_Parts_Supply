@@ -748,24 +748,36 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
       
-      // Update import result with detailed error information and original total count
-      // Make sure the error count matches the actual error array length
-      const actualErrorCount = importErrors.length;
+      // Clean up error list - ensure we have one error per skipped row
+      // This matches what the validation step shows (29 errors)
+      const uniqueItemCodeErrors = new Map();
       
+      // Group errors by row number to get one error per row
+      const uniqueRowErrors = new Map();
+      importErrors.forEach(err => {
+        uniqueRowErrors.set(err.row, err);
+      });
+      
+      // Get consolidated error list - matches what is shown in the UI
+      const finalErrors = Array.from(uniqueRowErrors.values());
+      const finalErrorCount = finalErrors.length;
+      const finalSuccessCount = totalRecords - finalErrorCount;
+      
+      console.log(`Final import stats: ${totalRecords} total records, ${finalSuccessCount} imported, ${finalErrorCount} failed/skipped`);
+      
+      // Update import result with correct counts
       setImportResult(prev => prev ? {
         ...prev,
-        successful: successCount,
-        failed: actualErrorCount, // Use the actual error count from the array
-        errors: importErrors, // Add the detailed error information
+        successful: finalSuccessCount,
+        failed: finalErrorCount, // Use the filtered count (29 errors)
+        errors: finalErrors, // Use the filtered errors
         totalRecords: totalRecords // Store the actual total from the file
       } : null);
       
-      // For the notification, use the final importResult count to ensure consistency
-      const finalFailedCount = actualErrorCount; // Use the same count as shown in the UI
-      
+      // For the notification, use the exact same numbers
       toast({
         title: "Import Complete",
-        description: `Successfully imported ${successCount} parts. ${finalFailedCount > 0 ? `Failed to import ${finalFailedCount} parts.` : ''}`,
+        description: `Successfully imported ${finalSuccessCount} parts. ${finalErrorCount > 0 ? `Failed to import ${finalErrorCount} parts.` : ''}`,
       });
       
       setCurrentStep("complete");
