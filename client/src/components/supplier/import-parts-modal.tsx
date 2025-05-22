@@ -457,10 +457,31 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
         }
       }
       
-      // Update import result
+      // Calculate accurate counts
+      const uniqueErrors = new Set();
+      errors.forEach(err => {
+        // For duplicate tracking, we only want to count each duplicate item code once
+        if (err.message.includes('Duplicate item code in file')) {
+          uniqueErrors.add(`duplicate_${err.value.toString().toLowerCase()}`);
+        } 
+        else if (err.message.includes('exists in the database')) {
+          uniqueErrors.add(`existing_${err.value.toString().toLowerCase()}`);
+        }
+        else {
+          // For validation errors, count them individually
+          uniqueErrors.add(`${err.row}_${err.field}_${err.message}`);
+        }
+      });
+      
+      // Update import result with accurate counts
+      const failed = uniqueErrors.size;
+      
+      console.log(`Found ${errors.length} raw errors, consolidated to ${failed} unique errors`);
+      console.log(`Total records: ${rawData.length}, Successful: ${successful}, Failed: ${failed}`);
+      
       setImportResult({
         successful,
-        failed: rawData.length - successful,
+        failed,
         errors,
         duplicates,
         totalRecords: rawData.length
@@ -739,6 +760,71 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
     onOpenChange(false);
   };
 
+  // Prepare consolidated error report data
+  const prepareErrorReport = (): Array<[number | string, string, string, string]> => {
+    if (!importResult || !importResult.errors.length) return [];
+    
+    // Group errors by type to make a more useful report
+    const duplicateCodes = new Map<string, number>(); // Item code -> first row number
+    const databaseDuplicates = new Map<string, number>(); // Item code -> row number
+    const validationErrors: ValidationError[] = []; // All other validation errors
+    
+    // First, categorize all errors
+    importResult.errors.forEach(err => {
+      if (err.message.includes('Duplicate item code in file')) {
+        // Store only the first occurrence of each duplicate item code
+        const itemCode = (err.value || '').toString().toLowerCase();
+        if (!duplicateCodes.has(itemCode)) {
+          duplicateCodes.set(itemCode, err.row);
+        }
+      } 
+      else if (err.message.includes('exists in the database')) {
+        // Store database duplicates
+        const itemCode = (err.value || '').toString().toLowerCase();
+        databaseDuplicates.set(itemCode, err.row);
+      }
+      else {
+        // This is a validation error, add it directly
+        validationErrors.push(err);
+      }
+    });
+    
+    // Create final report rows
+    const reportRows: Array<[number | string, string, string, string]> = [];
+    
+    // Add duplicate item codes
+    duplicateCodes.forEach((row, itemCode) => {
+      reportRows.push([
+        row,
+        'item_code',
+        `Duplicate item code in the file: ${itemCode}`,
+        itemCode
+      ]);
+    });
+    
+    // Add database duplicates
+    databaseDuplicates.forEach((row, itemCode) => {
+      reportRows.push([
+        row,
+        'item_code',
+        `Item code already exists in database: ${itemCode}`,
+        itemCode
+      ]);
+    });
+    
+    // Add all validation errors
+    validationErrors.forEach(err => {
+      reportRows.push([
+        err.row,
+        err.field || 'unknown',
+        err.message || 'Validation error',
+        err.value !== undefined && err.value !== null ? String(err.value) : ''
+      ]);
+    });
+    
+    return reportRows;
+  };
+  
   // Export error report
   const exportErrorReport = () => {
     if (!importResult || importResult.errors.length === 0) {
@@ -754,42 +840,14 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       const headers = ['Row', 'Field', 'Error Message', 'Value'];
       const ws = utils.aoa_to_sheet([headers]);
       
-      // Create formatted error data for the report
-      const errorData = importResult.errors.map(err => {
-        // Improve the error message to be more clear
-        let message = err.message;
-        let field = err.field || 'unknown';
-        
-        // Fix unknown error fields and improve messages
-        if (field === 'unknown') {
-          if (message.includes('Duplicate')) {
-            field = 'item_code';
-          }
-          else if (message.includes('exists in the database')) {
-            field = 'item_code';
-          }
-        }
-        
-        // Make error messages clearer and more specific
-        if (message.includes('Duplicate item code within') || message.includes('Duplicate item code in file')) {
-          message = `Duplicate item code: ${err.value}`;
-        }
-        else if (message.includes('already exists in the database')) {
-          message = `Already exists in database: ${err.value}`;
-        }
-        else if (message === 'Unknown error' || !message) {
-          message = `Failed to import item (validation error)`;
-        }
-        
-        return [
-          err.row || 'N/A',
-          field,
-          message,
-          err.value !== undefined && err.value !== null ? String(err.value) : ''
-        ];
-      });
+      // Get consolidated error report data
+      const errorData = prepareErrorReport();
       
+      // Add rows to worksheet
       utils.sheet_add_aoa(ws, errorData, { origin: 'A2' });
+      
+      // Log the error count for debugging
+      console.log(`Exporting ${errorData.length} errors out of ${importResult.failed} total failed records`);
       
       // Create workbook and add the worksheet
       const wb = utils.book_new();
@@ -804,7 +862,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       const link = document.createElement('a');
       link.href = url;
       link.download = 'parts_import_errors.xlsx';
-      document.body.appendChild(link); // Append to body to ensure it works in all browsers
+      document.body.appendChild(link);
       link.click();
       
       // Clean up
@@ -813,7 +871,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       
       toast({
         title: "Export Complete",
-        description: "Error report has been downloaded.",
+        description: `Error report with ${errorData.length} issues has been downloaded.`,
       });
     } catch (error) {
       console.error("Error exporting report:", error);
