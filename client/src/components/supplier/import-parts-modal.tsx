@@ -457,32 +457,58 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
         }
       }
       
-      // Calculate accurate counts
-      const uniqueErrors = new Set();
+          // Create a de-duplicated list of errors for accurate tracking
+      // We need to only keep errors for records that will actually not be imported
+      const uniqueErrorMap = new Map(); // Map of row number to error
+      const skippedRows = new Set(); // Rows that will be skipped during import
+      
+      // First, identify all rows that will be skipped (duplicates, validation failures)
       errors.forEach(err => {
-        // For duplicate tracking, we only want to count each duplicate item code once
-        if (err.message.includes('Duplicate item code in file')) {
-          uniqueErrors.add(`duplicate_${err.value.toString().toLowerCase()}`);
-        } 
-        else if (err.message.includes('exists in the database')) {
-          uniqueErrors.add(`existing_${err.value.toString().toLowerCase()}`);
+        skippedRows.add(err.row);
+      });
+      
+      // Now create one error per skipped row, prioritizing clearer error messages
+      skippedRows.forEach(rowNum => {
+        // Find all errors for this row
+        const rowErrors = errors.filter(err => err.row === rowNum);
+        
+        // Prioritize the error to show (duplicate errors are more important than validation errors)
+        let primaryError;
+        
+        // First look for duplicate in file errors
+        primaryError = rowErrors.find(err => err.message.includes('Duplicate item code in file'));
+        
+        // Then look for database duplicate errors
+        if (!primaryError) {
+          primaryError = rowErrors.find(err => err.message.includes('exists in the database'));
         }
-        else {
-          // For validation errors, count them individually
-          uniqueErrors.add(`${err.row}_${err.field}_${err.message}`);
+        
+        // Then use any other error
+        if (!primaryError && rowErrors.length > 0) {
+          primaryError = rowErrors[0];
+        }
+        
+        // Add this error to our unique map
+        if (primaryError) {
+          uniqueErrorMap.set(rowNum, primaryError);
         }
       });
       
-      // Update import result with accurate counts
-      const failed = uniqueErrors.size;
+      // Convert map to array for our de-duplicated error list
+      const uniqueErrors = Array.from(uniqueErrorMap.values());
       
-      console.log(`Found ${errors.length} raw errors, consolidated to ${failed} unique errors`);
+      // Calculate final counts
+      const failed = uniqueErrors.length;
+      successful = rawData.length - failed; // Recalculate successful based on failed count
+      
+      console.log(`Found ${errors.length} raw errors, consolidated to ${failed} unique errors (one per skipped row)`);
       console.log(`Total records: ${rawData.length}, Successful: ${successful}, Failed: ${failed}`);
       
+      // Use uniqueErrors as our error list to ensure consistency
       setImportResult({
         successful,
         failed,
-        errors,
+        errors: uniqueErrors, // This is the key change - use our filtered errors
         duplicates,
         totalRecords: rawData.length
       });
@@ -764,60 +790,38 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
   const prepareErrorReport = (): Array<[number | string, string, string, string]> => {
     if (!importResult || !importResult.errors.length) return [];
     
-    // Group errors by type to make a more useful report
-    const duplicateCodes = new Map<string, number>(); // Item code -> first row number
-    const databaseDuplicates = new Map<string, number>(); // Item code -> row number
-    const validationErrors: ValidationError[] = []; // All other validation errors
-    
-    // First, categorize all errors
-    importResult.errors.forEach(err => {
-      if (err.message.includes('Duplicate item code in file')) {
-        // Store only the first occurrence of each duplicate item code
-        const itemCode = (err.value || '').toString().toLowerCase();
-        if (!duplicateCodes.has(itemCode)) {
-          duplicateCodes.set(itemCode, err.row);
-        }
-      } 
-      else if (err.message.includes('exists in the database')) {
-        // Store database duplicates
-        const itemCode = (err.value || '').toString().toLowerCase();
-        databaseDuplicates.set(itemCode, err.row);
-      }
-      else {
-        // This is a validation error, add it directly
-        validationErrors.push(err);
-      }
-    });
-    
-    // Create final report rows
+    // Simply use the exact same list of errors that we tracked during validation
+    // This ensures the Excel report matches exactly with what was displayed in the UI
     const reportRows: Array<[number | string, string, string, string]> = [];
     
-    // Add duplicate item codes
-    duplicateCodes.forEach((row, itemCode) => {
-      reportRows.push([
-        row,
-        'item_code',
-        `Duplicate item code in the file: ${itemCode}`,
-        itemCode
-      ]);
-    });
-    
-    // Add database duplicates
-    databaseDuplicates.forEach((row, itemCode) => {
-      reportRows.push([
-        row,
-        'item_code',
-        `Item code already exists in database: ${itemCode}`,
-        itemCode
-      ]);
-    });
-    
-    // Add all validation errors
-    validationErrors.forEach(err => {
+    // Create one clear report row for each error
+    importResult.errors.forEach(err => {
+      // Improve error messages for better clarity
+      let message = err.message;
+      let field = err.field || 'unknown';
+      
+      // Fix unknown field errors
+      if (field === 'unknown') {
+        if (message.includes('Duplicate')) {
+          field = 'item_code';
+        } 
+        else if (message.includes('exists in the database')) {
+          field = 'item_code';
+        }
+      }
+      
+      // Standardize error messages
+      if (message.includes('Duplicate item code in file')) {
+        message = `Duplicate item code in imported file: ${err.value}`;
+      }
+      else if (message.includes('exists in the database')) {
+        message = `Item code already exists in database: ${err.value}`;
+      }
+      
       reportRows.push([
         err.row,
-        err.field || 'unknown',
-        err.message || 'Validation error',
+        field,
+        message,
         err.value !== undefined && err.value !== null ? String(err.value) : ''
       ]);
     });
