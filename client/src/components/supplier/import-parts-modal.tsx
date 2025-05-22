@@ -760,9 +760,12 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
         totalRecords: totalRecords // Store the actual total from the file
       } : null);
       
+      // For the notification, use the final importResult count to ensure consistency
+      const finalFailedCount = actualErrorCount; // Use the same count as shown in the UI
+      
       toast({
         title: "Import Complete",
-        description: `Successfully imported ${successCount} parts. ${errorCount > 0 ? `Failed to import ${errorCount} parts.` : ''}`,
+        description: `Successfully imported ${successCount} parts. ${finalFailedCount > 0 ? `Failed to import ${finalFailedCount} parts.` : ''}`,
       });
       
       setCurrentStep("complete");
