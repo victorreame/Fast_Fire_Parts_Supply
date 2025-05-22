@@ -458,6 +458,9 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       let successCount = 0;
       let errorCount = 0;
       
+      // Track detailed errors for the error report
+      const importErrors: ValidationError[] = [];
+      
       for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
         const batchStart = batchIndex * batchSize;
         const batchEnd = Math.min(batchStart + batchSize, rawData.length);
