@@ -789,36 +789,48 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
     onOpenChange(false);
   };
 
-  // Prepare consolidated error report data
+  // Prepare error report data - ensures exactly the same number of errors as shown in UI
   const prepareErrorReport = (): Array<[number | string, string, string, string]> => {
     if (!importResult || !importResult.errors.length) return [];
     
-    // Simply use the exact same list of errors that we tracked during validation
-    // This ensures the Excel report matches exactly with what was displayed in the UI
+    // First process the errors to avoid duplicates
+    const uniqueErrors = new Map<number, ValidationError>();
+    
+    // Group by row to ensure only one error per row (matching UI count)
+    importResult.errors.forEach(err => {
+      const rowNum = err.row;
+      if (!uniqueErrors.has(rowNum)) {
+        uniqueErrors.set(rowNum, err);
+      }
+    });
+    
+    // Final count should exactly match the number shown in the UI
+    const reportErrors = Array.from(uniqueErrors.values());
+    
+    // Process for clear, actionable error messages
     const reportRows: Array<[number | string, string, string, string]> = [];
     
-    // Create one clear report row for each error
-    importResult.errors.forEach(err => {
-      // Improve error messages for better clarity
+    // Create one error row per skipped row in the file
+    reportErrors.forEach(err => {
       let message = err.message;
       let field = err.field || 'unknown';
       
-      // Fix unknown field errors
+      // Clean up field names
       if (field === 'unknown') {
-        if (message.includes('Duplicate')) {
-          field = 'item_code';
-        } 
-        else if (message.includes('exists in the database')) {
+        if (message.includes('Duplicate') || message.includes('item code')) {
           field = 'item_code';
         }
       }
       
-      // Standardize error messages
+      // Make error messages clearer and more consistent
       if (message.includes('Duplicate item code in file')) {
         message = `Duplicate item code in imported file: ${err.value}`;
       }
       else if (message.includes('exists in the database')) {
         message = `Item code already exists in database: ${err.value}`;
+      }
+      else if (message === 'Unknown error' || message.includes('skipping')) {
+        message = `Failed validation - record skipped`;
       }
       
       reportRows.push([
@@ -853,8 +865,8 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       // Add rows to worksheet
       utils.sheet_add_aoa(ws, errorData, { origin: 'A2' });
       
-      // Log the error count for debugging
-      console.log(`Exporting ${errorData.length} errors out of ${importResult.failed} total failed records`);
+      // Add debug log - should always match UI count now
+      console.log(`Exporting ${errorData.length} errors - this should match UI count of ${importResult.failed}`);
       
       // Create workbook and add the worksheet
       const wb = utils.book_new();
