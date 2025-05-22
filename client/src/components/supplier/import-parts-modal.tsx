@@ -1050,7 +1050,9 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
                   </AlertTitle>
                   <AlertDescription>
                     {importResult.successful > 0 
-                      ? `${importResult.successful} valid records will be imported.` 
+                      ? updateExisting 
+                        ? `${importResult.successful - importResult.duplicates} new records will be imported.` 
+                        : `${importResult.successful - importResult.duplicates} records will be imported.`
                       : "Please fix the errors in your file and try again."}
                     {importResult.duplicates > 0 && updateExisting && 
                       ` ${importResult.duplicates} existing records will be updated.`}
