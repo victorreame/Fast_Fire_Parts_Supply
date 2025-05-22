@@ -461,6 +461,36 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       // Track detailed errors for the error report
       const importErrors: ValidationError[] = [];
       
+      // Track item codes in current import to detect duplicates within the file
+      const importItemCodes = new Set<string>();
+      
+      // Pre-process to find duplicates within the file
+      rawData.forEach((row: any, index: number) => {
+        // Apply mapping to get the item_code
+        const itemCode = Object.keys(row).reduce((code, field) => {
+          if (mapping[field] === 'item_code') {
+            return (row[field] || '').toString().toLowerCase();
+          }
+          return code;
+        }, '');
+        
+        // Skip empty item codes
+        if (!itemCode) return;
+        
+        // Check if this item code already exists in our current import
+        if (importItemCodes.has(itemCode)) {
+          importErrors.push({
+            row: index + 2, // +2 for header row and 0-indexing
+            field: 'item_code',
+            message: 'Duplicate item code within imported file',
+            value: itemCode
+          });
+          errorCount++;
+        } else {
+          importItemCodes.add(itemCode);
+        }
+      });
+      
       for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
         const batchStart = batchIndex * batchSize;
         const batchEnd = Math.min(batchStart + batchSize, rawData.length);
@@ -494,9 +524,23 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
             
             // Skip validation here as we already validated
             
-            // Check if item exists and handle update/skip
+            // Check for duplicate in import file - skip if already marked as duplicate
             const itemCode = mappedRow.item_code?.toString().toLowerCase();
-            const existingPart = itemCode ? existingPartsByCode.get(itemCode) : undefined;
+            if (!itemCode) {
+              throw new Error("Item code is required");
+            }
+
+            // Check if already processed as duplicate in pre-processing
+            if (importErrors.some(err => 
+                err.field === 'item_code' && 
+                err.value.toLowerCase() === itemCode && 
+                err.message.includes('Duplicate'))) {
+              // Skip this row as it was already marked as a duplicate
+              throw new Error("Duplicate item code - skipping this entry");
+            }
+            
+            // Check if item exists in database and handle update/skip
+            const existingPart = existingPartsByCode.get(itemCode);
             
             if (existingPart) {
               // Handle existing item
@@ -520,8 +564,10 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
                   image: mappedRow.image
                 });
                 successCount++;
+              } else {
+                // Skip and report as duplicate if we're not updating
+                throw new Error(`Item code '${mappedRow.item_code}' already exists in the database`);
               }
-              // Skip if we're not updating
             } else {
               // Create new part
               await apiRequest("POST", "/api/parts", {
