@@ -301,6 +301,51 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       const existingParts = Array.isArray(response) ? response : [];
       const existingItemCodes = new Set(existingParts.map((part: any) => part.item_code.toLowerCase()));
       
+      // Track item codes to find duplicates within the file
+      const importItemCodes = new Map<string, number>();
+      
+      // First pass: collect all item codes to find duplicates within the import file
+      for (let rowIndex = 0; rowIndex < rawData.length; rowIndex++) {
+        const rawRow = rawData[rowIndex] as any;
+        // Find the item code in the raw data using our mapping
+        let itemCode = '';
+        for (const sourceField in rawRow) {
+          if (mapping[sourceField] === 'item_code' && rawRow[sourceField]) {
+            itemCode = rawRow[sourceField].toString().toLowerCase();
+            break;
+          }
+        }
+        
+        if (itemCode) {
+          if (importItemCodes.has(itemCode)) {
+            // Found duplicate within the file - mark both rows
+            const firstRow = importItemCodes.get(itemCode)!;
+            
+            // Only add the error for the first occurrence once
+            if (!errors.some(e => e.row === firstRow + 2 && e.field === 'item_code' && e.message.includes('duplicate'))) {
+              errors.push({
+                row: firstRow + 2, // +2 for header row and 0-indexing
+                field: 'item_code',
+                message: `Duplicate item code in file (rows ${firstRow + 2} and ${rowIndex + 2})`,
+                value: itemCode
+              });
+            }
+            
+            // Always add error for subsequent occurrences
+            errors.push({
+              row: rowIndex + 2, // +2 for header row and 0-indexing
+              field: 'item_code',
+              message: `Duplicate item code in file (rows ${firstRow + 2} and ${rowIndex + 2})`,
+              value: itemCode
+            });
+            
+            duplicates++;
+          } else {
+            importItemCodes.set(itemCode, rowIndex);
+          }
+        }
+      }
+      
       // Validate each row
       for (let rowIndex = 0; rowIndex < rawData.length; rowIndex++) {
         const rawRow = rawData[rowIndex] as any;
@@ -343,20 +388,26 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
           }
         }
         
-        // Check for duplicate item codes within the import file
+        // Check if it exists in the database and we're not updating
         if (mappedRow.item_code) {
           const itemCode = mappedRow.item_code.toString().toLowerCase();
           
-          // Check if it exists in the database and we're not updating
-          if (existingItemCodes.has(itemCode) && !updateExisting) {
-            duplicates++;
-            errors.push({
-              row: rowIndex + 2, // +2 because of 0-indexing and header row
-              field: 'item_code',
-              message: 'Item code already exists in the database',
-              value: mappedRow.item_code
-            });
-            continue; // Skip further validation for this row
+          // Skip this check if this row was already marked with a duplicate error
+          if (!errors.some(e => e.row === rowIndex + 2 && e.field === 'item_code' && e.message.includes('duplicate'))) {
+            // Check if it exists in the database and we're not updating
+            if (existingItemCodes.has(itemCode) && !updateExisting) {
+              duplicates++;
+              errors.push({
+                row: rowIndex + 2, // +2 because of 0-indexing and header row
+                field: 'item_code',
+                message: 'Item code already exists in the database',
+                value: mappedRow.item_code
+              });
+              continue; // Skip further validation for this row
+            }
+          } else {
+            // Skip validation for rows already identified as duplicates
+            continue;
           }
         }
         
