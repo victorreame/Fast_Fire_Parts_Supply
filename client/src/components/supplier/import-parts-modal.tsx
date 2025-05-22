@@ -515,6 +515,9 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       // Track item codes in current import to detect duplicates within the file
       const importItemCodes = new Set<string>();
       
+      // Track the total number of records in the file
+      const totalRecords = rawData.length;
+      
       // Pre-process to find duplicates within the file
       rawData.forEach((row: any, index: number) => {
         // Apply mapping to get the item_code
@@ -693,12 +696,13 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
       
-      // Update import result with detailed error information
+      // Update import result with detailed error information and original total count
       setImportResult(prev => prev ? {
         ...prev,
         successful: successCount,
         failed: errorCount,
-        errors: importErrors // Add the detailed error information
+        errors: importErrors, // Add the detailed error information
+        totalRecords: totalRecords // Store the actual total from the file
       } : null);
       
       toast({
@@ -1104,16 +1108,16 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
                   
                   <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
                     <div className="bg-white border rounded-lg p-4">
-                      <p className="text-sm text-neutral-500">Total Processed</p>
-                      <p className="text-2xl font-bold">{importResult.successful + importResult.failed}</p>
+                      <p className="text-sm text-neutral-500">Total Records</p>
+                      <p className="text-2xl font-bold">{importResult.totalRecords || 0}</p>
                     </div>
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <p className="text-sm text-neutral-500">Imported</p>
                       <p className="text-2xl font-bold text-green-600">{importResult.successful}</p>
                     </div>
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <p className="text-sm text-neutral-500">Failed</p>
-                      <p className="text-2xl font-bold text-red-600">{importResult.failed}</p>
+                      <p className="text-sm text-neutral-500">Failed/Skipped</p>
+                      <p className="text-2xl font-bold text-red-600">{importResult.totalRecords ? (importResult.totalRecords - importResult.successful) : importResult.failed}</p>
                     </div>
                   </div>
                 </div>
