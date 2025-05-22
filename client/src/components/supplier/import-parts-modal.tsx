@@ -754,80 +754,40 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       const headers = ['Row', 'Field', 'Error Message', 'Value'];
       const ws = utils.aoa_to_sheet([headers]);
       
-      // Count exactly how many errors we should have based on the displayed numbers
-      const failedCount = importResult.totalRecords - importResult.successful;
-      console.log(`Total records: ${importResult.totalRecords}, Successful: ${importResult.successful}, Failed: ${failedCount}`);
-      
-      // Get all unique errors by using a more specific key (rows with the same issues are grouped)
-      const uniqueErrors: ValidationError[] = [];
-      const seenErrors = new Set();
-      
-      // Group errors by type to better consolidate them
-      const duplicateItemCodes = new Set();
-      const databaseExistingCodes = new Set();
-      const otherErrors: ValidationError[] = [];
-      
-      // First categorize all errors
-      importResult.errors.forEach(err => {
-        if (err.message.includes('Duplicate item code within') || 
-            err.message.includes('Duplicate item code in file')) {
-          duplicateItemCodes.add(err.value.toLowerCase());
-        } 
-        else if (err.message.includes('already exists in the database')) {
-          databaseExistingCodes.add(err.value.toLowerCase());
+      // Create formatted error data for the report
+      const errorData = importResult.errors.map(err => {
+        // Improve the error message to be more clear
+        let message = err.message;
+        let field = err.field || 'unknown';
+        
+        // Fix unknown error fields and improve messages
+        if (field === 'unknown') {
+          if (message.includes('Duplicate')) {
+            field = 'item_code';
+          }
+          else if (message.includes('exists in the database')) {
+            field = 'item_code';
+          }
         }
-        else {
-          otherErrors.push(err);
+        
+        // Make error messages clearer and more specific
+        if (message.includes('Duplicate item code within') || message.includes('Duplicate item code in file')) {
+          message = `Duplicate item code: ${err.value}`;
         }
-      });
-      
-      // Add one error per duplicate item code
-      duplicateItemCodes.forEach(code => {
-        // Find the first error for this code
-        const err = importResult.errors.find(e => 
-          e.value.toLowerCase() === code && 
-          (e.message.includes('Duplicate item code within') || e.message.includes('Duplicate item code in file'))
-        );
-        if (err) {
-          uniqueErrors.push({
-            ...err,
-            message: `Duplicate item code in imported file: ${code}`
-          });
+        else if (message.includes('already exists in the database')) {
+          message = `Already exists in database: ${err.value}`;
         }
-      });
-      
-      // Add one error per existing database code
-      databaseExistingCodes.forEach(code => {
-        // Find the first error for this code
-        const err = importResult.errors.find(e => 
-          e.value.toLowerCase() === code && 
-          e.message.includes('already exists in the database')
-        );
-        if (err) {
-          uniqueErrors.push({
-            ...err,
-            message: `Item code already exists in database: ${code}`
-          });
+        else if (message === 'Unknown error' || !message) {
+          message = `Failed to import item (validation error)`;
         }
+        
+        return [
+          err.row || 'N/A',
+          field,
+          message,
+          err.value !== undefined && err.value !== null ? String(err.value) : ''
+        ];
       });
-      
-      // Add all other errors
-      otherErrors.forEach(err => {
-        uniqueErrors.push(err);
-      });
-      
-      // Debug log the counts
-      console.log(`Unique Error Report: ${uniqueErrors.length} errors (${duplicateItemCodes.size} duplicates, ${databaseExistingCodes.size} existing, ${otherErrors.length} other)`);
-      console.log(`Should match Failed Count: ${failedCount}`);
-      
-      
-      // Map to rows
-      const errorData = uniqueErrors.map(err => [
-        err.row,
-        err.field,
-        err.message,
-        err.value !== undefined && err.value !== null ? String(err.value) : ''
-      ]);
       
       utils.sheet_add_aoa(ws, errorData, { origin: 'A2' });
       
