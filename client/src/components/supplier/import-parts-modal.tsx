@@ -467,7 +467,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
         const batch = rawData.slice(batchStart, batchEnd);
         
         // Process each item in the batch
-        const promises = batch.map(async (rawRow) => {
+        const promises = batch.map(async (rawRow: any) => {
           try {
             const mappedRow: {[key: string]: any} = {};
             
@@ -543,9 +543,46 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
               });
               successCount++;
             }
-          } catch (error) {
+          } catch (error: any) {
             console.error("Error importing row:", error);
             errorCount++;
+            
+            // Add detailed error info for the error report
+            let errorMessage = "Unknown error";
+            let errorField = "unknown";
+            let errorValue = (rawRow as any).item_code || "unknown";
+            
+            if (error.message) {
+              errorMessage = error.message;
+              
+              // Try to extract more specific error details from the response
+              try {
+                if (error.message.includes("400:") || error.message.includes("500:")) {
+                  const errorJson = error.message.split(":", 2)[1].trim();
+                  const errorObj = JSON.parse(errorJson);
+                  
+                  if (errorObj.message) {
+                    errorMessage = errorObj.message;
+                  }
+                  
+                  if (errorObj.errors && errorObj.errors.length > 0) {
+                    errorField = errorObj.errors[0].path?.join('.') || "validation";
+                    errorMessage = errorObj.errors[0].message || errorMessage;
+                  }
+                }
+              } catch (parseError) {
+                // Fallback to original error message if parsing fails
+                console.log("Error parsing error details:", parseError);
+              }
+            }
+            
+            // Store the error details for the report
+            importErrors.push({
+              row: batchStart + batch.indexOf(rawRow) + 2, // +2 for header row and 0-indexing
+              field: errorField,
+              message: errorMessage,
+              value: errorValue
+            });
           }
         });
         
@@ -559,11 +596,12 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
       
-      // Update import result
+      // Update import result with detailed error information
       setImportResult(prev => prev ? {
         ...prev,
         successful: successCount,
-        failed: errorCount
+        failed: errorCount,
+        errors: importErrors // Add the detailed error information
       } : null);
       
       toast({
