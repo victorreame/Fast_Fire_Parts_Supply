@@ -462,7 +462,8 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
         successful,
         failed: rawData.length - successful,
         errors,
-        duplicates
+        duplicates,
+        totalRecords: rawData.length
       });
       
       setCurrentStep("validation");
@@ -753,8 +754,17 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       const headers = ['Row', 'Field', 'Error Message', 'Value'];
       const ws = utils.aoa_to_sheet([headers]);
       
-      // Add error data
-      const errorData = importResult.errors.map(err => [
+      // Filter out duplicate errors to match the UI count
+      const uniqueErrors = new Map();
+      
+      // Use a combination of row and field as a unique key
+      importResult.errors.forEach(err => {
+        const key = `${err.row}-${err.field}-${err.value}`;
+        uniqueErrors.set(key, err);
+      });
+      
+      // Convert back to array and map to rows
+      const errorData = Array.from(uniqueErrors.values()).map(err => [
         err.row,
         err.field,
         err.message,
