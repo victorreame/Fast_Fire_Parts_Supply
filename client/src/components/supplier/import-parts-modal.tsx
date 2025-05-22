@@ -58,6 +58,7 @@ interface ImportResult {
   failed: number;
   errors: ValidationError[];
   duplicates: number;
+  totalRecords: number;
 }
 
 // Enhanced part validation schema with more detailed validation messages
@@ -519,6 +520,8 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       const totalRecords = rawData.length;
       
       // Pre-process to find duplicates within the file
+      const duplicateRows = new Set<number>();
+      
       rawData.forEach((row: any, index: number) => {
         // Apply mapping to get the item_code
         const itemCode = Object.keys(row).reduce((code, field) => {
@@ -540,6 +543,7 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
             value: itemCode
           });
           errorCount++;
+          duplicateRows.add(index); // Mark this row as a duplicate
         } else {
           importItemCodes.add(itemCode);
         }
@@ -697,10 +701,13 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
       
       // Update import result with detailed error information and original total count
+      // Make sure the error count matches the actual error array length
+      const actualErrorCount = importErrors.length;
+      
       setImportResult(prev => prev ? {
         ...prev,
         successful: successCount,
-        failed: errorCount,
+        failed: actualErrorCount, // Use the actual error count from the array
         errors: importErrors, // Add the detailed error information
         totalRecords: totalRecords // Store the actual total from the file
       } : null);
