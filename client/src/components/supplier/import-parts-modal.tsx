@@ -754,17 +754,75 @@ const ImportPartsModal: React.FC<ImportPartsModalProps> = ({ open, onOpenChange 
       const headers = ['Row', 'Field', 'Error Message', 'Value'];
       const ws = utils.aoa_to_sheet([headers]);
       
-      // Filter out duplicate errors to match the UI count
-      const uniqueErrors = new Map();
+      // Count exactly how many errors we should have based on the displayed numbers
+      const failedCount = importResult.totalRecords - importResult.successful;
+      console.log(`Total records: ${importResult.totalRecords}, Successful: ${importResult.successful}, Failed: ${failedCount}`);
       
-      // Use a combination of row and field as a unique key
+      // Get all unique errors by using a more specific key (rows with the same issues are grouped)
+      const uniqueErrors: ValidationError[] = [];
+      const seenErrors = new Set();
+      
+      // Group errors by type to better consolidate them
+      const duplicateItemCodes = new Set();
+      const databaseExistingCodes = new Set();
+      const otherErrors: ValidationError[] = [];
+      
+      // First categorize all errors
       importResult.errors.forEach(err => {
-        const key = `${err.row}-${err.field}-${err.value}`;
-        uniqueErrors.set(key, err);
+        if (err.message.includes('Duplicate item code within') || 
+            err.message.includes('Duplicate item code in file')) {
+          duplicateItemCodes.add(err.value.toLowerCase());
+        } 
+        else if (err.message.includes('already exists in the database')) {
+          databaseExistingCodes.add(err.value.toLowerCase());
+        }
+        else {
+          otherErrors.push(err);
+        }
       });
       
-      // Convert back to array and map to rows
-      const errorData = Array.from(uniqueErrors.values()).map(err => [
+      // Add one error per duplicate item code
+      duplicateItemCodes.forEach(code => {
+        // Find the first error for this code
+        const err = importResult.errors.find(e => 
+          e.value.toLowerCase() === code && 
+          (e.message.includes('Duplicate item code within') || e.message.includes('Duplicate item code in file'))
+        );
+        if (err) {
+          uniqueErrors.push({
+            ...err,
+            message: `Duplicate item code in imported file: ${code}`
+          });
+        }
+      });
+      
+      // Add one error per existing database code
+      databaseExistingCodes.forEach(code => {
+        // Find the first error for this code
+        const err = importResult.errors.find(e => 
+          e.value.toLowerCase() === code && 
+          e.message.includes('already exists in the database')
+        );
+        if (err) {
+          uniqueErrors.push({
+            ...err,
+            message: `Item code already exists in database: ${code}`
+          });
+        }
+      });
+      
+      // Add all other errors
+      otherErrors.forEach(err => {
+        uniqueErrors.push(err);
+      });
+      
+      // Debug log the counts
+      console.log(`Unique Error Report: ${uniqueErrors.length} errors (${duplicateItemCodes.size} duplicates, ${databaseExistingCodes.size} existing, ${otherErrors.length} other)`);
+      console.log(`Should match Failed Count: ${failedCount}`);
+      
+      
+      // Map to rows
+      const errorData = uniqueErrors.map(err => [
         err.row,
         err.field,
         err.message,
