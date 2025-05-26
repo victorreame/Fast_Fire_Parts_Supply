@@ -79,24 +79,25 @@ const SupplierParts = () => {
         </div>
 
         <div className="p-6">
-          <div className="flex justify-end items-center mb-4">
-            <div className="flex">
+          {/* Action Buttons - Responsive Layout */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               <Button
-                className="bg-primary hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center"
+                className="bg-primary hover:bg-primary-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center"
                 onClick={handleAddPart}
               >
                 <i className="fas fa-plus mr-2"></i>
                 Add Part
               </Button>
               <Button
-                className="ml-3 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center"
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center"
                 onClick={() => setShowImportDialog(true)}
               >
                 <i className="fas fa-file-import mr-2"></i>
                 Import Parts
               </Button>
               <Button 
-                className="ml-3 border border-neutral-300 bg-white hover:bg-neutral-50 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center"
+                className="border border-neutral-300 bg-white hover:bg-neutral-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center"
                 variant="outline"
               >
                 <i className="fas fa-download mr-2"></i>
@@ -105,8 +106,9 @@ const SupplierParts = () => {
             </div>
           </div>
 
-          <div className="flex mb-4">
-            <div className="relative flex-grow mr-4">
+          {/* Search and Filters - Responsive Layout */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
               <Input
                 type="text"
                 placeholder="Search parts..."
@@ -116,28 +118,30 @@ const SupplierParts = () => {
               />
               <i className="fas fa-search absolute left-3 top-2.5 text-neutral-400"></i>
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[150px] mr-2">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {partTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={sizeFilter} onValueChange={setSizeFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Sizes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sizes</SelectItem>
-                {pipeSizes.map(size => (
-                  <SelectItem key={size} value={size}>{size}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {partTypes.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={sizeFilter} onValueChange={setSizeFilter}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="All Sizes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sizes</SelectItem>
+                  {pipeSizes.map(size => (
+                    <SelectItem key={size} value={size}>{size}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {isLoading ? (
