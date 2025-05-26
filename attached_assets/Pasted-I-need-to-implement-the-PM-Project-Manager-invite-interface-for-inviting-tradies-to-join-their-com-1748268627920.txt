@@ -1,0 +1,53 @@
+I need to implement the PM (Project Manager) invite interface for inviting tradies to join their company. This is part of UI2 (Project Manager interface) in my fire parts supply application.
+
+**EXISTING DATABASE TABLES (DO NOT MODIFY):**
+- `tradie_invitations` table with fields: project_manager_id, tradie_id, email, phone, invitation_token, token_expiry, status, created_at, response_date
+- `notifications` table with fields: user_id, title, message, type, is_read, related_id, related_type, created_at
+- `users` table with businessId field linking PMs to their company
+
+**REQUIREMENTS:**
+
+**1. PM Dashboard - Invite Tradie Section:**
+- Add "Invite Tradie" button/section to PM dashboard
+- Form with fields:
+  - Email address (required, validation)
+  - Phone number (optional)
+  - Personal message (optional, max 200 chars)
+- Submit button to send invitation
+
+**2. Invitation Logic:**
+- Check if email already exists in users table:
+  - **If exists**: Create invitation record, send in-platform notification to tradie
+  - **If doesn't exist**: Create invitation record, send email invitation with registration link
+- Generate unique invitation_token (UUID)
+- Set token_expiry to 7 days from now
+- Set status to 'pending'
+- Link to PM's businessId
+
+**3. Current Company Tradies Display:**
+- Show list of all tradies in PM's company (same businessId)
+- Display: Name, Email, Status (Approved/Pending/Removed)
+- Action buttons:
+  - "Remove" button (sets isApproved to false, sends removal notification)
+  - "Re-invite" button (for removed tradies)
+
+**4. Pending Invitations Management:**
+- Show table of pending invitations sent by this PM
+- Display: Email, Status, Sent Date, Expires Date
+- Actions:
+  - "Resend" (new token, reset expiry)
+  - "Cancel" (set status to 'cancelled')
+
+**5. Validation & Error Handling:**
+- Prevent duplicate invitations to same email
+- Email format validation
+- Show success/error messages
+- Handle expired invitations
+
+**6. UI/UX Requirements:**
+- Clean, professional interface matching existing dashboard style
+- Responsive design for desktop/mobile
+- Loading states for async operations
+- Confirmation dialogs for remove/cancel actions
+
+Please implement the complete PM invite interface with proper form handling, data validation, and integration with existing database tables. Include all necessary API endpoints for the frontend functionality.
