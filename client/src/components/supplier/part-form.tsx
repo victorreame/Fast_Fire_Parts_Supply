@@ -51,7 +51,6 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
         toast({
           title: "Error",
@@ -61,7 +60,6 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
         return;
       }
       
-      // Check file type
       if (!file.type.startsWith('image/')) {
         toast({
           title: "Error",
@@ -122,22 +120,22 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
 
   // Extract unique pipe sizes for dropdown
   const pipeSizes = Array.isArray(parts)
-    ? Array.from(new Set(parts.map((p: Part) => p.pipeSize))).sort()
+    ? Array.from(new Set(parts.map((p: Part) => p.pipe_size))).sort()
     : [];
 
   const form = useForm<PartFormValues>({
     resolver: zodResolver(partFormSchema),
     defaultValues: part
       ? {
-          itemCode: part.itemCode,
-          pipeSize: part.pipeSize,
+          itemCode: part.item_code,
+          pipeSize: part.pipe_size,
           description: part.description,
           type: part.type,
-          priceT1: part.priceT1,
-          priceT2: part.priceT2,
-          priceT3: part.priceT3,
-          inStock: part.inStock || 0,
-          isPopular: part.isPopular || false,
+          priceT1: part.price_t1,
+          priceT2: part.price_t2,
+          priceT3: part.price_t3,
+          inStock: part.in_stock || 0,
+          isPopular: part.is_popular || false,
           image: part.image,
           imageUrl: part.image || ""
         }
@@ -202,11 +200,17 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
 
   const onSubmit = async (values: PartFormValues) => {
     try {
+      // Use imageUrl if provided, otherwise use uploaded image path
+      const finalValues = {
+        ...values,
+        image: values.imageUrl || values.image
+      };
+
       if (part) {
         // Update existing part
-        await updatePartMutation.mutateAsync(values);
+        await updatePartMutation.mutateAsync(finalValues);
         
-        // Upload image if selected
+        // Upload image if file was selected (takes priority over URL)
         if (image) {
           setIsUploading(true);
           await uploadImageMutation.mutateAsync(part.id);
@@ -214,11 +218,10 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
         }
       } else {
         // Create new part
-        const newPartResponse = await createPartMutation.mutateAsync(values);
+        const newPartResponse = await createPartMutation.mutateAsync(finalValues);
         
-        // Upload image if selected and part created successfully
+        // Upload image if file was selected and part created successfully
         if (image && newPartResponse) {
-          // Safely parse the response to get the part ID
           let newPartId: number | undefined;
           try {
             const newPart = newPartResponse as unknown as Part;
@@ -235,12 +238,16 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
         }
       }
       
-      // Clear file input after successful submission
+      // Clear form after successful submission
       if (image) {
         setImage(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
+      }
+      if (!part) {
+        setPreviewUrl(null);
+        form.reset();
       }
     } catch (error) {
       setIsUploading(false);
@@ -468,17 +475,23 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
             />
           </div>
           
-          {/* Right Column - Image Upload */}
-          <div className="space-y-2">
-            <Label htmlFor="part-image">Part Image</Label>
+          {/* Right Column - Image */}
+          <div className="space-y-4">
+            <Label>Part Image</Label>
+            
+            {/* Image Preview */}
             <div className="flex items-start gap-4">
               <div>
-                {previewUrl ? (
+                {(previewUrl || form.watch("imageUrl")) ? (
                   <div className="relative w-32 h-32 rounded border overflow-hidden">
                     <img 
-                      src={previewUrl} 
+                      src={previewUrl || form.watch("imageUrl")} 
                       alt="Part preview" 
                       className="w-full h-full object-contain"
+                      onError={() => {
+                        setPreviewUrl(null);
+                        form.setValue("imageUrl", "");
+                      }}
                     />
                     <Button
                       type="button"
@@ -488,6 +501,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
                       onClick={() => {
                         setPreviewUrl(null);
                         setImage(null);
+                        form.setValue("imageUrl", "");
                         if (fileInputRef.current) {
                           fileInputRef.current.value = '';
                         }
@@ -503,31 +517,62 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
                   </div>
                 )}
               </div>
-              
-              <div className="flex-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center mb-2 w-full"
-                  disabled={isUploading}
-                >
-                  <FaUpload className="mr-2 h-4 w-4" />
-                  {previewUrl ? "Change image" : "Upload image"}
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Upload a clear image of the part.<br />
-                  JPG, PNG or GIF, max 2MB.
-                </p>
-                <input
-                  ref={fileInputRef}
-                  id="part-image"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </div>
+            </div>
+
+            {/* Image URL Input */}
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image URL</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="https://example.com/image.jpg" 
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        if (e.target.value && e.target.value.match(/\.(jpeg|jpg|gif|png)$/i)) {
+                          setPreviewUrl(e.target.value);
+                          setImage(null);
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                          }
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Enter a direct link to the part image
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* File Upload Option */}
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center w-full"
+                disabled={isUploading}
+              >
+                <FaUpload className="mr-2 h-4 w-4" />
+                {previewUrl ? "Change image" : "Upload from device"}
+              </Button>
+              <p className="text-sm text-muted-foreground mt-1">
+                Or upload from your device. JPG, PNG or GIF, max 2MB.
+              </p>
+              <input
+                ref={fileInputRef}
+                id="part-image"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
             </div>
           </div>
         </div>
@@ -540,9 +585,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
         >
           {createPartMutation.isPending || updatePartMutation.isPending || isUploading
             ? "Saving..."
-            : part
-            ? "Update Part"
-            : "Add Part"}
+            : part ? "Update Part" : "Create Part"}
         </Button>
       </form>
     </Form>
