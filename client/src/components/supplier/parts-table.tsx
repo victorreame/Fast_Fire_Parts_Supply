@@ -113,9 +113,6 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                   <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16 resize-x">
                     Stock
                   </TableHead>
-                  <TableHead className="px-3 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">
-                    Actions
-                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="bg-white divide-y divide-neutral-200">
