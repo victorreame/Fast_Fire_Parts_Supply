@@ -24,25 +24,25 @@ const SupplierParts = () => {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [partToEdit, setPartToEdit] = useState<Part | null>(null);
 
-  const { data: parts, isLoading } = useQuery({
+  const { data: parts, isLoading } = useQuery<Part[]>({
     queryKey: ['/api/parts'],
   });
 
   // Extract unique types and pipe sizes for filters
-  const partTypes = parts 
-    ? Array.from(new Set(parts.map(part => part.type))).sort() 
+  const partTypes = parts && Array.isArray(parts)
+    ? Array.from(new Set(parts.map((part: Part) => part.type))).sort() 
     : [];
 
-  const pipeSizes = parts
-    ? Array.from(new Set(parts.map(part => part.pipe_size))).sort()
+  const pipeSizes = parts && Array.isArray(parts)
+    ? Array.from(new Set(parts.map((part: Part) => part.pipe_size))).sort()
     : [];
 
   // Filter parts based on search, type, and size
-  const filteredParts = parts
-    ? parts.filter(part => {
+  const filteredParts = parts && Array.isArray(parts)
+    ? parts.filter((part: Part) => {
         const matchesSearch = searchQuery
-          ? part.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            part.item_code.toLowerCase().includes(searchQuery.toLowerCase())
+          ? (part.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             part.item_code?.toLowerCase().includes(searchQuery.toLowerCase()))
           : true;
         
         const matchesType = typeFilter !== "all" 
@@ -125,7 +125,7 @@ const SupplierParts = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  {partTypes.map(type => (
+                  {partTypes.map((type: string) => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
                 </SelectContent>
@@ -136,7 +136,7 @@ const SupplierParts = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Sizes</SelectItem>
-                  {pipeSizes.map(size => (
+                  {pipeSizes.map((size: string) => (
                     <SelectItem key={size} value={size}>{size}</SelectItem>
                   ))}
                 </SelectContent>

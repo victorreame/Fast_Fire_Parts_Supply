@@ -170,7 +170,20 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
 
   const createPartMutation = useMutation({
     mutationFn: async (values: PartFormValues) => {
-      return apiRequest("POST", "/api/parts", values);
+      // Map form values to API format
+      const apiValues = {
+        item_code: values.item_code,
+        pipe_size: values.pipe_size,
+        description: values.description,
+        type: values.type,
+        price_t1: values.price_t1,
+        price_t2: values.price_t2,
+        price_t3: values.price_t3,
+        in_stock: values.in_stock,
+        is_popular: values.is_popular,
+        image: values.image
+      };
+      return apiRequest("POST", "/api/parts", apiValues);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
@@ -193,7 +206,20 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
   const updatePartMutation = useMutation({
     mutationFn: async (values: PartFormValues) => {
       if (!part) return;
-      return apiRequest("PUT", `/api/parts/${part.id}`, values);
+      // Map form values to API format
+      const apiValues = {
+        item_code: values.item_code,
+        pipe_size: values.pipe_size,
+        description: values.description,
+        type: values.type,
+        price_t1: values.price_t1,
+        price_t2: values.price_t2,
+        price_t3: values.price_t3,
+        in_stock: values.in_stock,
+        is_popular: values.is_popular,
+        image: values.image
+      };
+      return apiRequest("PUT", `/api/parts/${part.id}`, apiValues);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
