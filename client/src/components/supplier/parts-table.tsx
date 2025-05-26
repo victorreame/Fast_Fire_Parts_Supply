@@ -124,7 +124,11 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                   const shouldTruncate = part.description && part.description.length > 50;
                   
                   return (
-                    <TableRow key={part.id} className="hover:bg-neutral-50 h-16">
+                    <TableRow 
+                      key={part.id} 
+                      className="hover:bg-neutral-50 h-16 cursor-pointer"
+                      onClick={() => onEdit(part)}
+                    >
                       <TableCell className="px-3 py-2 align-middle">
                         <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50 flex-shrink-0">
                           {part.image ? (
@@ -165,7 +169,10 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                             <>
                               {part.description.substring(0, 50)}...
                               <button
-                                onClick={() => toggleRowExpansion(part.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleRowExpansion(part.id);
+                                }}
                                 className="ml-1 text-blue-600 hover:text-blue-800 text-xs font-medium"
                               >
                                 Show more
@@ -176,7 +183,10 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                               {part.description}
                               {shouldTruncate && isExpanded && (
                                 <button
-                                  onClick={() => toggleRowExpansion(part.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleRowExpansion(part.id);
+                                  }}
                                   className="ml-1 text-blue-600 hover:text-blue-800 text-xs font-medium"
                                 >
                                   Show less
@@ -211,26 +221,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                           {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
                         </div>
                       </TableCell>
-                      <TableCell className="px-3 py-2 text-right text-sm font-medium align-middle">
-                        <div className="flex justify-end space-x-2">
-                          <Button 
-                            variant="outline"
-                            size="sm"
-                            className="text-primary hover:text-primary-900 text-xs px-2 py-1"
-                            onClick={() => onEdit(part)}
-                          >
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:text-red-900 text-xs px-2 py-1"
-                            onClick={() => handleDelete(part.id)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
+
                     </TableRow>
                   );
                 })}

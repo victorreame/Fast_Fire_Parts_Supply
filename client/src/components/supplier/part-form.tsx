@@ -40,6 +40,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(part?.image || null);
   const [isUploading, setIsUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>(part?.image || "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: parts } = useQuery({
@@ -72,6 +73,19 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
       
       setImage(file);
       setPreviewUrl(URL.createObjectURL(file));
+      setImageUrl(""); // Clear URL when file is selected
+    }
+  };
+
+  // Handle image URL change
+  const handleImageUrlChange = (url: string) => {
+    setImageUrl(url);
+    if (url.trim()) {
+      setPreviewUrl(url);
+      setImage(null); // Clear file when URL is used
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -121,22 +135,22 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
 
   // Extract unique pipe sizes for dropdown
   const pipeSizes = Array.isArray(parts)
-    ? Array.from(new Set(parts.map((p: Part) => p.pipeSize))).sort()
+    ? Array.from(new Set(parts.map((p: Part) => p.pipe_size))).sort()
     : [];
 
   const form = useForm<PartFormValues>({
     resolver: zodResolver(partFormSchema),
     defaultValues: part
       ? {
-          itemCode: part.itemCode,
-          pipeSize: part.pipeSize,
+          itemCode: part.item_code,
+          pipeSize: part.pipe_size,
           description: part.description,
           type: part.type,
-          priceT1: part.priceT1,
-          priceT2: part.priceT2,
-          priceT3: part.priceT3,
-          inStock: part.inStock || 0, // Ensure it's not null
-          isPopular: part.isPopular || false, // Ensure it's not null
+          priceT1: part.price_t1,
+          priceT2: part.price_t2,
+          priceT3: part.price_t3,
+          inStock: part.in_stock || 0, // Ensure it's not null
+          isPopular: part.is_popular || false, // Ensure it's not null
           image: part.image
         }
       : {
