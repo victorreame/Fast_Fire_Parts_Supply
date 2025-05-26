@@ -1,6 +1,6 @@
-
 import React from "react";
 import { Part } from "@shared/schema";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,11 +9,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/components/ui/resizable";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface PartsTableProps {
   parts: Part[];
@@ -21,277 +28,189 @@ interface PartsTableProps {
 }
 
 const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [deletePartId, setDeletePartId] = React.useState<number | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+
+  const deletePartMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest("DELETE", `/api/parts/${id}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
+      toast({
+        title: "Part deleted",
+        description: "The part has been successfully deleted.",
+      });
+      setShowDeleteDialog(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete part. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = (id: number) => {
+    setDeletePartId(id);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletePartId !== null) {
+      deletePartMutation.mutate(deletePartId);
+    }
+  };
 
   return (
     <>
       {/* Desktop/Tablet Table View */}
       <div className="hidden md:block">
-        <div className="overflow-hidden rounded-lg border border-neutral-200">
-          <div className="w-full">
-            <ResizablePanelGroup direction="horizontal" className="min-h-[600px]">
-              {/* Image Column */}
-              <ResizablePanel defaultSize={8} minSize={6} maxSize={12}>
-                <div className="h-full border-r border-neutral-200">
-                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
-                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Image
-                    </span>
-                  </div>
-                  <div className="divide-y divide-neutral-200">
-                    {parts.map((part) => (
-                      <div 
-                        key={`img-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center h-[72px]"
+        <div className="overflow-x-auto rounded-lg border border-neutral-200">
+          <Table>
+            <TableHeader className="bg-neutral-50">
+              <TableRow>
+                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[80px]">
+                  Image
+                </TableHead>
+                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[120px]">
+                  Item Code
+                </TableHead>
+                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[100px]">
+                  Pipe Size
+                </TableHead>
+                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[200px]">
+                  Description
+                </TableHead>
+                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[100px]">
+                  Type
+                </TableHead>
+                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[90px]">
+                  Price T1
+                </TableHead>
+                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[90px]">
+                  Price T2
+                </TableHead>
+                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[90px]">
+                  Price T3
+                </TableHead>
+                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[80px]">
+                  Stock
+                </TableHead>
+                <TableHead className="px-4 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[120px]">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="bg-white divide-y divide-neutral-200">
+              {parts.map((part) => (
+                <TableRow key={part.id} className="hover:bg-neutral-50">
+                  <TableCell className="px-4 py-4">
+                    <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50">
+                      {part.image ? (
+                        <img 
+                          src={part.image} 
+                          alt={part.description}
+                          className="w-full h-full object-contain rounded"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : (
+                        <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                      {part.image && (
+                        <svg className="w-6 h-6 text-neutral-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-sm font-medium text-neutral-900">
+                    {part.item_code}
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
+                    {part.pipe_size}
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
+                    <div className="max-w-[200px] truncate" title={part.description}>
+                      {part.description}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
+                    {part.type}
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
+                    ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
+                    ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
+                    ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
+                    {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-right text-sm font-medium">
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="text-primary hover:text-primary-900"
                         onClick={() => onEdit(part)}
                       >
-                        <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50">
-                          {part.image ? (
-                            <img 
-                              src={part.image} 
-                              alt={part.description}
-                              className="w-full h-full object-contain rounded"
-                            />
-                          ) : (
-                            <i className="fas fa-cube text-neutral-400 text-lg"></i>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              {/* Item Code Column */}
-              <ResizablePanel defaultSize={12} minSize={8} maxSize={20}>
-                <div className="h-full border-r border-neutral-200">
-                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
-                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Item Code
-                    </span>
-                  </div>
-                  <div className="divide-y divide-neutral-200">
-                    {parts.map((part) => (
-                      <div 
-                        key={`code-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center h-[72px]"
-                        onClick={() => onEdit(part)}
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-900"
+                        onClick={() => handleDelete(part.id)}
                       >
-                        <span className="text-sm font-medium text-neutral-900">
-                          {part.item_code}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              {/* Pipe Size Column */}
-              <ResizablePanel defaultSize={10} minSize={6} maxSize={15}>
-                <div className="h-full border-r border-neutral-200">
-                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
-                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Pipe Size
-                    </span>
-                  </div>
-                  <div className="divide-y divide-neutral-200">
-                    {parts.map((part) => (
-                      <div 
-                        key={`size-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center h-[72px]"
-                        onClick={() => onEdit(part)}
-                      >
-                        <span className="text-sm text-neutral-500">
-                          {part.pipe_size}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              {/* Description Column */}
-              <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
-                <div className="h-full border-r border-neutral-200">
-                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
-                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Description
-                    </span>
-                  </div>
-                  <div className="divide-y divide-neutral-200">
-                    {parts.map((part) => (
-                      <div 
-                        key={`desc-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center h-[72px]"
-                        onClick={() => onEdit(part)}
-                      >
-                        <div className="text-sm text-neutral-500 leading-tight whitespace-normal break-words overflow-hidden">
-                          {part.description}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              {/* Type Column */}
-              <ResizablePanel defaultSize={10} minSize={6} maxSize={15}>
-                <div className="h-full border-r border-neutral-200">
-                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
-                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Type
-                    </span>
-                  </div>
-                  <div className="divide-y divide-neutral-200">
-                    {parts.map((part) => (
-                      <div 
-                        key={`type-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center h-[72px]"
-                        onClick={() => onEdit(part)}
-                      >
-                        <span className="text-sm text-neutral-500">
-                          {part.type}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              {/* Price T1 Column */}
-              <ResizablePanel defaultSize={8} minSize={6} maxSize={12}>
-                <div className="h-full border-r border-neutral-200">
-                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
-                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Price T1
-                    </span>
-                  </div>
-                  <div className="divide-y divide-neutral-200">
-                    {parts.map((part) => (
-                      <div 
-                        key={`t1-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center h-[72px]"
-                        onClick={() => onEdit(part)}
-                      >
-                        <span className="text-sm text-neutral-500">
-                          ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              {/* Price T2 Column */}
-              <ResizablePanel defaultSize={8} minSize={6} maxSize={12}>
-                <div className="h-full border-r border-neutral-200">
-                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
-                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Price T2
-                    </span>
-                  </div>
-                  <div className="divide-y divide-neutral-200">
-                    {parts.map((part) => (
-                      <div 
-                        key={`t2-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center h-[72px]"
-                        onClick={() => onEdit(part)}
-                      >
-                        <span className="text-sm text-neutral-500">
-                          ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              {/* Price T3 Column */}
-              <ResizablePanel defaultSize={8} minSize={6} maxSize={12}>
-                <div className="h-full border-r border-neutral-200">
-                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
-                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Price T3
-                    </span>
-                  </div>
-                  <div className="divide-y divide-neutral-200">
-                    {parts.map((part) => (
-                      <div 
-                        key={`t3-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center h-[72px]"
-                        onClick={() => onEdit(part)}
-                      >
-                        <span className="text-sm text-neutral-500">
-                          ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              {/* Stock Column */}
-              <ResizablePanel defaultSize={6} minSize={5} maxSize={10}>
-                <div className="h-full">
-                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
-                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Stock
-                    </span>
-                  </div>
-                  <div className="divide-y divide-neutral-200">
-                    {parts.map((part) => (
-                      <div 
-                        key={`stock-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center h-[72px]"
-                        onClick={() => onEdit(part)}
-                      >
-                        <span className="text-sm text-neutral-500">
-                          {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </div>
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
         {parts.map((part) => (
-          <div 
-            key={part.id} 
-            className="bg-white border border-neutral-200 rounded-lg p-4 shadow-sm cursor-pointer hover:bg-neutral-50"
-            onClick={() => onEdit(part)}
-          >
-            <div className="flex items-start mb-3">
-              <div className="flex items-start space-x-3 flex-1">
+          <div key={part.id} className="bg-white border border-neutral-200 rounded-lg p-4 shadow-sm">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex items-start space-x-3">
                 <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50 flex-shrink-0">
                   {part.image ? (
                     <img 
                       src={part.image} 
                       alt={part.description}
                       className="w-full h-full object-contain rounded"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                      }}
                     />
                   ) : (
-                    <i className="fas fa-cube text-neutral-400 text-lg"></i>
+                    <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                  {part.image && (
+                    <svg className="w-6 h-6 text-neutral-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                   )}
                 </div>
                 <div>
@@ -299,8 +218,23 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                   <p className="text-xs text-neutral-500 mt-1">{part.pipe_size} • {part.type}</p>
                 </div>
               </div>
-              <div className="text-xs text-neutral-400 flex items-center">
-                <i className="fas fa-edit"></i>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="text-primary hover:text-primary-900 text-xs px-2 py-1"
+                  onClick={() => onEdit(part)}
+                >
+                  Edit
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 hover:text-red-900 text-xs px-2 py-1"
+                  onClick={() => handleDelete(part.id)}
+                >
+                  Delete
+                </Button>
               </div>
             </div>
             
@@ -333,6 +267,25 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
           </div>
         ))}
       </div>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Part</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this part? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deletePartMutation.isPending}>
+              {deletePartMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
