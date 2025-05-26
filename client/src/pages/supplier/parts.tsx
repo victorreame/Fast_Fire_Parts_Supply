@@ -23,6 +23,8 @@ const SupplierParts = () => {
   const [showAddPartDialog, setShowAddPartDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [partToEdit, setPartToEdit] = useState<Part | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   const { data: parts, isLoading } = useQuery<Part[]>({
     queryKey: ['/api/parts'],
@@ -56,6 +58,18 @@ const SupplierParts = () => {
         return matchesSearch && matchesType && matchesSize;
       })
     : [];
+
+  // Calculate pagination
+  const totalItems = filteredParts.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedParts = filteredParts.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  const resetPagination = () => {
+    setCurrentPage(1);
+  };
 
   const handleAddPart = () => {
     setPartToEdit(null);
@@ -114,12 +128,18 @@ const SupplierParts = () => {
                 placeholder="Search parts..."
                 className="w-full py-2 pl-10 pr-4 rounded-lg"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  resetPagination();
+                }}
               />
               <i className="fas fa-search absolute left-3 top-2.5 text-neutral-400"></i>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <Select value={typeFilter} onValueChange={(value) => {
+                setTypeFilter(value);
+                resetPagination();
+              }}>
                 <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
@@ -130,7 +150,10 @@ const SupplierParts = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={sizeFilter} onValueChange={setSizeFilter}>
+              <Select value={sizeFilter} onValueChange={(value) => {
+                setSizeFilter(value);
+                resetPagination();
+              }}>
                 <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="All Sizes" />
                 </SelectTrigger>
@@ -147,14 +170,79 @@ const SupplierParts = () => {
           {isLoading ? (
             <Skeleton className="h-64 w-full" />
           ) : (
-            <PartsTable parts={filteredParts} onEdit={handleEditPart} />
+            <PartsTable parts={paginatedParts} onEdit={handleEditPart} />
           )}
 
-          <div className="flex items-center justify-between mt-4">
+          {/* Pagination Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
             <div className="text-sm text-neutral-700">
-              Showing <span className="font-medium">1</span> to{" "}
-              <span className="font-medium">{filteredParts.length}</span> of{" "}
-              <span className="font-medium">{filteredParts.length}</span> results
+              Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
+              <span className="font-medium">{Math.min(endIndex, totalItems)}</span> of{" "}
+              <span className="font-medium">{totalItems}</span> results
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {/* Items per page selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-neutral-700">Show:</span>
+                <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+                  setItemsPerPage(parseInt(value));
+                  resetPagination();
+                }}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Page navigation */}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  
+                  <span className="text-sm text-neutral-700 px-2">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Last
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
