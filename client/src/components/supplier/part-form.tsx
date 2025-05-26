@@ -19,17 +19,18 @@ interface PartFormProps {
   onSuccess?: () => void;
 }
 
-// Extend the insertPartSchema with validation
-const partFormSchema = insertPartSchema.extend({
-  itemCode: z.string().min(3, "Item code must be at least 3 characters"),
-  pipeSize: z.string().min(1, "Pipe size is required"),
+// Create a form schema that matches database field names
+const partFormSchema = z.object({
+  item_code: z.string().min(3, "Item code must be at least 3 characters"),
+  pipe_size: z.string().min(1, "Pipe size is required"),
   description: z.string().min(3, "Description must be at least 3 characters"),
   type: z.string().min(1, "Type is required"),
-  priceT1: z.number().min(0.01, "Price T1 must be greater than 0"),
-  priceT2: z.number().min(0.01, "Price T2 must be greater than 0"),
-  priceT3: z.number().min(0.01, "Price T3 must be greater than 0"),
-  inStock: z.number().min(0, "Stock cannot be negative"),
-  isPopular: z.boolean(),
+  price_t1: z.number().min(0.01, "Price T1 must be greater than 0"),
+  price_t2: z.number().min(0.01, "Price T2 must be greater than 0"),
+  price_t3: z.number().min(0.01, "Price T3 must be greater than 0"),
+  in_stock: z.number().min(0, "Stock cannot be negative"),
+  is_popular: z.boolean(),
+  image: z.string().optional(),
 });
 
 type PartFormValues = z.infer<typeof partFormSchema>;
@@ -142,27 +143,27 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
     resolver: zodResolver(partFormSchema),
     defaultValues: part
       ? {
-          itemCode: part.item_code,
-          pipeSize: part.pipe_size,
+          item_code: part.item_code,
+          pipe_size: part.pipe_size,
           description: part.description,
           type: part.type,
-          priceT1: part.price_t1,
-          priceT2: part.price_t2,
-          priceT3: part.price_t3,
-          inStock: part.in_stock || 0, // Ensure it's not null
-          isPopular: part.is_popular || false, // Ensure it's not null
-          image: part.image
+          price_t1: part.price_t1,
+          price_t2: part.price_t2,
+          price_t3: part.price_t3,
+          in_stock: part.in_stock || 0,
+          is_popular: part.is_popular || false,
+          image: part.image || undefined
         }
       : {
-          itemCode: "",
-          pipeSize: "",
+          item_code: "",
+          pipe_size: "",
           description: "",
           type: "",
-          priceT1: 0,
-          priceT2: 0,
-          priceT3: 0,
-          inStock: 0,
-          isPopular: false,
+          price_t1: 0,
+          price_t2: 0,
+          price_t3: 0,
+          in_stock: 0,
+          is_popular: false,
           image: undefined
         },
   });
@@ -213,11 +214,17 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
 
   const onSubmit = async (values: PartFormValues) => {
     try {
+      // Include the image URL in the values if it's set
+      const finalValues = {
+        ...values,
+        image: imageUrl || values.image || undefined
+      };
+
       if (part) {
         // Update existing part
-        await updatePartMutation.mutateAsync(values);
+        await updatePartMutation.mutateAsync(finalValues);
         
-        // Upload image if selected
+        // Upload image file if selected (takes precedence over URL)
         if (image) {
           setIsUploading(true);
           await uploadImageMutation.mutateAsync(part.id);
@@ -225,9 +232,9 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
         }
       } else {
         // Create new part
-        const newPartResponse = await createPartMutation.mutateAsync(values);
+        const newPartResponse = await createPartMutation.mutateAsync(finalValues);
         
-        // Upload image if selected and part created successfully
+        // Upload image file if selected and part created successfully
         if (image && newPartResponse) {
           // Safely parse the response to get the part ID
           let newPartId: number | undefined;
@@ -246,12 +253,11 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
         }
       }
       
-      // Clear file input after successful submission
-      if (image) {
-        setImage(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+      // Clear form state after successful submission
+      setImage(null);
+      setImageUrl("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     } catch (error) {
       setIsUploading(false);
@@ -266,7 +272,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
         <div className="grid grid-cols-3 gap-4">
           <FormField
             control={form.control}
-            name="itemCode"
+            name="item_code"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Item Code</FormLabel>
@@ -280,7 +286,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
           
           <FormField
             control={form.control}
-            name="pipeSize"
+            name="pipe_size"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Pipe Size</FormLabel>
@@ -379,7 +385,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
             <div className="grid grid-cols-3 gap-3">
               <FormField
                 control={form.control}
-                name="priceT1"
+                name="price_t1"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Price T1 ($)</FormLabel>
@@ -389,7 +395,8 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
                         min="0.01" 
                         step="0.01" 
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -399,7 +406,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
               
               <FormField
                 control={form.control}
-                name="priceT2"
+                name="price_t2"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Price T2 ($)</FormLabel>
@@ -409,7 +416,8 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
                         min="0.01" 
                         step="0.01" 
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -419,7 +427,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
               
               <FormField
                 control={form.control}
-                name="priceT3"
+                name="price_t3"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Price T3 ($)</FormLabel>
@@ -429,7 +437,8 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
                         min="0.01" 
                         step="0.01" 
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -440,7 +449,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
 
             <FormField
               control={form.control}
-              name="inStock"
+              name="in_stock"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Stock Quantity</FormLabel>
@@ -449,7 +458,8 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
                       type="number" 
                       min="0" 
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -459,7 +469,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
             
             <FormField
               control={form.control}
-              name="isPopular"
+              name="is_popular"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
@@ -470,7 +480,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
+                      checked={!!field.value}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
@@ -480,8 +490,10 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
           </div>
           
           {/* Right Column - Image Upload */}
-          <div className="space-y-2">
+          <div className="space-y-4">
             <Label htmlFor="part-image">Part Image</Label>
+            
+            {/* Image Preview */}
             <div className="flex items-start gap-4">
               <div>
                 {previewUrl ? (
@@ -499,6 +511,7 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
                       onClick={() => {
                         setPreviewUrl(null);
                         setImage(null);
+                        setImageUrl("");
                         if (fileInputRef.current) {
                           fileInputRef.current.value = '';
                         }
@@ -515,29 +528,59 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
                 )}
               </div>
               
-              <div className="flex-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center mb-2 w-full"
-                  disabled={isUploading}
-                >
-                  <FaUpload className="mr-2 h-4 w-4" />
-                  {previewUrl ? "Change image" : "Upload image"}
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Upload a clear image of the part.<br />
-                  JPG, PNG or GIF, max 2MB.
-                </p>
-                <input
-                  ref={fileInputRef}
-                  id="part-image"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
+              <div className="flex-1 space-y-3">
+                {/* File Upload */}
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center w-full"
+                    disabled={isUploading}
+                  >
+                    <FaUpload className="mr-2 h-4 w-4" />
+                    {previewUrl ? "Change image" : "Upload image"}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    JPG, PNG or GIF, max 2MB
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    id="part-image"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </div>
+                
+                {/* OR separator */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Image URL Input */}
+                <div>
+                  <Label htmlFor="image-url" className="text-sm">Image URL</Label>
+                  <Input
+                    id="image-url"
+                    type="url"
+                    placeholder="https://example.com/image.jpg"
+                    value={imageUrl}
+                    onChange={(e) => handleImageUrlChange(e.target.value)}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter a direct link to the image
+                  </p>
+                </div>
               </div>
             </div>
           </div>
