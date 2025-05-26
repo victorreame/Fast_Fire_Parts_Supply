@@ -30,6 +30,7 @@ const partFormSchema = insertPartSchema.extend({
   priceT3: z.number().min(0.01, "Price T3 must be greater than 0"),
   inStock: z.number().min(0, "Stock cannot be negative"),
   isPopular: z.boolean(),
+  imageUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
 });
 
 type PartFormValues = z.infer<typeof partFormSchema>;
@@ -135,9 +136,10 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
           priceT1: part.priceT1,
           priceT2: part.priceT2,
           priceT3: part.priceT3,
-          inStock: part.inStock || 0, // Ensure it's not null
-          isPopular: part.isPopular || false, // Ensure it's not null
-          image: part.image
+          inStock: part.inStock || 0,
+          isPopular: part.isPopular || false,
+          image: part.image,
+          imageUrl: part.image || ""
         }
       : {
           itemCode: "",
@@ -149,7 +151,8 @@ const PartForm: React.FC<PartFormProps> = ({ part, onSuccess }) => {
           priceT3: 0,
           inStock: 0,
           isPopular: false,
-          image: undefined
+          image: undefined,
+          imageUrl: ""
         },
   });
 

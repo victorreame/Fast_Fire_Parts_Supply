@@ -1,6 +1,5 @@
 import React from "react";
 import { Part } from "@shared/schema";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,17 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 interface PartsTableProps {
   parts: Part[];
@@ -27,42 +15,6 @@ interface PartsTableProps {
 }
 
 const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [deletePartId, setDeletePartId] = React.useState<number | null>(null);
-  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
-
-  const deletePartMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest("DELETE", `/api/parts/${id}`, {});
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/parts'] });
-      toast({
-        title: "Part deleted",
-        description: "The part has been successfully deleted.",
-      });
-      setShowDeleteDialog(false);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete part. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleDelete = (id: number) => {
-    setDeletePartId(id);
-    setShowDeleteDialog(true);
-  };
-
-  const confirmDelete = () => {
-    if (deletePartId !== null) {
-      deletePartMutation.mutate(deletePartId);
-    }
-  };
 
   return (
     <>
@@ -100,14 +52,16 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                   <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
                     Stock
                   </TableHead>
-                  <TableHead className="px-3 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider w-36">
-                    Actions
-                  </TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody className="bg-white divide-y divide-neutral-200">
                 {parts.map((part) => (
-                  <TableRow key={part.id} className="hover:bg-neutral-50">
+                  <TableRow 
+                    key={part.id} 
+                    className="hover:bg-neutral-50 cursor-pointer"
+                    onClick={() => onEdit(part)}
+                  >
                     <TableCell className="px-3 py-4 w-20">
                       <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50">
                         {part.image ? (
@@ -147,26 +101,6 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     <TableCell className="px-3 py-4 text-sm text-neutral-500 w-16">
                       {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
                     </TableCell>
-                    <TableCell className="px-3 py-4 text-right text-sm font-medium w-36">
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          className="text-primary hover:text-primary-900"
-                          onClick={() => onEdit(part)}
-                        >
-                          Edit
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-900"
-                          onClick={() => handleDelete(part.id)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -178,9 +112,13 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
         {parts.map((part) => (
-          <div key={part.id} className="bg-white border border-neutral-200 rounded-lg p-4 shadow-sm">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex items-start space-x-3">
+          <div 
+            key={part.id} 
+            className="bg-white border border-neutral-200 rounded-lg p-4 shadow-sm cursor-pointer hover:bg-neutral-50"
+            onClick={() => onEdit(part)}
+          >
+            <div className="flex items-start mb-3">
+              <div className="flex items-start space-x-3 flex-1">
                 <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50 flex-shrink-0">
                   {part.image ? (
                     <img 
@@ -197,23 +135,8 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                   <p className="text-xs text-neutral-500 mt-1">{part.pipe_size} • {part.type}</p>
                 </div>
               </div>
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="text-primary hover:text-primary-900 text-xs px-2 py-1"
-                  onClick={() => onEdit(part)}
-                >
-                  Edit
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 hover:text-red-900 text-xs px-2 py-1"
-                  onClick={() => handleDelete(part.id)}
-                >
-                  Delete
-                </Button>
+              <div className="text-xs text-neutral-400 flex items-center">
+                <i className="fas fa-edit"></i>
               </div>
             </div>
             
@@ -247,24 +170,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
         ))}
       </div>
 
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Part</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this part? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={deletePartMutation.isPending}>
-              {deletePartMutation.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
     </>
   );
 };
