@@ -1376,62 +1376,208 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Invite a tradie (create a new tradie account)
+  // Invite a tradie using token system
   pmRouter.post("/tradies/invite", async (req: Request, res: Response) => {
     try {
-      const { firstName, lastName, email, phone, businessId } = req.body;
+      const { email, phone, personalMessage } = req.body;
 
       // Validate required fields
-      if (!firstName || !lastName || !email) {
-        return res.status(400).json({ message: "First name, last name, and email are required" });
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
       }
 
-      // Check if email already exists
+      // Check if there's already a pending invitation for this email from this PM
+      const existingInvitation = await storage.getTradieInvitationByEmail(email);
+      if (existingInvitation && existingInvitation.projectManagerId === req.user!.id && existingInvitation.status === 'pending') {
+        return res.status(400).json({ message: "An invitation has already been sent to this email" });
+      }
+
+      // Check if email already exists in users table
       const existingUser = await storage.getUserByEmail(email);
+      
+      // Generate unique invitation token
+      const invitationToken = crypto.randomUUID();
+      
+      // Set token expiry to 7 days from now
+      const tokenExpiry = new Date();
+      tokenExpiry.setDate(tokenExpiry.getDate() + 7);
 
-      if (existingUser) {
-        return res.status(400).json({ message: "Email is already in use" });
-      }
-
-      // Generate a random password
-      const tempPassword = Math.random().toString(36).slice(-8);
-
-      // Hash the password
-      const hashedPassword = await hashPassword(tempPassword);
-
-      // Create the tradie user
-      const newTradie = await storage.createUser({
-        username: email.split('@')[0], // Use the first part of email as username
-        password: hashedPassword,
-        firstName,
-        lastName,
+      // Create invitation record
+      const invitation = await storage.createTradieInvitation({
+        projectManagerId: req.user!.id,
+        tradieId: existingUser?.id || null, // Link to existing user if found
         email,
         phone: phone || null,
-        role: "tradie",
-        isApproved: true, // Auto-approve invited tradies
-        approvedBy: req.user!.id,
-        approvalDate: new Date(),
-        businessId: businessId || req.user!.businessId
+        invitationToken,
+        tokenExpiry,
+        status: 'pending',
+        personalMessage: personalMessage || null
       });
 
-      // Create a notification for the tradie
-      await storage.createNotification({
-        userId: newTradie.id,
-        title: "Welcome to Fast Fire Parts",
-        message: `You've been invited to join Fast Fire Parts. Your temporary password is: ${tempPassword}. Please change it after your first login.`,
-        type: "account_invitation",
-        isRead: false
-      });
-
-      // TODO: Send email with temp password (for a real system)
+      if (existingUser) {
+        // If user exists, send in-platform notification
+        await storage.createNotification({
+          userId: existingUser.id,
+          title: "Company Invitation Received",
+          message: `You've been invited to join ${req.user!.firstName} ${req.user!.lastName}'s company. ${personalMessage ? personalMessage : ''}`,
+          type: "company_invitation",
+          isRead: false,
+          relatedId: invitation.id,
+          relatedType: "invitation"
+        });
+      } else {
+        // If user doesn't exist, would send email invitation with registration link
+        // TODO: Send email with invitation link containing token
+        console.log(`Email invitation would be sent to ${email} with token: ${invitationToken}`);
+      }
 
       res.status(201).json({
-        ...newTradie,
-        temporaryPassword: tempPassword
+        message: existingUser ? "Invitation sent to existing user" : "Invitation email would be sent to new user",
+        invitation: {
+          id: invitation.id,
+          email: invitation.email,
+          status: invitation.status,
+          expiryDate: invitation.tokenExpiry
+        }
       });
     } catch (error) {
       console.error("Error inviting tradie:", error);
       res.status(500).json({ message: "Failed to invite tradie" });
+    }
+  });
+
+  // Get pending invitations sent by this PM
+  pmRouter.get("/invitations/pending", async (req: Request, res: Response) => {
+    try {
+      const pendingInvitations = await storage.getPendingInvitationsByPM(req.user!.id);
+      res.json(pendingInvitations);
+    } catch (error) {
+      console.error("Error getting pending invitations:", error);
+      res.status(500).json({ message: "Failed to get pending invitations" });
+    }
+  });
+
+  // Resend an invitation
+  pmRouter.post("/invitations/:id/resend", async (req: Request, res: Response) => {
+    try {
+      const invitationId = parseInt(req.params.id);
+      
+      if (isNaN(invitationId)) {
+        return res.status(400).json({ message: "Invalid invitation ID" });
+      }
+
+      // Verify the invitation belongs to this PM
+      const invitation = await storage.getTradieInvitation(invitationId);
+      if (!invitation || invitation.projectManagerId !== req.user!.id) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+
+      // Generate new token and expiry
+      const newToken = crypto.randomUUID();
+      const newExpiry = new Date();
+      newExpiry.setDate(newExpiry.getDate() + 7);
+
+      await storage.resendTradieInvitation(invitationId, newToken, newExpiry);
+
+      res.json({ message: "Invitation resent successfully" });
+    } catch (error) {
+      console.error("Error resending invitation:", error);
+      res.status(500).json({ message: "Failed to resend invitation" });
+    }
+  });
+
+  // Cancel an invitation
+  pmRouter.post("/invitations/:id/cancel", async (req: Request, res: Response) => {
+    try {
+      const invitationId = parseInt(req.params.id);
+      
+      if (isNaN(invitationId)) {
+        return res.status(400).json({ message: "Invalid invitation ID" });
+      }
+
+      // Verify the invitation belongs to this PM
+      const invitation = await storage.getTradieInvitation(invitationId);
+      if (!invitation || invitation.projectManagerId !== req.user!.id) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+
+      await storage.cancelTradieInvitation(invitationId);
+
+      res.json({ message: "Invitation cancelled successfully" });
+    } catch (error) {
+      console.error("Error cancelling invitation:", error);
+      res.status(500).json({ message: "Failed to cancel invitation" });
+    }
+  });
+
+  // Remove a tradie from company (set isApproved to false)
+  pmRouter.post("/tradies/:id/remove", async (req: Request, res: Response) => {
+    try {
+      const tradieId = parseInt(req.params.id);
+      const { reason } = req.body;
+
+      if (isNaN(tradieId)) {
+        return res.status(400).json({ message: "Invalid tradie ID" });
+      }
+
+      // Check if the tradie exists and is approved
+      const tradie = await storage.getUser(tradieId);
+      if (!tradie) {
+        return res.status(404).json({ message: "Tradie not found" });
+      }
+
+      if (tradie.role !== "tradie") {
+        return res.status(400).json({ message: "User is not a tradie" });
+      }
+
+      if (!tradie.isApproved) {
+        return res.status(400).json({ message: "Tradie is already removed" });
+      }
+
+      // Remove the tradie (set isApproved to false)
+      await storage.updateUser(tradieId, {
+        isApproved: false
+      });
+
+      // Send removal notification
+      await storage.createNotification({
+        userId: tradieId,
+        title: "Access Removed",
+        message: reason ? `Your access has been removed: ${reason}` : "Your access to the company has been removed.",
+        type: "account_removal",
+        isRead: false
+      });
+
+      res.json({ message: "Tradie removed successfully" });
+    } catch (error) {
+      console.error("Error removing tradie:", error);
+      res.status(500).json({ message: "Failed to remove tradie" });
+    }
+  });
+
+  // Get tradies in PM's company (including removed ones)
+  pmRouter.get("/tradies/company", async (req: Request, res: Response) => {
+    try {
+      // Get PM's business
+      const pm = await storage.getUser(req.user!.id);
+      if (!pm || !pm.businessId) {
+        return res.status(400).json({ message: "PM business not found" });
+      }
+
+      // Get all tradies in the same business
+      const tradies = await storage.getUsersByRole("tradie");
+      const companyTradies = tradies.filter(tradie => tradie.businessId === pm.businessId);
+
+      // Add status for display
+      const tradiesWithStatus = companyTradies.map(tradie => ({
+        ...tradie,
+        displayStatus: tradie.isApproved ? "Approved" : "Removed"
+      }));
+
+      res.json(tradiesWithStatus);
+    } catch (error) {
+      console.error("Error getting company tradies:", error);
+      res.status(500).json({ message: "Failed to get company tradies" });
     }
   });
 
