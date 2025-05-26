@@ -18,176 +18,101 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
 
   return (
     <>
-      {/* Desktop/Large Screen Table View - No Horizontal Scroll */}
-      <div className="hidden lg:block">
-        <div className="rounded-lg border border-neutral-200">
-          <Table>
-            <TableHeader className="bg-neutral-50">
-              <TableRow>
-                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[8%]">
-                  Image
-                </TableHead>
-                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[12%]">
-                  Item Code
-                </TableHead>
-                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[8%]">
-                  Pipe Size
-                </TableHead>
-                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[25%]">
-                  Description
-                </TableHead>
-                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[12%]">
-                  Type
-                </TableHead>
-                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[10%]">
-                  Price T1
-                </TableHead>
-                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[10%]">
-                  Price T2
-                </TableHead>
-                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[10%]">
-                  Price T3
-                </TableHead>
-                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[5%]">
-                  Stock
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="bg-white divide-y divide-neutral-200">
-              {parts.map((part) => (
-                <TableRow 
-                  key={part.id} 
-                  className="hover:bg-neutral-50 cursor-pointer"
-                  onClick={() => onEdit(part)}
-                >
-                  <TableCell className="px-2 py-3 w-[8%]">
-                    <div className="w-10 h-10 flex items-center justify-center rounded border bg-neutral-50">
-                      {part.image ? (
-                        <img 
-                          src={part.image} 
-                          alt={part.description}
-                          className="w-full h-full object-contain rounded"
-                        />
-                      ) : (
-                        <i className="fas fa-cube text-neutral-400 text-sm"></i>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-2 py-3 text-xs font-medium text-neutral-900 w-[12%]">
-                    <div className="truncate" title={part.item_code}>
-                      {part.item_code}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[8%]">
-                    {part.pipe_size}
-                  </TableCell>
-                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[25%]">
-                    <div className="truncate" title={part.description}>
-                      {part.description}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[12%]">
-                    <div className="truncate" title={part.type}>
-                      {part.type}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[10%]">
-                    ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
-                  </TableCell>
-                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[10%]">
-                    ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
-                  </TableCell>
-                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[10%]">
-                    ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
-                  </TableCell>
-                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[5%]">
-                    {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
-                  </TableCell>
+      {/* All Screen Sizes - Responsive Table with All Columns Visible */}
+      <div className="hidden md:block">
+        <div className="rounded-lg border border-neutral-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table className="w-full table-fixed">
+              <TableHeader className="bg-neutral-50">
+                <TableRow>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-12">
+                    Image
+                  </TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
+                    Item Code
+                  </TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
+                    Pipe Size
+                  </TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider flex-1 min-w-0">
+                    Description
+                  </TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24">
+                    Type
+                  </TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
+                    Price T1
+                  </TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
+                    Price T2
+                  </TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
+                    Price T3
+                  </TableHead>
+                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-12">
+                    Stock
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody className="bg-white divide-y divide-neutral-200">
+                {parts.map((part) => (
+                  <TableRow 
+                    key={part.id} 
+                    className="hover:bg-neutral-50 cursor-pointer"
+                    onClick={() => onEdit(part)}
+                  >
+                    <TableCell className="px-1 py-2 w-12">
+                      <div className="w-8 h-8 flex items-center justify-center rounded border bg-neutral-50">
+                        {part.image ? (
+                          <img 
+                            src={part.image} 
+                            alt={part.description}
+                            className="w-full h-full object-contain rounded"
+                          />
+                        ) : (
+                          <i className="fas fa-cube text-neutral-400 text-xs"></i>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-1 py-2 text-xs font-medium text-neutral-900 w-20">
+                      <div className="truncate" title={part.item_code}>
+                        {part.item_code}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-16">
+                      {part.pipe_size}
+                    </TableCell>
+                    <TableCell className="px-1 py-2 text-xs text-neutral-500 flex-1 min-w-0">
+                      <div className="truncate" title={part.description}>
+                        {part.description}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-24">
+                      <div className="truncate" title={part.type}>
+                        {part.type}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-16">
+                      ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
+                    </TableCell>
+                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-16">
+                      ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
+                    </TableCell>
+                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-16">
+                      ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
+                    </TableCell>
+                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-12">
+                      {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
 
-      {/* Tablet View - Fits Without Horizontal Scroll */}
-      <div className="hidden md:block lg:hidden">
-        <div className="rounded-lg border border-neutral-200">
-          <Table>
-            <TableHeader className="bg-neutral-50">
-              <TableRow>
-                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[10%]">
-                  Image
-                </TableHead>
-                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[15%]">
-                  Code
-                </TableHead>
-                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[10%]">
-                  Size
-                </TableHead>
-                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[30%]">
-                  Description
-                </TableHead>
-                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[15%]">
-                  Type
-                </TableHead>
-                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[20%]">
-                  Pricing
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="bg-white divide-y divide-neutral-200">
-              {parts.map((part) => (
-                <TableRow 
-                  key={part.id} 
-                  className="hover:bg-neutral-50 cursor-pointer"
-                  onClick={() => onEdit(part)}
-                >
-                  <TableCell className="px-1 py-2 w-[10%]">
-                    <div className="w-8 h-8 flex items-center justify-center rounded border bg-neutral-50">
-                      {part.image ? (
-                        <img 
-                          src={part.image} 
-                          alt={part.description}
-                          className="w-full h-full object-contain rounded"
-                        />
-                      ) : (
-                        <i className="fas fa-cube text-neutral-400 text-xs"></i>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-2 text-xs font-medium text-neutral-900 w-[15%]">
-                    <div className="truncate" title={part.item_code}>
-                      {part.item_code}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-2 text-xs text-neutral-500 w-[10%]">
-                    {part.pipe_size}
-                  </TableCell>
-                  <TableCell className="px-1 py-2 text-xs text-neutral-500 w-[30%]">
-                    <div className="truncate" title={part.description}>
-                      {part.description}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-2 text-xs text-neutral-500 w-[15%]">
-                    <div className="truncate" title={part.type}>
-                      {part.type}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-1 py-2 text-xs text-neutral-500 w-[20%]">
-                    <div className="space-y-0.5">
-                      <div>T1: ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}</div>
-                      <div>T2: ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}</div>
-                      <div>T3: ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}</div>
-                      <div className="font-medium">Stock: {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}</div>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+
 
       {/* Mobile Enhanced Card View - All Data Accessible */}
       <div className="md:hidden space-y-4">
