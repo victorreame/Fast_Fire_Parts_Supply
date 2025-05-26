@@ -41,7 +41,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     {parts.map((part) => (
                       <div 
                         key={`img-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center min-h-[72px]"
                         onClick={() => onEdit(part)}
                       >
                         <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50">
@@ -75,7 +75,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     {parts.map((part) => (
                       <div 
                         key={`code-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center min-h-[72px]"
                         onClick={() => onEdit(part)}
                       >
                         <span className="text-sm font-medium text-neutral-900">
@@ -101,7 +101,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     {parts.map((part) => (
                       <div 
                         key={`size-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center min-h-[72px]"
                         onClick={() => onEdit(part)}
                       >
                         <span className="text-sm text-neutral-500">
@@ -127,7 +127,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     {parts.map((part) => (
                       <div 
                         key={`desc-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center min-h-[72px]"
                         onClick={() => onEdit(part)}
                       >
                         <div className="text-sm text-neutral-500 leading-relaxed whitespace-normal break-words">
@@ -153,7 +153,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     {parts.map((part) => (
                       <div 
                         key={`type-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center min-h-[72px]"
                         onClick={() => onEdit(part)}
                       >
                         <span className="text-sm text-neutral-500">
@@ -179,7 +179,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     {parts.map((part) => (
                       <div 
                         key={`t1-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center min-h-[72px]"
                         onClick={() => onEdit(part)}
                       >
                         <span className="text-sm text-neutral-500">
@@ -205,7 +205,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     {parts.map((part) => (
                       <div 
                         key={`t2-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center min-h-[72px]"
                         onClick={() => onEdit(part)}
                       >
                         <span className="text-sm text-neutral-500">
@@ -231,7 +231,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     {parts.map((part) => (
                       <div 
                         key={`t3-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center min-h-[72px]"
                         onClick={() => onEdit(part)}
                       >
                         <span className="text-sm text-neutral-500">
@@ -257,7 +257,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     {parts.map((part) => (
                       <div 
                         key={`stock-${part.id}`}
-                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer flex items-center min-h-[72px]"
                         onClick={() => onEdit(part)}
                       >
                         <span className="text-sm text-neutral-500">
