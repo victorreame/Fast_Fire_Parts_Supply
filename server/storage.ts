@@ -159,11 +159,15 @@ export interface IStorage {
   
   // Tradie Invitations
   getTradieInvitation(id: number): Promise<TradieInvitation | undefined>;
+  getTradieInvitationByToken(token: string): Promise<TradieInvitation | undefined>;
   getTradieInvitationsByPM(pmId: number): Promise<TradieInvitation[]>;
   getTradieInvitationsByTradie(tradieId: number): Promise<TradieInvitation[]>;
   getTradieInvitationByEmail(email: string): Promise<TradieInvitation | undefined>;
+  getPendingInvitationsByPM(pmId: number): Promise<TradieInvitation[]>;
   createTradieInvitation(invitation: InsertTradieInvitation): Promise<TradieInvitation>;
   updateTradieInvitationStatus(id: number, status: string, responseDate?: Date): Promise<TradieInvitation | undefined>;
+  resendTradieInvitation(id: number, newToken: string, newExpiry: Date): Promise<TradieInvitation | undefined>;
+  cancelTradieInvitation(id: number): Promise<TradieInvitation | undefined>;
   acceptTradieInvitation(invitationId: number): Promise<TradieInvitation | undefined>;
   rejectTradieInvitation(invitationId: number): Promise<TradieInvitation | undefined>;
   deleteTradieInvitation(id: number): Promise<boolean>;
@@ -1999,6 +2003,49 @@ export class DatabaseStorage implements IStorage {
     const [updatedInvitation] = await db
       .update(tradieInvitations)
       .set(updateData)
+      .where(eq(tradieInvitations.id, id))
+      .returning();
+    return updatedInvitation;
+  }
+
+  async getTradieInvitationByToken(token: string): Promise<TradieInvitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(tradieInvitations)
+      .where(eq(tradieInvitations.invitationToken, token));
+    return invitation;
+  }
+
+  async getPendingInvitationsByPM(pmId: number): Promise<TradieInvitation[]> {
+    return await db
+      .select()
+      .from(tradieInvitations)
+      .where(
+        and(
+          eq(tradieInvitations.projectManagerId, pmId),
+          eq(tradieInvitations.status, 'pending')
+        )
+      )
+      .orderBy(desc(tradieInvitations.createdAt));
+  }
+
+  async resendTradieInvitation(id: number, newToken: string, newExpiry: Date): Promise<TradieInvitation | undefined> {
+    const [updatedInvitation] = await db
+      .update(tradieInvitations)
+      .set({ 
+        invitationToken: newToken, 
+        tokenExpiry: newExpiry,
+        status: 'pending'
+      })
+      .where(eq(tradieInvitations.id, id))
+      .returning();
+    return updatedInvitation;
+  }
+
+  async cancelTradieInvitation(id: number): Promise<TradieInvitation | undefined> {
+    const [updatedInvitation] = await db
+      .update(tradieInvitations)
+      .set({ status: 'cancelled' })
       .where(eq(tradieInvitations.id, id))
       .returning();
     return updatedInvitation;

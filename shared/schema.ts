@@ -292,20 +292,31 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 // Tradie Invitations table (new)
 export const tradieInvitations = pgTable("tradie_invitations", {
   id: serial("id").primaryKey(),
-  tradieId: integer("tradie_id").references(() => users.id).notNull(), // Tradie being invited
   projectManagerId: integer("project_manager_id").references(() => users.id).notNull(), // PM sending the invitation
-  status: text("status").notNull().default("pending"), // pending, accepted, rejected
+  tradieId: integer("tradie_id").references(() => users.id), // Tradie being invited (null if email doesn't exist yet)
   email: text("email").notNull(), // Email used for the invitation
-  invitationDate: timestamp("invitation_date").defaultNow(),
+  phone: text("phone"), // Phone number (optional)
+  invitationToken: text("invitation_token").notNull(), // UUID token for the invitation
+  tokenExpiry: timestamp("token_expiry").notNull(), // When the token expires
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected, cancelled
+  createdAt: timestamp("created_at").defaultNow(),
   responseDate: timestamp("response_date"), // When the tradie responded
-  expiryDate: timestamp("expiry_date"), // When the invitation expires
-  notes: text("notes"), // Additional notes or message
+  personalMessage: text("personal_message"), // Optional personal message from PM
 });
 
 export const insertTradieInvitationSchema = createInsertSchema(tradieInvitations).omit({
   id: true,
-  invitationDate: true,
+  createdAt: true,
   responseDate: true,
+  invitationToken: true,
+  tokenExpiry: true,
+});
+
+// Form validation schema for PM invite
+export const inviteFormSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().optional(),
+  personalMessage: z.string().max(200, "Message must be 200 characters or less").optional(),
 });
 
 // Define relations
