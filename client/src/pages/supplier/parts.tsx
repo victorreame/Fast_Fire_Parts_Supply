@@ -34,7 +34,7 @@ const SupplierParts = () => {
     : [];
 
   const pipeSizes = parts
-    ? Array.from(new Set(parts.map(part => part.pipeSize))).sort()
+    ? Array.from(new Set(parts.map(part => part.pipe_size))).sort()
     : [];
 
   // Filter parts based on search, type, and size
@@ -42,7 +42,7 @@ const SupplierParts = () => {
     ? parts.filter(part => {
         const matchesSearch = searchQuery
           ? part.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            part.itemCode.toLowerCase().includes(searchQuery.toLowerCase())
+            part.item_code.toLowerCase().includes(searchQuery.toLowerCase())
           : true;
         
         const matchesType = typeFilter !== "all" 
@@ -50,7 +50,7 @@ const SupplierParts = () => {
           : true;
         
         const matchesSize = sizeFilter !== "all"
-          ? part.pipeSize === sizeFilter
+          ? part.pipe_size === sizeFilter
           : true;
         
         return matchesSearch && matchesType && matchesSize;
