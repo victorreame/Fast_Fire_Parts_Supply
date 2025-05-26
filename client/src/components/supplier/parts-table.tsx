@@ -18,184 +18,174 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
 
   return (
     <>
-      {/* Desktop Table View */}
+      {/* Desktop/Large Screen Table View - No Horizontal Scroll */}
       <div className="hidden lg:block">
-        <div className="overflow-x-auto rounded-lg border border-neutral-200">
-          <div className="min-w-[1200px]">
-            <Table>
-              <TableHeader className="bg-neutral-50">
-                <TableRow>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
-                    Image
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">
-                    Item Code
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24">
-                    Pipe Size
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[200px]">
-                    Description
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24">
-                    Type
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
-                    Price T1
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
-                    Price T2
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
-                    Price T3
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
-                    Stock
-                  </TableHead>
-
-                </TableRow>
-              </TableHeader>
-              <TableBody className="bg-white divide-y divide-neutral-200">
-                {parts.map((part) => (
-                  <TableRow 
-                    key={part.id} 
-                    className="hover:bg-neutral-50 cursor-pointer"
-                    onClick={() => onEdit(part)}
-                  >
-                    <TableCell className="px-3 py-4 w-20">
-                      <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50">
-                        {part.image ? (
-                          <img 
-                            src={part.image} 
-                            alt={part.description}
-                            className="w-full h-full object-contain rounded"
-                          />
-                        ) : (
-                          <i className="fas fa-cube text-neutral-400 text-lg"></i>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm font-medium text-neutral-900 w-32">
+        <div className="rounded-lg border border-neutral-200">
+          <Table>
+            <TableHeader className="bg-neutral-50">
+              <TableRow>
+                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[8%]">
+                  Image
+                </TableHead>
+                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[12%]">
+                  Item Code
+                </TableHead>
+                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[8%]">
+                  Pipe Size
+                </TableHead>
+                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[25%]">
+                  Description
+                </TableHead>
+                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[12%]">
+                  Type
+                </TableHead>
+                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[10%]">
+                  Price T1
+                </TableHead>
+                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[10%]">
+                  Price T2
+                </TableHead>
+                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[10%]">
+                  Price T3
+                </TableHead>
+                <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[5%]">
+                  Stock
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="bg-white divide-y divide-neutral-200">
+              {parts.map((part) => (
+                <TableRow 
+                  key={part.id} 
+                  className="hover:bg-neutral-50 cursor-pointer"
+                  onClick={() => onEdit(part)}
+                >
+                  <TableCell className="px-2 py-3 w-[8%]">
+                    <div className="w-10 h-10 flex items-center justify-center rounded border bg-neutral-50">
+                      {part.image ? (
+                        <img 
+                          src={part.image} 
+                          alt={part.description}
+                          className="w-full h-full object-contain rounded"
+                        />
+                      ) : (
+                        <i className="fas fa-cube text-neutral-400 text-sm"></i>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2 py-3 text-xs font-medium text-neutral-900 w-[12%]">
+                    <div className="truncate" title={part.item_code}>
                       {part.item_code}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-24">
-                      {part.pipe_size}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 min-w-[200px]">
-                      <div className="max-w-[200px] truncate" title={part.description}>
-                        {part.description}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-24">
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[8%]">
+                    {part.pipe_size}
+                  </TableCell>
+                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[25%]">
+                    <div className="truncate" title={part.description}>
+                      {part.description}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[12%]">
+                    <div className="truncate" title={part.type}>
                       {part.type}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-20">
-                      ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-20">
-                      ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-20">
-                      ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-16">
-                      {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[10%]">
+                    ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
+                  </TableCell>
+                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[10%]">
+                    ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
+                  </TableCell>
+                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[10%]">
+                    ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
+                  </TableCell>
+                  <TableCell className="px-2 py-3 text-xs text-neutral-500 w-[5%]">
+                    {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
-      {/* Tablet Horizontal Scroll View */}
+      {/* Tablet View - Fits Without Horizontal Scroll */}
       <div className="hidden md:block lg:hidden">
-        <div className="overflow-x-auto rounded-lg border border-neutral-200">
-          <div className="min-w-[900px]">
-            <Table>
-              <TableHeader className="bg-neutral-50">
-                <TableRow>
-                  <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
-                    Image
-                  </TableHead>
-                  <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24">
-                    Code
-                  </TableHead>
-                  <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
-                    Size
-                  </TableHead>
-                  <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[150px]">
-                    Description
-                  </TableHead>
-                  <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
-                    Type
-                  </TableHead>
-                  <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
-                    T1
-                  </TableHead>
-                  <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
-                    T2
-                  </TableHead>
-                  <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
-                    T3
-                  </TableHead>
-                  <TableHead className="px-2 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
-                    Stock
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="bg-white divide-y divide-neutral-200">
-                {parts.map((part) => (
-                  <TableRow 
-                    key={part.id} 
-                    className="hover:bg-neutral-50 cursor-pointer"
-                    onClick={() => onEdit(part)}
-                  >
-                    <TableCell className="px-2 py-3 w-16">
-                      <div className="w-10 h-10 flex items-center justify-center rounded border bg-neutral-50">
-                        {part.image ? (
-                          <img 
-                            src={part.image} 
-                            alt={part.description}
-                            className="w-full h-full object-contain rounded"
-                          />
-                        ) : (
-                          <i className="fas fa-cube text-neutral-400 text-sm"></i>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-2 py-3 text-xs font-medium text-neutral-900 w-24">
+        <div className="rounded-lg border border-neutral-200">
+          <Table>
+            <TableHeader className="bg-neutral-50">
+              <TableRow>
+                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[10%]">
+                  Image
+                </TableHead>
+                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[15%]">
+                  Code
+                </TableHead>
+                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[10%]">
+                  Size
+                </TableHead>
+                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[30%]">
+                  Description
+                </TableHead>
+                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[15%]">
+                  Type
+                </TableHead>
+                <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-[20%]">
+                  Pricing
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="bg-white divide-y divide-neutral-200">
+              {parts.map((part) => (
+                <TableRow 
+                  key={part.id} 
+                  className="hover:bg-neutral-50 cursor-pointer"
+                  onClick={() => onEdit(part)}
+                >
+                  <TableCell className="px-1 py-2 w-[10%]">
+                    <div className="w-8 h-8 flex items-center justify-center rounded border bg-neutral-50">
+                      {part.image ? (
+                        <img 
+                          src={part.image} 
+                          alt={part.description}
+                          className="w-full h-full object-contain rounded"
+                        />
+                      ) : (
+                        <i className="fas fa-cube text-neutral-400 text-xs"></i>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-1 py-2 text-xs font-medium text-neutral-900 w-[15%]">
+                    <div className="truncate" title={part.item_code}>
                       {part.item_code}
-                    </TableCell>
-                    <TableCell className="px-2 py-3 text-xs text-neutral-500 w-20">
-                      {part.pipe_size}
-                    </TableCell>
-                    <TableCell className="px-2 py-3 text-xs text-neutral-500 min-w-[150px]">
-                      <div className="max-w-[150px] truncate" title={part.description}>
-                        {part.description}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-2 py-3 text-xs text-neutral-500 w-20">
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-1 py-2 text-xs text-neutral-500 w-[10%]">
+                    {part.pipe_size}
+                  </TableCell>
+                  <TableCell className="px-1 py-2 text-xs text-neutral-500 w-[30%]">
+                    <div className="truncate" title={part.description}>
+                      {part.description}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-1 py-2 text-xs text-neutral-500 w-[15%]">
+                    <div className="truncate" title={part.type}>
                       {part.type}
-                    </TableCell>
-                    <TableCell className="px-2 py-3 text-xs text-neutral-500 w-16">
-                      ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
-                    </TableCell>
-                    <TableCell className="px-2 py-3 text-xs text-neutral-500 w-16">
-                      ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
-                    </TableCell>
-                    <TableCell className="px-2 py-3 text-xs text-neutral-500 w-16">
-                      ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
-                    </TableCell>
-                    <TableCell className="px-2 py-3 text-xs text-neutral-500 w-16">
-                      {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-1 py-2 text-xs text-neutral-500 w-[20%]">
+                    <div className="space-y-0.5">
+                      <div>T1: ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}</div>
+                      <div>T2: ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}</div>
+                      <div>T3: ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}</div>
+                      <div className="font-medium">Stock: {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}</div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
