@@ -73,6 +73,9 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
           <Table>
             <TableHeader className="bg-neutral-50">
               <TableRow>
+                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[80px]">
+                  Image
+                </TableHead>
                 <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[120px]">
                   Item Code
                 </TableHead>
@@ -105,6 +108,30 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
             <TableBody className="bg-white divide-y divide-neutral-200">
               {parts.map((part) => (
                 <TableRow key={part.id} className="hover:bg-neutral-50">
+                  <TableCell className="px-4 py-4">
+                    <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50">
+                      {part.image ? (
+                        <img 
+                          src={part.image} 
+                          alt={part.description}
+                          className="w-full h-full object-contain rounded"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : (
+                        <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                      {part.image && (
+                        <svg className="w-6 h-6 text-neutral-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="px-4 py-4 text-sm font-medium text-neutral-900">
                     {part.item_code}
                   </TableCell>
@@ -163,9 +190,33 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
         {parts.map((part) => (
           <div key={part.id} className="bg-white border border-neutral-200 rounded-lg p-4 shadow-sm">
             <div className="flex justify-between items-start mb-3">
-              <div>
-                <h3 className="font-medium text-neutral-900 text-sm">{part.item_code}</h3>
-                <p className="text-xs text-neutral-500 mt-1">{part.pipe_size} • {part.type}</p>
+              <div className="flex items-start space-x-3">
+                <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50 flex-shrink-0">
+                  {part.image ? (
+                    <img 
+                      src={part.image} 
+                      alt={part.description}
+                      className="w-full h-full object-contain rounded"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : (
+                    <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                  {part.image && (
+                    <svg className="w-6 h-6 text-neutral-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-medium text-neutral-900 text-sm">{part.item_code}</h3>
+                  <p className="text-xs text-neutral-500 mt-1">{part.pipe_size} • {part.type}</p>
+                </div>
               </div>
               <div className="flex space-x-2">
                 <Button 
