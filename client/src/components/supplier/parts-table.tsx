@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Part } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
   const { toast } = useToast();
   const [deletePartId, setDeletePartId] = React.useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   const deletePartMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -65,123 +67,176 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
     }
   };
 
+  const toggleRowExpansion = (partId: number) => {
+    const newExpandedRows = new Set(expandedRows);
+    if (newExpandedRows.has(partId)) {
+      newExpandedRows.delete(partId);
+    } else {
+      newExpandedRows.add(partId);
+    }
+    setExpandedRows(newExpandedRows);
+  };
+
   return (
     <>
       {/* Desktop/Tablet Table View */}
       <div className="hidden md:block">
-        <div className="overflow-x-auto rounded-lg border border-neutral-200">
-          <Table>
-            <TableHeader className="bg-neutral-50">
-              <TableRow>
-                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[80px]">
-                  Image
-                </TableHead>
-                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[120px]">
-                  Item Code
-                </TableHead>
-                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[100px]">
-                  Pipe Size
-                </TableHead>
-                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[200px]">
-                  Description
-                </TableHead>
-                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[100px]">
-                  Type
-                </TableHead>
-                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[90px]">
-                  Price T1
-                </TableHead>
-                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[90px]">
-                  Price T2
-                </TableHead>
-                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[90px]">
-                  Price T3
-                </TableHead>
-                <TableHead className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[80px]">
-                  Stock
-                </TableHead>
-                <TableHead className="px-4 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[120px]">
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="bg-white divide-y divide-neutral-200">
-              {parts.map((part) => (
-                <TableRow key={part.id} className="hover:bg-neutral-50">
-                  <TableCell className="px-4 py-4">
-                    <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50">
-                      {part.image ? (
-                        <img 
-                          src={part.image} 
-                          alt={part.description}
-                          className="w-full h-full object-contain rounded"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling.style.display = 'flex';
-                          }}
-                        />
-                      ) : (
-                        <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      )}
-                      {part.image && (
-                        <svg className="w-6 h-6 text-neutral-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-4 py-4 text-sm font-medium text-neutral-900">
-                    {part.item_code}
-                  </TableCell>
-                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
-                    {part.pipe_size}
-                  </TableCell>
-                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
-                    <div className="max-w-[200px] truncate" title={part.description}>
-                      {part.description}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
-                    {part.type}
-                  </TableCell>
-                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
-                    ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
-                  </TableCell>
-                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
-                    ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
-                  </TableCell>
-                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
-                    ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
-                  </TableCell>
-                  <TableCell className="px-4 py-4 text-sm text-neutral-500">
-                    {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
-                  </TableCell>
-                  <TableCell className="px-4 py-4 text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-2">
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        className="text-primary hover:text-primary-900"
-                        onClick={() => onEdit(part)}
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:text-red-900"
-                        onClick={() => handleDelete(part.id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
+        <div className="w-full">
+          <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+            <Table className="w-full">
+              <TableHeader className="bg-neutral-50">
+                <TableRow>
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20 resize-x">
+                    Image
+                  </TableHead>
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-32 resize-x">
+                    Item Code
+                  </TableHead>
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24 resize-x">
+                    Pipe Size
+                  </TableHead>
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-0 flex-1 resize-x">
+                    Description
+                  </TableHead>
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24 resize-x">
+                    Type
+                  </TableHead>
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20 resize-x">
+                    Price T1
+                  </TableHead>
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20 resize-x">
+                    Price T2
+                  </TableHead>
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20 resize-x">
+                    Price T3
+                  </TableHead>
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16 resize-x">
+                    Stock
+                  </TableHead>
+                  <TableHead className="px-3 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">
+                    Actions
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody className="bg-white divide-y divide-neutral-200">
+                {parts.map((part) => {
+                  const isExpanded = expandedRows.has(part.id);
+                  const shouldTruncate = part.description && part.description.length > 50;
+                  
+                  return (
+                    <TableRow key={part.id} className="hover:bg-neutral-50 h-16">
+                      <TableCell className="px-3 py-2 align-middle">
+                        <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50 flex-shrink-0">
+                          {part.image ? (
+                            <img 
+                              src={part.image} 
+                              alt={part.description}
+                              className="w-full h-full object-contain rounded"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.setAttribute('style', 'display: flex');
+                              }}
+                            />
+                          ) : (
+                            <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z" />
+                            </svg>
+                          )}
+                          {part.image && (
+                            <svg className="w-6 h-6 text-neutral-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z" />
+                            </svg>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm font-medium text-neutral-900 align-middle">
+                        <div className="break-words">
+                          {part.item_code}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-neutral-500 align-middle">
+                        <div className="break-words">
+                          {part.pipe_size}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-neutral-500 align-middle">
+                        <div className="break-words leading-tight">
+                          {shouldTruncate && !isExpanded ? (
+                            <>
+                              {part.description.substring(0, 50)}...
+                              <button
+                                onClick={() => toggleRowExpansion(part.id)}
+                                className="ml-1 text-blue-600 hover:text-blue-800 text-xs font-medium"
+                              >
+                                Show more
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              {part.description}
+                              {shouldTruncate && isExpanded && (
+                                <button
+                                  onClick={() => toggleRowExpansion(part.id)}
+                                  className="ml-1 text-blue-600 hover:text-blue-800 text-xs font-medium"
+                                >
+                                  Show less
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-neutral-500 align-middle">
+                        <div className="break-words">
+                          {part.type}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-neutral-500 align-middle">
+                        <div className="text-right">
+                          ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-neutral-500 align-middle">
+                        <div className="text-right">
+                          ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-neutral-500 align-middle">
+                        <div className="text-right">
+                          ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-neutral-500 align-middle">
+                        <div className="text-center">
+                          {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-right text-sm font-medium align-middle">
+                        <div className="flex justify-end space-x-2">
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            className="text-primary hover:text-primary-900 text-xs px-2 py-1"
+                            onClick={() => onEdit(part)}
+                          >
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-900 text-xs px-2 py-1"
+                            onClick={() => handleDelete(part.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
 
@@ -199,17 +254,17 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                       className="w-full h-full object-contain rounded"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                        e.currentTarget.nextElementSibling?.setAttribute('style', 'display: flex');
                       }}
                     />
                   ) : (
                     <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z" />
                     </svg>
                   )}
                   {part.image && (
                     <svg className="w-6 h-6 text-neutral-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z" />
                     </svg>
                   )}
                 </div>
