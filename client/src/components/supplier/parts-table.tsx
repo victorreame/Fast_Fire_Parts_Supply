@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Part } from "@shared/schema";
 import {
@@ -8,6 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 
 interface PartsTableProps {
   parts: Part[];
@@ -20,91 +26,249 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
     <>
       {/* Desktop/Tablet Table View */}
       <div className="hidden md:block">
-        <div className="overflow-x-auto rounded-lg border border-neutral-200">
-          <div className="min-w-[1200px]">
-            <Table>
-              <TableHeader className="bg-neutral-50">
-                <TableRow>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
-                    Image
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">
-                    Item Code
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24">
-                    Pipe Size
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[200px]">
-                    Description
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24">
-                    Type
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
-                    Price T1
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
-                    Price T2
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
-                    Price T3
-                  </TableHead>
-                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
-                    Stock
-                  </TableHead>
+        <div className="overflow-hidden rounded-lg border border-neutral-200">
+          <div className="w-full">
+            <ResizablePanelGroup direction="horizontal" className="min-h-[600px]">
+              {/* Image Column */}
+              <ResizablePanel defaultSize={8} minSize={6} maxSize={12}>
+                <div className="h-full border-r border-neutral-200">
+                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
+                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Image
+                    </span>
+                  </div>
+                  <div className="divide-y divide-neutral-200">
+                    {parts.map((part) => (
+                      <div 
+                        key={`img-${part.id}`}
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        onClick={() => onEdit(part)}
+                      >
+                        <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50">
+                          {part.image ? (
+                            <img 
+                              src={part.image} 
+                              alt={part.description}
+                              className="w-full h-full object-contain rounded"
+                            />
+                          ) : (
+                            <i className="fas fa-cube text-neutral-400 text-lg"></i>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ResizablePanel>
 
-                </TableRow>
-              </TableHeader>
-              <TableBody className="bg-white divide-y divide-neutral-200">
-                {parts.map((part) => (
-                  <TableRow 
-                    key={part.id} 
-                    className="hover:bg-neutral-50 cursor-pointer"
-                    onClick={() => onEdit(part)}
-                  >
-                    <TableCell className="px-3 py-4 w-20">
-                      <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50">
-                        {part.image ? (
-                          <img 
-                            src={part.image} 
-                            alt={part.description}
-                            className="w-full h-full object-contain rounded"
-                          />
-                        ) : (
-                          <i className="fas fa-cube text-neutral-400 text-lg"></i>
-                        )}
+              <ResizableHandle withHandle />
+
+              {/* Item Code Column */}
+              <ResizablePanel defaultSize={12} minSize={8} maxSize={20}>
+                <div className="h-full border-r border-neutral-200">
+                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
+                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Item Code
+                    </span>
+                  </div>
+                  <div className="divide-y divide-neutral-200">
+                    {parts.map((part) => (
+                      <div 
+                        key={`code-${part.id}`}
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        onClick={() => onEdit(part)}
+                      >
+                        <span className="text-sm font-medium text-neutral-900">
+                          {part.item_code}
+                        </span>
                       </div>
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm font-medium text-neutral-900 w-32">
-                      {part.item_code}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-24">
-                      {part.pipe_size}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 min-w-[200px]">
-                      <div className="max-w-[200px] truncate" title={part.description}>
-                        {part.description}
+                    ))}
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle />
+
+              {/* Pipe Size Column */}
+              <ResizablePanel defaultSize={10} minSize={6} maxSize={15}>
+                <div className="h-full border-r border-neutral-200">
+                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
+                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Pipe Size
+                    </span>
+                  </div>
+                  <div className="divide-y divide-neutral-200">
+                    {parts.map((part) => (
+                      <div 
+                        key={`size-${part.id}`}
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        onClick={() => onEdit(part)}
+                      >
+                        <span className="text-sm text-neutral-500">
+                          {part.pipe_size}
+                        </span>
                       </div>
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-24">
-                      {part.type}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-20">
-                      ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-20">
-                      ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-20">
-                      ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
-                    </TableCell>
-                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-16">
-                      {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    ))}
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle />
+
+              {/* Description Column */}
+              <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                <div className="h-full border-r border-neutral-200">
+                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
+                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Description
+                    </span>
+                  </div>
+                  <div className="divide-y divide-neutral-200">
+                    {parts.map((part) => (
+                      <div 
+                        key={`desc-${part.id}`}
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        onClick={() => onEdit(part)}
+                      >
+                        <div className="text-sm text-neutral-500 leading-relaxed whitespace-normal break-words">
+                          {part.description}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle />
+
+              {/* Type Column */}
+              <ResizablePanel defaultSize={10} minSize={6} maxSize={15}>
+                <div className="h-full border-r border-neutral-200">
+                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
+                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Type
+                    </span>
+                  </div>
+                  <div className="divide-y divide-neutral-200">
+                    {parts.map((part) => (
+                      <div 
+                        key={`type-${part.id}`}
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        onClick={() => onEdit(part)}
+                      >
+                        <span className="text-sm text-neutral-500">
+                          {part.type}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle />
+
+              {/* Price T1 Column */}
+              <ResizablePanel defaultSize={8} minSize={6} maxSize={12}>
+                <div className="h-full border-r border-neutral-200">
+                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
+                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Price T1
+                    </span>
+                  </div>
+                  <div className="divide-y divide-neutral-200">
+                    {parts.map((part) => (
+                      <div 
+                        key={`t1-${part.id}`}
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        onClick={() => onEdit(part)}
+                      >
+                        <span className="text-sm text-neutral-500">
+                          ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle />
+
+              {/* Price T2 Column */}
+              <ResizablePanel defaultSize={8} minSize={6} maxSize={12}>
+                <div className="h-full border-r border-neutral-200">
+                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
+                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Price T2
+                    </span>
+                  </div>
+                  <div className="divide-y divide-neutral-200">
+                    {parts.map((part) => (
+                      <div 
+                        key={`t2-${part.id}`}
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        onClick={() => onEdit(part)}
+                      >
+                        <span className="text-sm text-neutral-500">
+                          ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle />
+
+              {/* Price T3 Column */}
+              <ResizablePanel defaultSize={8} minSize={6} maxSize={12}>
+                <div className="h-full border-r border-neutral-200">
+                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
+                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Price T3
+                    </span>
+                  </div>
+                  <div className="divide-y divide-neutral-200">
+                    {parts.map((part) => (
+                      <div 
+                        key={`t3-${part.id}`}
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        onClick={() => onEdit(part)}
+                      >
+                        <span className="text-sm text-neutral-500">
+                          ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle />
+
+              {/* Stock Column */}
+              <ResizablePanel defaultSize={6} minSize={5} maxSize={10}>
+                <div className="h-full">
+                  <div className="bg-neutral-50 px-3 py-3 border-b border-neutral-200">
+                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Stock
+                    </span>
+                  </div>
+                  <div className="divide-y divide-neutral-200">
+                    {parts.map((part) => (
+                      <div 
+                        key={`stock-${part.id}`}
+                        className="px-3 py-4 hover:bg-neutral-50 cursor-pointer"
+                        onClick={() => onEdit(part)}
+                      >
+                        <span className="text-sm text-neutral-500">
+                          {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </div>
         </div>
       </div>
@@ -169,8 +333,6 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
           </div>
         ))}
       </div>
-
-
     </>
   );
 };
