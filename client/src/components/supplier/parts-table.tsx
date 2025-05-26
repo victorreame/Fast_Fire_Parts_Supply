@@ -18,40 +18,41 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
 
   return (
     <>
-      {/* All Screen Sizes - Responsive Table with All Columns Visible */}
+      {/* Desktop/Tablet Table View */}
       <div className="hidden md:block">
-        <div className="rounded-lg border border-neutral-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table className="w-full table-fixed">
+        <div className="overflow-x-auto rounded-lg border border-neutral-200">
+          <div className="min-w-[1200px]">
+            <Table>
               <TableHeader className="bg-neutral-50">
                 <TableRow>
-                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-12">
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
                     Image
                   </TableHead>
-                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">
                     Item Code
                   </TableHead>
-                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24">
                     Pipe Size
                   </TableHead>
-                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider flex-1 min-w-0">
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider min-w-[200px]">
                     Description
                   </TableHead>
-                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24">
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-24">
                     Type
                   </TableHead>
-                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
                     Price T1
                   </TableHead>
-                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
                     Price T2
                   </TableHead>
-                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-20">
                     Price T3
                   </TableHead>
-                  <TableHead className="px-1 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-12">
+                  <TableHead className="px-3 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-16">
                     Stock
                   </TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody className="bg-white divide-y divide-neutral-200">
@@ -61,8 +62,8 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                     className="hover:bg-neutral-50 cursor-pointer"
                     onClick={() => onEdit(part)}
                   >
-                    <TableCell className="px-1 py-2 w-12">
-                      <div className="w-8 h-8 flex items-center justify-center rounded border bg-neutral-50">
+                    <TableCell className="px-3 py-4 w-20">
+                      <div className="w-12 h-12 flex items-center justify-center rounded border bg-neutral-50">
                         {part.image ? (
                           <img 
                             src={part.image} 
@@ -70,38 +71,34 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
                             className="w-full h-full object-contain rounded"
                           />
                         ) : (
-                          <i className="fas fa-cube text-neutral-400 text-xs"></i>
+                          <i className="fas fa-cube text-neutral-400 text-lg"></i>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="px-1 py-2 text-xs font-medium text-neutral-900 w-20">
-                      <div className="truncate" title={part.item_code}>
-                        {part.item_code}
-                      </div>
+                    <TableCell className="px-3 py-4 text-sm font-medium text-neutral-900 w-32">
+                      {part.item_code}
                     </TableCell>
-                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-16">
+                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-24">
                       {part.pipe_size}
                     </TableCell>
-                    <TableCell className="px-1 py-2 text-xs text-neutral-500 flex-1 min-w-0">
-                      <div className="truncate" title={part.description}>
+                    <TableCell className="px-3 py-4 text-sm text-neutral-500 min-w-[200px]">
+                      <div className="max-w-[200px] truncate" title={part.description}>
                         {part.description}
                       </div>
                     </TableCell>
-                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-24">
-                      <div className="truncate" title={part.type}>
-                        {part.type}
-                      </div>
+                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-24">
+                      {part.type}
                     </TableCell>
-                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-16">
+                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-20">
                       ${part.price_t1 !== undefined && part.price_t1 !== null ? part.price_t1.toFixed(2) : '0.00'}
                     </TableCell>
-                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-16">
+                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-20">
                       ${part.price_t2 !== undefined && part.price_t2 !== null ? part.price_t2.toFixed(2) : '0.00'}
                     </TableCell>
-                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-16">
+                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-20">
                       ${part.price_t3 !== undefined && part.price_t3 !== null ? part.price_t3.toFixed(2) : '0.00'}
                     </TableCell>
-                    <TableCell className="px-1 py-2 text-xs text-neutral-500 w-12">
+                    <TableCell className="px-3 py-4 text-sm text-neutral-500 w-16">
                       {part.in_stock !== undefined && part.in_stock !== null ? part.in_stock : 0}
                     </TableCell>
                   </TableRow>
@@ -112,9 +109,7 @@ const PartsTable: React.FC<PartsTableProps> = ({ parts, onEdit }) => {
         </div>
       </div>
 
-
-
-      {/* Mobile Enhanced Card View - All Data Accessible */}
+      {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
         {parts.map((part) => (
           <div 
