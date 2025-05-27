@@ -13,11 +13,54 @@ const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-// Get all notifications for the current user
+// Get all notifications for the current user with filtering and pagination
 notificationRouter.get('/', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const notifications = await storage.getUserNotifications(req.user!.id);
-    res.json(notifications);
+    const { 
+      page = '1', 
+      limit = '10', 
+      read, 
+      search, 
+      type 
+    } = req.query;
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const offset = (pageNum - 1) * limitNum;
+
+    // Get notifications with filters
+    let notifications = await storage.getUserNotifications(req.user!.id);
+    let total = notifications.length;
+
+    // Apply filters
+    if (read !== undefined) {
+      notifications = notifications.filter(n => n.isRead === (read === 'true'));
+    }
+    
+    if (type && type !== 'all') {
+      notifications = notifications.filter(n => n.type === type);
+    }
+
+    if (search) {
+      const searchLower = (search as string).toLowerCase();
+      notifications = notifications.filter(n => 
+        n.title.toLowerCase().includes(searchLower) ||
+        n.message.toLowerCase().includes(searchLower)
+      );
+    }
+
+    total = notifications.length;
+
+    // Apply pagination
+    const paginatedNotifications = notifications.slice(offset, offset + limitNum);
+
+    res.json({
+      notifications: paginatedNotifications,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+      hasMore: offset + paginatedNotifications.length < total
+    });
   } catch (error) {
     console.error("Error getting notifications:", error);
     res.status(500).json({ message: "Failed to get notifications" });
