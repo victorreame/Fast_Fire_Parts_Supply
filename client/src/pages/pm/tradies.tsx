@@ -434,9 +434,9 @@ const TradieManagement = () => {
         <TabsContent value="pending">
           <Card>
             <CardHeader>
-              <CardTitle>Pending Tradies</CardTitle>
+              <CardTitle>Pending Invitations</CardTitle>
               <CardDescription>
-                Review and approve tradie registration requests
+                Track invitations you've sent to tradies
               </CardDescription>
             </CardHeader>
             <CardContent>
