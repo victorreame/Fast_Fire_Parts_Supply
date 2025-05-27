@@ -1324,8 +1324,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Tradie not found" });
       }
 
-      if (tradie.role !== "tradie") {
-        return res.status(400).json({ message: "User is not a tradie" });
+      if (!["tradie", "contractor"].includes(tradie.role)) {
+        return res.status(400).json({ message: "User is not a tradie or contractor" });
       }
 
       if (tradie.isApproved) {
@@ -1372,8 +1372,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Tradie not found" });
       }
 
-      if (tradie.role !== "tradie") {
-        return res.status(400).json({ message: "User is not a tradie" });
+      if (!["tradie", "contractor"].includes(tradie.role)) {
+        return res.status(400).json({ message: "User is not a tradie or contractor" });
       }
 
       // Reject the tradie by updating the user status
