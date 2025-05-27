@@ -740,7 +740,7 @@ const TradieManagement = () => {
                 <Button variant="outline" onClick={() => setShowTradieDetails(false)}>
                   Close
                 </Button>
-                {!selectedTradie.isApproved && (
+                {!selectedTradie.isApproved ? (
                   <div className="flex gap-2">
                     <Button
                       variant="default"
@@ -765,6 +765,18 @@ const TradieManagement = () => {
                       Reject
                     </Button>
                   </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="text-red-600 border-red-600 hover:bg-red-50"
+                    onClick={() => {
+                      setShowTradieDetails(false);
+                      setShowRemoveDialog(true);
+                    }}
+                  >
+                    <XCircleIcon className="h-4 w-4 mr-1" />
+                    Remove from Company
+                  </Button>
                 )}
               </DialogFooter>
             </div>
