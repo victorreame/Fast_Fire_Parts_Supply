@@ -191,8 +191,9 @@ const NotificationsPage = () => {
   const pendingInvitations = invitations?.filter((inv: TradieInvitation) => inv.status === 'pending') || [];
   const respondedInvitations = invitations?.filter((inv: TradieInvitation) => inv.status !== 'pending') || [];
   
-  // Filter invitation notifications
-  const otherNotifications = notifications?.filter((n: Notification) => n.type !== 'company_invitation') || [];
+  // Filter invitation notifications - ensure notifications is an array
+  const notificationsArray = Array.isArray(notifications) ? notifications : (notifications?.notifications || []);
+  const otherNotifications = notificationsArray.filter((n: Notification) => n.type !== 'company_invitation') || [];
 
   const getStatusBadge = (status: string, tokenExpiry: string) => {
     if (isExpired(tokenExpiry) && status === 'pending') {
