@@ -20,6 +20,7 @@ import FavoritesPage from "@/pages/mobile/favorites";
 import AccountPage from "@/pages/mobile/account";
 import SearchPage from "@/pages/mobile/search";
 import NotificationsPage from "@/pages/mobile/notifications";
+import TradieInvitations from "@/pages/mobile/invitations";
 
 // Supplier pages
 import SupplierDashboard from "@/pages/supplier/dashboard";
@@ -288,6 +289,11 @@ function App() {
         <Route path="/notifications">
           <AuthGuardMobile>
             <NotificationsPage />
+          </AuthGuardMobile>
+        </Route>
+        <Route path="/invitations">
+          <AuthGuardMobile>
+            <TradieInvitations />
           </AuthGuardMobile>
         </Route>
         

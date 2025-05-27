@@ -450,54 +450,38 @@ const TradieManagement = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="hidden md:table-cell">Email</TableHead>
+                      <TableHead>Email</TableHead>
                       <TableHead className="hidden md:table-cell">Phone</TableHead>
-                      <TableHead>Requested On</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="hidden md:table-cell">Personal Message</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden md:table-cell">Sent</TableHead>
+                      <TableHead className="hidden md:table-cell">Expires</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filterTradies(pendingTradies).map((tradie) => (
-                      <TableRow key={tradie.id}>
-                        <TableCell>
-                          <div className="font-medium">
-                            {tradie.firstName} {tradie.lastName}
-                          </div>
-                          <div className="text-sm text-gray-500 md:hidden">{tradie.email}</div>
+                    {filterTradies(pendingTradies).map((invitation) => (
+                      <TableRow key={invitation.id}>
+                        <TableCell className="font-medium">
+                          {invitation.email}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">{tradie.email}</TableCell>
-                        <TableCell className="hidden md:table-cell">{tradie.phone || "—"}</TableCell>
-                        <TableCell>{new Date(tradie.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewTradie(tradie)}
-                            >
-                              <EyeIcon className="h-4 w-4 mr-1" />
-                              <span className="hidden md:inline">View</span>
-                            </Button>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700"
-                              onClick={() => handleApproveTradie(tradie)}
-                            >
-                              <CheckCircleIcon className="h-4 w-4 mr-1" />
-                              <span className="hidden md:inline">Approve</span>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 border-red-600 hover:bg-red-50"
-                              onClick={() => handleRejectTradie(tradie)}
-                            >
-                              <XCircleIcon className="h-4 w-4 mr-1" />
-                              <span className="hidden md:inline">Reject</span>
-                            </Button>
-                          </div>
+                        <TableCell className="hidden md:table-cell">{invitation.phone || "N/A"}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {invitation.personalMessage || "No message"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                            Pending Response
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <time dateTime={invitation.createdAt}>
+                            {new Date(invitation.createdAt).toLocaleDateString()}
+                          </time>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <time dateTime={invitation.tokenExpiry}>
+                            {new Date(invitation.tokenExpiry).toLocaleDateString()}
+                          </time>
                         </TableCell>
                       </TableRow>
                     ))}

@@ -40,6 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
   // Use the favorites router from the separate file
   app.use("/api/favorites", favoritesRouter);
+  app.use("/api/tradie", tradieRouter);
   app.use("/api", apiRouter);
 
   // PM middleware to check if user is a project manager
