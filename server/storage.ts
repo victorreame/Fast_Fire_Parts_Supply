@@ -2017,8 +2017,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPendingInvitationsByPM(pmId: number): Promise<TradieInvitation[]> {
-    return await db
-      .select()
+    const results = await db
+      .select({
+        id: tradieInvitations.id,
+        projectManagerId: tradieInvitations.projectManagerId,
+        tradieId: tradieInvitations.tradieId,
+        email: tradieInvitations.email,
+        phone: tradieInvitations.phone,
+        invitationToken: tradieInvitations.invitationToken,
+        tokenExpiry: tradieInvitations.tokenExpiry,
+        status: tradieInvitations.status,
+        createdAt: tradieInvitations.createdAt,
+        responseDate: tradieInvitations.responseDate,
+        personalMessage: tradieInvitations.personalMessage,
+      })
       .from(tradieInvitations)
       .where(
         and(
@@ -2027,6 +2039,9 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(tradieInvitations.createdAt));
+    
+    console.log(`Found ${results.length} pending invitations for PM ${pmId}:`, results);
+    return results;
   }
 
   async resendTradieInvitation(id: number, newToken: string, newExpiry: Date): Promise<TradieInvitation | undefined> {
