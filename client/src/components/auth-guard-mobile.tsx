@@ -71,6 +71,7 @@ export function AuthGuardMobile({ children, redirectPath = '/login' }: AuthGuard
           '/parts/popular',
           '/search',
           '/notifications',
+          '/invitations',
           '/pending-approval'
         ];
         const restrictedPaths = [

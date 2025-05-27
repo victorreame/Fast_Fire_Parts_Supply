@@ -2,6 +2,9 @@ import express, { Request, Response } from "express";
 import { storage } from "./storage";
 import { requireAuth } from "./access-control";
 import { emailService } from "./email-service";
+import { db } from "./db";
+import { tradieInvitations } from "../shared/schema";
+import { eq } from "drizzle-orm";
 
 const tradieRouter = express.Router();
 
@@ -11,12 +14,15 @@ tradieRouter.get("/invitations", requireAuth, async (req: Request, res: Response
     const userId = req.user!.id;
     const userEmail = req.user!.email;
 
-    // Get pending invitations for this tradie by email
-    const invitations = await storage.getInvitationsByEmail(userEmail);
+    // Get all invitations for this tradie by email
+    const allInvitations = await db
+      .select()
+      .from(tradieInvitations)
+      .where(eq(tradieInvitations.email, userEmail));
     
     // Filter only pending invitations and add company/PM info
     const pendingInvitations = [];
-    for (const invitation of invitations) {
+    for (const invitation of allInvitations) {
       if (invitation.status === 'pending') {
         // Get PM and company info
         const pm = await storage.getUser(invitation.projectManagerId);
