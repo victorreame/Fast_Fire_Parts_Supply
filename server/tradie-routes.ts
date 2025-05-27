@@ -56,49 +56,185 @@ tradieRouter.post('/invitations/:id/accept', isTradie, async (req: Request, res:
       return res.status(404).json({ message: "Invitation not found" });
     }
     
-    // Check if invitation belongs to the requesting tradie
-    if (invitation.tradieId !== req.user!.id) {
+    // Check if invitation is for this tradie's email
+    if (invitation.email !== req.user!.email) {
       return res.status(403).json({ message: "Not authorized to accept this invitation" });
     }
     
-    // Only allow accepting pending invitations
+    // Check if invitation is still valid
     if (invitation.status !== 'pending') {
-      return res.status(400).json({ message: "This invitation cannot be accepted" });
+      return res.status(400).json({ message: "This invitation has already been responded to" });
     }
     
-    // Accept the invitation and update the tradie status
-    const acceptedInvitation = await storage.acceptTradieInvitation(invitationId);
+    // Check if invitation is not expired
+    if (new Date(invitation.tokenExpiry) < new Date()) {
+      return res.status(400).json({ message: "This invitation has expired" });
+    }
     
-    // Update the tradie's status to active and set isApproved to true
-    await storage.updateUserStatus(req.user!.id, 'active');
-    await storage.updateUserApproval(req.user!.id, true, invitation.projectManagerId);
+    // Get PM details for company assignment
+    const pm = await storage.getUser(invitation.projectManagerId);
+    if (!pm) {
+      return res.status(404).json({ message: "Project manager not found" });
+    }
     
-    // Create notifications for both tradie and PM
-    const tradieNotification = {
+    // Accept the invitation
+    await storage.updateTradieInvitationStatus(invitationId, 'accepted', new Date());
+    
+    // Update tradie's company association and approval status
+    await storage.updateUser(req.user!.id, {
+      businessId: pm.businessId,
+      isApproved: true,
+      approvedBy: invitation.projectManagerId,
+      status: 'active'
+    });
+    
+    // Remove related notification
+    const notifications = await storage.getNotificationsByUser(req.user!.id);
+    const relatedNotification = notifications.find(n => 
+      n.type === 'company_invitation' && 
+      n.relatedId === invitationId && 
+      n.relatedType === 'invitation'
+    );
+    
+    if (relatedNotification) {
+      await storage.deleteNotification(relatedNotification.id);
+    }
+    
+    // Create confirmation notification for tradie
+    await storage.createNotification({
       userId: req.user!.id,
-      title: "Invitation Accepted",
-      message: "You have accepted the project manager's invitation. You now have full access to the platform.",
+      title: "Welcome to Your New Company",
+      message: `You've successfully joined ${pm.firstName} ${pm.lastName}'s company. You now have full access to the platform.`,
       type: "invitation_accepted",
       relatedId: invitationId,
-      relatedType: "tradie_invitation"
-    };
+      relatedType: "invitation"
+    });
     
-    const pmNotification = {
+    // Create notification for PM about acceptance
+    await storage.createNotification({
       userId: invitation.projectManagerId,
       title: "Invitation Accepted",
-      message: `${req.user!.firstName} ${req.user!.lastName} has accepted your invitation.`,
-      type: "invitation_accepted",
+      message: `${req.user!.firstName} ${req.user!.lastName} has accepted your company invitation.`,
+      type: "invitation_response",
       relatedId: invitationId,
-      relatedType: "tradie_invitation"
-    };
+      relatedType: "invitation"
+    });
     
-    await storage.createNotification(tradieNotification);
-    await storage.createNotification(pmNotification);
-    
-    res.json(acceptedInvitation);
+    res.json({
+      message: "Invitation accepted successfully",
+      companyName: pm.businessId ? (await storage.getBusiness(pm.businessId))?.name : "the company"
+    });
   } catch (error) {
     console.error("Error accepting invitation:", error);
     res.status(500).json({ message: "Failed to accept invitation" });
+  }
+});
+
+// Reject an invitation
+tradieRouter.post('/invitations/:id/reject', isTradie, async (req: Request, res: Response) => {
+  try {
+    const invitationId = parseInt(req.params.id);
+    
+    if (isNaN(invitationId)) {
+      return res.status(400).json({ message: "Invalid invitation ID" });
+    }
+    
+    const invitation = await storage.getTradieInvitation(invitationId);
+    
+    if (!invitation) {
+      return res.status(404).json({ message: "Invitation not found" });
+    }
+    
+    // Check if invitation is for this tradie's email
+    if (invitation.email !== req.user!.email) {
+      return res.status(403).json({ message: "Not authorized to reject this invitation" });
+    }
+    
+    // Check if invitation is still valid
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ message: "This invitation has already been responded to" });
+    }
+    
+    // Get PM details for notifications
+    const pm = await storage.getUser(invitation.projectManagerId);
+    if (!pm) {
+      return res.status(404).json({ message: "Project manager not found" });
+    }
+    
+    // Reject the invitation
+    await storage.updateTradieInvitationStatus(invitationId, 'rejected', new Date());
+    
+    // Remove related notification
+    const notifications = await storage.getNotificationsByUser(req.user!.id);
+    const relatedNotification = notifications.find(n => 
+      n.type === 'company_invitation' && 
+      n.relatedId === invitationId && 
+      n.relatedType === 'invitation'
+    );
+    
+    if (relatedNotification) {
+      await storage.deleteNotification(relatedNotification.id);
+    }
+    
+    // Create notification for PM about rejection
+    await storage.createNotification({
+      userId: invitation.projectManagerId,
+      title: "Invitation Declined",
+      message: `${req.user!.firstName} ${req.user!.lastName} has declined your company invitation.`,
+      type: "invitation_response",
+      relatedId: invitationId,
+      relatedType: "invitation"
+    });
+    
+    res.json({
+      message: "Invitation rejected successfully"
+    });
+  } catch (error) {
+    console.error("Error rejecting invitation:", error);
+    res.status(500).json({ message: "Failed to reject invitation" });
+  }
+});
+
+// Get invitation details by token (for external registration)
+tradieRouter.get('/invitations/token/:token', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    
+    const invitation = await storage.getTradieInvitationByToken(token);
+    
+    if (!invitation) {
+      return res.status(404).json({ message: "Invitation not found" });
+    }
+    
+    // Check if invitation is expired
+    if (new Date(invitation.tokenExpiry) < new Date()) {
+      return res.status(400).json({ message: "Invitation has expired" });
+    }
+    
+    // Check if invitation is still pending
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ message: "Invitation has already been responded to" });
+    }
+    
+    // Get PM details
+    const pm = await storage.getUser(invitation.projectManagerId);
+    
+    res.json({
+      invitation: {
+        id: invitation.id,
+        email: invitation.email,
+        personalMessage: invitation.personalMessage,
+        createdAt: invitation.createdAt,
+        tokenExpiry: invitation.tokenExpiry
+      },
+      projectManager: pm ? {
+        name: `${pm.firstName} ${pm.lastName}`,
+        businessId: pm.businessId
+      } : null
+    });
+  } catch (error) {
+    console.error("Error getting invitation by token:", error);
+    res.status(500).json({ message: "Failed to get invitation details" });
   }
 });
 

@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
-import { BellRing, Check, X, User, Bell, Loader2 } from "lucide-react";
+import { BellRing, Check, X, User, Bell, Loader2, MailIcon, ClockIcon, AlertTriangleIcon, BuildingIcon, CalendarIcon } from "lucide-react";
 
 interface Notification {
   id: number;
