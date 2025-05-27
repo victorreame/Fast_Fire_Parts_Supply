@@ -121,6 +121,25 @@ tradieRouter.post('/invitations/:id/accept', isTradie, async (req: Request, res:
       relatedType: "invitation"
     });
     
+    // Send PM notification email about acceptance
+    if (pm && pm.email) {
+      const tradieName = `${req.user!.firstName} ${req.user!.lastName}`.trim() || req.user!.email;
+      try {
+        await emailService.sendPMNotificationEmail(
+          pm.email,
+          pm.id,
+          pm.businessId!,
+          invitation.email,
+          'accepted',
+          new Date().toISOString(),
+          tradieName
+        );
+      } catch (error) {
+        console.error('Failed to send PM notification email:', error);
+        // Don't fail the request if email fails
+      }
+    }
+
     res.json({
       message: "Invitation accepted successfully",
       companyName: pm.businessId ? (await storage.getBusiness(pm.businessId))?.name : "the company"
@@ -187,6 +206,23 @@ tradieRouter.post('/invitations/:id/reject', isTradie, async (req: Request, res:
       relatedType: "invitation"
     });
     
+    // Send PM notification email about rejection
+    if (pm && pm.email) {
+      try {
+        await emailService.sendPMNotificationEmail(
+          pm.email,
+          pm.id,
+          pm.businessId!,
+          invitation.email,
+          'rejected',
+          new Date().toISOString()
+        );
+      } catch (error) {
+        console.error('Failed to send PM notification email:', error);
+        // Don't fail the request if email fails
+      }
+    }
+
     res.json({
       message: "Invitation rejected successfully"
     });
