@@ -99,13 +99,8 @@ interface JobAssignment {
   status: string;
 }
 
-// Define the invitation form schema
-const inviteFormSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().optional(),
-});
+// Import the correct invitation form schema
+import { inviteFormSchema } from "@shared/schema";
 
 type InviteFormValues = z.infer<typeof inviteFormSchema>;
 
@@ -125,10 +120,9 @@ const TradieManagement = () => {
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
       email: "",
       phone: "",
+      personalMessage: "",
     },
   });
 
@@ -282,10 +276,9 @@ const TradieManagement = () => {
   // Handlers
   const handleInviteTradie = () => {
     form.reset({
-      firstName: "",
-      lastName: "",
       email: "",
       phone: "",
+      personalMessage: "",
     });
     setShowInviteForm(true);
   };
@@ -546,26 +539,16 @@ const TradieManagement = () => {
             <form onSubmit={form.handleSubmit(handleInviteSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="firstName"
+                name="personalMessage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name</FormLabel>
+                    <FormLabel>Personal Message (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter first name" {...field} />
+                      <Input placeholder="Add a personal message to the invitation" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter last name" {...field} />
-                    </FormControl>
+                    <FormDescription>
+                      This message will be included in the invitation email
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
