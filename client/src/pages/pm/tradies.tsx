@@ -152,7 +152,7 @@ const TradieManagement = () => {
     queryKey: ['/api/pm/tradies', 'pending'],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', '/api/pm/tradies/pending');
+        const response = await apiRequest('GET', '/api/pm/invitations/pending');
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch pending tradies:", error);
