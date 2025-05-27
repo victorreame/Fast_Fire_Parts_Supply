@@ -50,20 +50,12 @@ const NotificationsPage = () => {
   const { data: notifications, isLoading: notificationsLoading, refetch: refetchNotifications } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
     enabled: !!user,
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/notifications');
-      return await response.json();
-    },
   });
 
   // Get tradie invitations
   const { data: invitations, isLoading: invitationsLoading, refetch: refetchInvitations } = useQuery<TradieInvitation[]>({
     queryKey: ['/api/tradie/invitations'],
     enabled: !!user && user.role === 'tradie',
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/tradie/invitations');
-      return await response.json();
-    },
   });
 
   // Accept invitation mutation
@@ -75,7 +67,7 @@ const NotificationsPage = () => {
     onSuccess: (data) => {
       toast({
         title: "Invitation Accepted!",
-        description: `Welcome to ${data.companyName}! You now have full access to the platform.`,
+        description: `Welcome to ${data.companyName || 'the company'}! You now have full access to the platform.`,
       });
       
       setShowAcceptDialog(false);
@@ -168,33 +160,11 @@ const NotificationsPage = () => {
 
   // Handlers
   const handleAcceptInvitation = (invitation: TradieInvitation) => {
-    // Mark notification as read when viewing invitation details
-    const relatedNotification = notifications?.find(n => 
-      n.type === 'company_invitation' && 
-      n.relatedId === invitation.id && 
-      n.relatedType === 'invitation'
-    );
-    
-    if (relatedNotification && !relatedNotification.isRead) {
-      markAsReadMutation.mutate(relatedNotification.id);
-    }
-    
     setSelectedInvitation(invitation);
     setShowAcceptDialog(true);
   };
 
   const handleRejectInvitation = (invitation: TradieInvitation) => {
-    // Mark notification as read when viewing invitation details
-    const relatedNotification = notifications?.find(n => 
-      n.type === 'company_invitation' && 
-      n.relatedId === invitation.id && 
-      n.relatedType === 'invitation'
-    );
-    
-    if (relatedNotification && !relatedNotification.isRead) {
-      markAsReadMutation.mutate(relatedNotification.id);
-    }
-    
     setSelectedInvitation(invitation);
     setShowRejectDialog(true);
   };
@@ -222,7 +192,6 @@ const NotificationsPage = () => {
   const respondedInvitations = invitations?.filter((inv: TradieInvitation) => inv.status !== 'pending') || [];
   
   // Filter invitation notifications
-  const invitationNotifications = notifications?.filter((n: Notification) => n.type === 'company_invitation') || [];
   const otherNotifications = notifications?.filter((n: Notification) => n.type !== 'company_invitation') || [];
 
   const getStatusBadge = (status: string, tokenExpiry: string) => {
@@ -466,7 +435,7 @@ const NotificationsPage = () => {
               <AlertDialogAction 
                 onClick={handleRejectConfirm}
                 disabled={rejectInvitationMutation.isPending}
-                variant="destructive"
+                className="bg-red-600 hover:bg-red-700"
               >
                 {rejectInvitationMutation.isPending ? (
                   <>
