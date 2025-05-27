@@ -112,13 +112,14 @@ tradieRouter.post('/invitations/:id/accept', isTradie, async (req: Request, res:
     });
     
     // Create notification for PM about acceptance
+    const tradieName = `${req.user!.firstName} ${req.user!.lastName}`.trim() || req.user!.email;
     await storage.createNotification({
       userId: invitation.projectManagerId,
       title: "Invitation Accepted",
-      message: `${req.user!.firstName} ${req.user!.lastName} has accepted your company invitation.`,
-      type: "invitation_response",
+      message: `${tradieName} has joined your company`,
+      type: "invitation_accepted",
       relatedId: invitationId,
-      relatedType: "invitation"
+      relatedType: "tradie_invitation"
     });
     
     // Send PM notification email about acceptance
@@ -200,10 +201,10 @@ tradieRouter.post('/invitations/:id/reject', isTradie, async (req: Request, res:
     await storage.createNotification({
       userId: invitation.projectManagerId,
       title: "Invitation Declined",
-      message: `${req.user!.firstName} ${req.user!.lastName} has declined your company invitation.`,
-      type: "invitation_response",
+      message: `${invitation.email} declined your invitation`,
+      type: "invitation_rejected",
       relatedId: invitationId,
-      relatedType: "invitation"
+      relatedType: "tradie_invitation"
     });
     
     // Send PM notification email about rejection

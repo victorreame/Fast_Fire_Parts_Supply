@@ -1,0 +1,70 @@
+**3. Real-Time Notification Features:**
+
+**A. Notification Badge/Counter:**
+- Show unread count on navigation
+- Update in real-time when new notifications arrive
+- Different styling for invitation notifications (higher priority)
+
+**B. Notification Dropdown/Panel:**
+- Latest 10 notifications with timestamps
+- Mark as read on click/view
+- "Mark all as read" functionality
+- Link to full notification details
+
+**C. Notification Details Page:**
+- Full notification history
+- Filter by type (invitations, responses, etc.)
+- Bulk actions (mark multiple as read)
+- Pagination for large notification lists
+
+**4. Notification Content Enhancement:**
+
+**A. Dynamic Content:**
+- Include PM/tradie names from users table
+- Include company names from businesses table
+- Format timestamps relative (e.g., "2 hours ago")
+- Include action buttons where relevant
+
+**B. Action Buttons in Notifications:**
+- **Invitation notifications:** "Accept" / "Reject" buttons
+- **Response notifications:** "View Details" button
+- **Removal notifications:** "Contact Support" button
+
+**5. Notification State Management:**
+
+**A. Auto-Read Scenarios:**
+- Mark invitation as read when tradie responds
+- Mark PM notifications as read after 24 hours (optional)
+
+**B. Cleanup Logic:**
+- Archive old notifications (90+ days)
+- Remove notifications for expired invitations
+- Clean up orphaned notifications
+
+**6. UI/UX Requirements:**
+
+**A. Visual Design:**
+- Distinct icons for each notification type
+- Color coding (invitations = blue, responses = green, removals = orange)
+- Unread notifications highlighted
+- Mobile-responsive design
+
+**B. Interactive Elements:**
+- Hover effects and loading states
+- Smooth animations for mark as read
+- Confirmation dialogs for bulk actions
+- Toast notifications for immediate feedback
+
+**7. Integration Points:**
+- Hook into Part 2 (PM invite creation)
+- Hook into Part 3 (tradie responses)
+- Hook into removal workflow
+- Real-time updates using WebSockets/polling
+
+**8. Performance Considerations:**
+- Efficient queries for notification counts
+- Pagination for large notification lists
+- Caching for frequently accessed data
+- Optimized database indexes
+
+Please implement the complete notification system with real-time updates, proper state management, and seamless integration with the invitation workflow. Include notification UI components for both PM and Tradie dashboards.

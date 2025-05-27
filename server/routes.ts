@@ -1417,14 +1417,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (existingUser) {
         // If user exists, send in-platform notification
+        // Get company name for better notification content
+        const business = req.user!.businessId ? await storage.getBusiness(req.user!.businessId) : null;
+        const companyName = business?.name || 'a company';
+        const pmName = `${req.user!.firstName} ${req.user!.lastName}`.trim() || 'Project Manager';
+        
         await storage.createNotification({
           userId: existingUser.id,
-          title: "Company Invitation Received",
-          message: `You've been invited to join ${req.user!.firstName} ${req.user!.lastName}'s company. ${personalMessage ? personalMessage : ''}`,
-          type: "company_invitation",
-          isRead: false,
+          title: "New Company Invitation",
+          message: `You've been invited to join ${companyName} by ${pmName}`,
+          type: "invitation_received",
           relatedId: invitation.id,
-          relatedType: "invitation"
+          relatedType: "tradie_invitation"
         });
       } else {
         // If user doesn't exist, would send email invitation with registration link
