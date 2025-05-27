@@ -78,7 +78,7 @@ const NotificationsPage = () => {
       
       // Redirect to dashboard after successful acceptance
       setTimeout(() => {
-        window.location.href = '/mobile/home';
+        window.location.href = '/mobile';
       }, 2000);
     },
     onError: (error: any) => {

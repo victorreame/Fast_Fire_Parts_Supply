@@ -1296,8 +1296,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get approved tradies
   pmRouter.get("/tradies/approved", async (req: Request, res: Response) => {
     try {
-      // Get users with role 'tradie' who are approved
-      const approvedTradies = await storage.getUsersByRoleAndApprovalStatus("tradie", true);
+      // Get users with role 'tradie' or 'contractor' who are approved
+      const approvedTradies = await db
+        .select()
+        .from(users)
+        .where(and(
+          or(eq(users.role, 'tradie'), eq(users.role, 'contractor')),
+          eq(users.isApproved, true)
+        ));
       res.json(approvedTradies);
     } catch (error) {
       console.error("Error getting approved tradies:", error);
