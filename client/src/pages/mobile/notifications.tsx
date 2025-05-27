@@ -55,7 +55,7 @@ const NotificationsPage = () => {
   // Get tradie invitations
   const { data: invitations, isLoading: invitationsLoading, refetch: refetchInvitations } = useQuery<TradieInvitation[]>({
     queryKey: ['/api/tradie/invitations'],
-    enabled: !!user && user.role === 'tradie',
+    enabled: !!user && (user.role === 'tradie' || user.role === 'contractor'),
   });
 
   // Accept invitation mutation
