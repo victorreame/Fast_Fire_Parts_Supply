@@ -2,6 +2,15 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { emailService } from "./email-service";
+import { 
+  AccessControl, 
+  requireAuth, 
+  requirePM, 
+  requireApprovedTradie, 
+  requireOrderPermissions,
+  validateJobAccess,
+  requireCompanyAccess
+} from "./access-control";
 import './types'; // Import session types
 import favoritesRouter from "./favorites-routes";
 import { 
@@ -338,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Jobs routes
-  apiRouter.get("/jobs", checkTradieApproved, async (req: Request, res: Response) => {
+  apiRouter.get("/jobs", requireApprovedTradie, async (req: Request, res: Response) => {
     try {
       // Check if user is authenticated
       const userId = req.isAuthenticated() ? req.user.id : getGuestUserId(req);
@@ -618,7 +627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Orders routes
-  apiRouter.post("/orders", checkTradieApproved, async (req: Request, res: Response) => {
+  apiRouter.post("/orders", requireOrderPermissions, async (req: Request, res: Response) => {
     try {
       let userId = 0;
       let businessId = 0;
@@ -801,6 +810,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Users routes (for supplier dashboard)
+  // Get user permissions
+  apiRouter.get("/user/permissions", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const permissions = await AccessControl.getUserPermissions(req.user!.id);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error getting user permissions:", error);
+      res.status(500).json({ message: "Failed to get user permissions" });
+    }
+  });
+
   apiRouter.post("/users", async (req: Request, res: Response) => {
     if (!req.isAuthenticated() || req.user.role !== "supplier") {
       return res.status(403).json({ message: "Unauthorized" });
@@ -1378,7 +1398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Invite a tradie using token system
-  pmRouter.post("/tradies/invite", async (req: Request, res: Response) => {
+  pmRouter.post("/tradies/invite", requirePM, async (req: Request, res: Response) => {
     try {
       const { email, phone, personalMessage } = req.body;
 
@@ -1387,10 +1407,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email is required" });
       }
 
-      // Check if there's already a pending invitation for this email from this PM
-      const existingInvitation = await storage.getTradieInvitationByEmail(email);
-      if (existingInvitation && existingInvitation.projectManagerId === req.user!.id && existingInvitation.status === 'pending') {
-        return res.status(400).json({ message: "An invitation has already been sent to this email" });
+      // Check rate limiting for invitations
+      const rateLimitCheck = await AccessControl.checkInvitationRateLimit(req.user!.id);
+      if (!rateLimitCheck.allowed) {
+        return res.status(429).json({ message: rateLimitCheck.reason });
+      }
+
+      // Validate invitation permissions
+      const invitationCheck = await AccessControl.canSendInvitation(req.user!.id, email);
+      if (!invitationCheck.canSend) {
+        return res.status(400).json({ message: invitationCheck.reason });
       }
 
       // Check if email already exists in users table
