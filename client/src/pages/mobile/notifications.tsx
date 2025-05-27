@@ -230,7 +230,7 @@ const NotificationsPage = () => {
           <h1 className="text-2xl font-bold">Notifications</h1>
         </div>
 
-        {user?.role === 'tradie' && (
+        {(user?.role === 'tradie' || user?.role === 'contractor') && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="invitations" className="flex items-center gap-2">
