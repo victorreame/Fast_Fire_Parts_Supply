@@ -14,9 +14,11 @@ tradieRouter.get("/invitations", requireAuth, async (req: Request, res: Response
     const userId = req.user!.id;
     const userEmail = req.user!.email;
 
-    // Get all invitations for this tradie by email - use storage method for now
-    const invitation = await storage.getTradieInvitationByEmail(userEmail);
-    const allInvitations = invitation ? [invitation] : [];
+    // Get all invitations for this tradie by email - query database directly
+    const allInvitations = await db
+      .select()
+      .from(tradieInvitations)
+      .where(eq(tradieInvitations.email, userEmail));
     
     // Filter only pending invitations and add company/PM info
     const pendingInvitations = [];
