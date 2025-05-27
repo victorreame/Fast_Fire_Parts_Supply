@@ -1,6 +1,9 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { users } from "../shared/schema";
+import { and, or, eq } from "drizzle-orm";
 import { emailService } from "./email-service";
 import { 
   AccessControl, 
@@ -1297,13 +1300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   pmRouter.get("/tradies/approved", async (req: Request, res: Response) => {
     try {
       // Get users with role 'tradie' or 'contractor' who are approved
-      const approvedTradies = await db
-        .select()
-        .from(users)
-        .where(and(
-          or(eq(users.role, 'tradie'), eq(users.role, 'contractor')),
-          eq(users.isApproved, true)
-        ));
+      const approvedTradies = await storage.getUsersByRoleAndApprovalStatus("contractor", true);
       res.json(approvedTradies);
     } catch (error) {
       console.error("Error getting approved tradies:", error);
