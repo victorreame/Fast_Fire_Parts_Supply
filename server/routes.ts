@@ -1,6 +1,7 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { emailService } from "./email-service";
 import './types'; // Import session types
 import favoritesRouter from "./favorites-routes";
 import { 
@@ -1431,14 +1432,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Email invitation would be sent to ${email} with token: ${invitationToken}`);
       }
 
+      // Send invitation email for new users (not yet registered)
+      let emailSent = false;
+      if (!existingUser) {
+        // Validate email format before sending
+        if (emailService.isValidEmail(email)) {
+          // Check rate limiting
+          if (emailService.checkRateLimit(email)) {
+            emailSent = await emailService.sendInvitationEmail(
+              email,
+              req.user!.id,
+              req.user!.businessId!,
+              invitationToken,
+              tokenExpiry.toISOString(),
+              personalMessage
+            );
+          } else {
+            return res.status(429).json({ message: "Too many invitations sent to this email. Please try again later." });
+          }
+        } else {
+          return res.status(400).json({ message: "Invalid email address format" });
+        }
+      }
+
       res.status(201).json({
-        message: existingUser ? "Invitation sent to existing user" : "Invitation email would be sent to new user",
+        message: existingUser 
+          ? "Invitation sent to existing user" 
+          : emailSent 
+            ? "Invitation email sent successfully"
+            : "Invitation created but email sending failed",
         invitation: {
           id: invitation.id,
           email: invitation.email,
           status: invitation.status,
           expiryDate: invitation.tokenExpiry
-        }
+        },
+        emailSent: existingUser ? null : emailSent
       });
     } catch (error) {
       console.error("Error inviting tradie:", error);

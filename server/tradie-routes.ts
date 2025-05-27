@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
+import { emailService } from './email-service';
 import { insertTradieInvitationSchema, insertNotificationSchema } from '@shared/schema';
 import { z } from 'zod';
 
