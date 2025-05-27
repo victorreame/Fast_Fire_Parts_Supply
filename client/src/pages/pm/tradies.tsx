@@ -115,6 +115,8 @@ const TradieManagement = () => {
   const [jobAssignments, setJobAssignments] = useState<JobAssignment[]>([]);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [removeReason, setRemoveReason] = useState("");
 
   // Form setup
   const form = useForm<InviteFormValues>({
@@ -273,6 +275,38 @@ const TradieManagement = () => {
     },
   });
 
+  const removeTradieMutation = useMutation({
+    mutationFn: async ({ tradieId, reason }: { tradieId: number; reason: string }) => {
+      const response = await apiRequest('POST', `/api/pm/tradies/${tradieId}/remove`, { reason });
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Tradie removed",
+        description: "The tradie has been removed from your company.",
+      });
+      
+      // Close dialog and reset
+      setShowRemoveDialog(false);
+      setSelectedTradie(null);
+      setRemoveReason("");
+      
+      // Refetch tradies
+      refetchActiveTradies();
+      
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ['/api/pm/dashboard/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to remove tradie. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Handlers
   const handleInviteTradie = () => {
     form.reset({
@@ -313,6 +347,15 @@ const TradieManagement = () => {
 
   const handleInviteSubmit = (values: InviteFormValues) => {
     inviteTradieMutation.mutate(values);
+  };
+
+  const handleRemoveConfirm = () => {
+    if (selectedTradie) {
+      removeTradieMutation.mutate({
+        tradieId: selectedTradie.id,
+        reason: removeReason
+      });
+    }
   };
 
   // Filter tradies based on search query
@@ -838,6 +881,49 @@ const TradieManagement = () => {
                 </>
               ) : (
                 "Reject"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Remove Tradie Dialog */}
+      <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Tradie from Company</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove {selectedTradie?.firstName} {selectedTradie?.lastName} from your company?
+              This action will revoke their access and they will need to be re-invited to rejoin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4">
+            <label htmlFor="removeReason" className="block text-sm font-medium text-gray-700 mb-2">
+              Reason for removal (optional):
+            </label>
+            <textarea
+              id="removeReason"
+              value={removeReason}
+              onChange={(e) => setRemoveReason(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md resize-none"
+              rows={3}
+              placeholder="Provide a reason for removing this tradie..."
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRemoveReason("")}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRemoveConfirm}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={removeTradieMutation.isPending}
+            >
+              {removeTradieMutation.isPending ? (
+                <>
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  Removing...
+                </>
+              ) : (
+                "Remove Tradie"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
