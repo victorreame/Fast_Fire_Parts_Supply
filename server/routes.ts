@@ -1339,13 +1339,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         approvalDate: new Date()
       });
 
+      // Clean up any accepted invitations for this user
+      const userInvitations = await storage.getTradieInvitationsByTradie(tradieId);
+      for (const invitation of userInvitations) {
+        if (invitation.status === 'accepted') {
+          await storage.deleteTradieInvitation(invitation.id);
+        }
+      }
+
       // Create a notification for the tradie
       await storage.createNotification({
         userId: tradieId,
         title: "Account Approved",
         message: "Your account has been approved. You can now access the system.",
-        type: "account_approval",
-        isRead: false
+        type: "account_approval"
       });
 
       res.json(updatedTradie);
@@ -1385,13 +1392,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "rejected" // Add a status field to mark as rejected
       });
 
+      // Clean up any rejected invitations for this user
+      const userInvitations = await storage.getTradieInvitationsByTradie(tradieId);
+      for (const invitation of userInvitations) {
+        if (invitation.status === 'accepted' || invitation.status === 'pending') {
+          await storage.deleteTradieInvitation(invitation.id);
+        }
+      }
+
       // Create a notification for the tradie
       await storage.createNotification({
         userId: tradieId,
         title: "Account Rejected",
         message: reason ? `Your account registration was rejected: ${reason}` : "Your account registration was rejected.",
-        type: "account_rejection",
-        isRead: false
+        type: "account_rejection"
       });
 
       res.json(updatedTradie);
@@ -1662,13 +1676,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isApproved: false
       });
 
+      // Clean up any invitations for this user to allow re-invitation
+      const userInvitations = await storage.getTradieInvitationsByTradie(tradieId);
+      for (const invitation of userInvitations) {
+        await storage.deleteTradieInvitation(invitation.id);
+      }
+
       // Send removal notification
       await storage.createNotification({
         userId: tradieId,
         title: "Access Removed",
         message: reason ? `Your access has been removed: ${reason}` : "Your access to the company has been removed.",
-        type: "account_removal",
-        isRead: false
+        type: "account_removal"
       });
 
       res.json({ message: "Tradie removed successfully" });
