@@ -308,8 +308,6 @@ export const insertTradieInvitationSchema = createInsertSchema(tradieInvitations
   id: true,
   createdAt: true,
   responseDate: true,
-  invitationToken: true,
-  tokenExpiry: true,
 });
 
 // Form validation schema for PM invite
