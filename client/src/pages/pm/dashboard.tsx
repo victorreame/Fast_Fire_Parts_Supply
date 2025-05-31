@@ -51,19 +51,21 @@ const Dashboard = () => {
   });
 
   // Query for recent notifications
-  const { data: notifications, isLoading: notificationsLoading } = useQuery<Notification[]>({
+  const { data: notificationsData, isLoading: notificationsLoading } = useQuery<{notifications: Notification[]}>({
     queryKey: ['/api/notifications'],
     queryFn: async () => {
       try {
         const response = await fetch('/api/notifications?limit=5');
-        if (!response.ok) return [];
+        if (!response.ok) return { notifications: [] };
         return await response.json();
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
-        return [];
+        return { notifications: [] };
       }
     },
   });
+
+  const notifications = notificationsData?.notifications || [];
 
   return (
     <PMLayout>

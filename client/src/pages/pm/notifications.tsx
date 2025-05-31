@@ -56,11 +56,13 @@ const PMNotificationsPage = () => {
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   // Get unread count
-  const { data: unreadCount } = useQuery<number>({
+  const { data: unreadCountData } = useQuery<{count: number}>({
     queryKey: ['/api/notifications/unread/count'],
     enabled: !!user,
     refetchInterval: 30000,
   });
+
+  const unreadCount = unreadCountData?.count || 0;
 
   // Mark notification as read mutation
   const markAsReadMutation = useMutation({

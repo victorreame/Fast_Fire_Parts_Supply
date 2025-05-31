@@ -366,9 +366,9 @@ const TradieManagement = () => {
     const query = searchQuery.toLowerCase();
     return tradies.filter(
       tradie =>
-        tradie.firstName.toLowerCase().includes(query) ||
-        tradie.lastName.toLowerCase().includes(query) ||
-        tradie.email.toLowerCase().includes(query) ||
+        (tradie.firstName && tradie.firstName.toLowerCase().includes(query)) ||
+        (tradie.lastName && tradie.lastName.toLowerCase().includes(query)) ||
+        (tradie.email && tradie.email.toLowerCase().includes(query)) ||
         (tradie.phone && tradie.phone.includes(query))
     );
   };
