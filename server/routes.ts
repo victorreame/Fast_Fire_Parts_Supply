@@ -350,63 +350,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Jobs routes
-  apiRouter.get("/jobs", requireApprovedTradie, async (req: Request, res: Response) => {
+  // Jobs CRUD routes with business access control
+  
+  // 1. LIST JOBS (GET /api/jobs) - Return jobs for user's business only
+  apiRouter.get("/jobs", requireAuth, async (req: Request, res: Response) => {
     try {
-      // Check if user is authenticated
-      const userId = req.isAuthenticated() ? req.user.id : getGuestUserId(req);
-      const isAuthenticated = req.isAuthenticated();
+      const user = req.user!;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = 20;
+      const offset = (page - 1) * limit;
 
-      let jobs: any[] = [];
-
-      // Public jobs are available to all users, authenticated or not
-      const publicJobs = await storage.getPublicJobs();
-      jobs = [...publicJobs];
-
-      // If user is authenticated, add their specific jobs
-      if (isAuthenticated) {
-        const user = req.user;
-
-        if (user.role === "contractor" && user.businessId) {
-          // Contractors see their business's jobs
-          const businessJobs = await storage.getJobsByBusiness(user.businessId);
-          jobs = [...jobs, ...businessJobs];
-        } else if (user.role === "supplier") {
-          // Suppliers see all jobs they've created and all business jobs
-          const createdJobs = await storage.getJobsByCreator(user.id);
-          jobs = [...jobs, ...createdJobs];
-
-          const businesses = await storage.getAllBusinesses();
-
-          // Get all jobs with business details
-          for (const business of businesses) {
-            const businessJobs = await storage.getJobsByBusiness(business.id);
-
-            jobs = [
-              ...jobs,
-              ...businessJobs.map(job => ({
-                ...job,
-                businessName: business.name
-              }))
-            ];
-          }
-        }
+      if (!user.businessId) {
+        return res.status(403).json({ message: "User must be associated with a business" });
       }
 
-      // Remove duplicates
-      const uniqueJobs = Array.from(new Map(jobs.map(job => [job.id, job])).values());
+      // Get jobs for user's business only, paginated
+      const allJobs = await storage.getJobsByBusiness(user.businessId);
+      
+      // Sort by created_at desc and apply pagination
+      const sortedJobs = allJobs
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+        .slice(offset, offset + limit);
 
-      res.json(uniqueJobs);
+      // Return basic job fields only
+      const jobsList = sortedJobs.map(job => ({
+        id: job.id,
+        name: job.name,
+        jobNumber: job.jobNumber,
+        location: job.location,
+        status: job.status,
+        createdAt: job.createdAt
+      }));
+
+      res.json({
+        jobs: jobsList,
+        total: allJobs.length,
+        page,
+        totalPages: Math.ceil(allJobs.length / limit)
+      });
     } catch (error) {
       console.error("Error getting jobs:", error);
       res.status(500).json({ message: "Failed to get jobs" });
     }
   });
 
-  // Get a single job by ID
-  apiRouter.get("/jobs/:id", async (req: Request, res: Response) => {
+  // 2. GET SINGLE JOB (GET /api/jobs/:id) - Full job details with business access control
+  apiRouter.get("/jobs/:id", requireAuth, async (req: Request, res: Response) => {
     try {
       const jobId = parseInt(req.params.id);
+      const user = req.user!;
 
       if (isNaN(jobId)) {
         return res.status(400).json({ message: "Invalid job ID" });
@@ -418,24 +410,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Job not found" });
       }
 
-      // Check authorization: only allow access to public jobs or jobs created by the user
-      // or if the user is a supplier/admin
-      if (!req.isAuthenticated()) {
-        if (!job.isPublic) {
-          return res.status(403).json({ message: "Unauthorized" });
-        }
-      } else {
-        const user = req.user;
-        if (user.role !== 'supplier' && user.role !== 'admin' && 
-            !job.isPublic && job.createdBy !== user.id) {
-          return res.status(403).json({ message: "Unauthorized" });
-        }
+      // Check if user can access this job (same business)
+      if (!user.businessId || job.businessId !== user.businessId) {
+        return res.status(403).json({ message: "Access denied - job belongs to different business" });
       }
 
       res.json(job);
     } catch (error) {
       console.error("Error getting job:", error);
       res.status(500).json({ message: "Failed to get job" });
+    }
+  });
+
+  // 3. CREATE JOB (POST /api/jobs) - PM role only
+  apiRouter.post("/jobs", requirePM, async (req: Request, res: Response) => {
+    try {
+      const user = req.user!;
+
+      if (!user.businessId) {
+        return res.status(403).json({ message: "Project manager must be associated with a business" });
+      }
+
+      // Validate request body
+      const jobData = insertJobSchema.parse({
+        ...req.body,
+        businessId: user.businessId,
+        projectManagerId: user.id,
+        createdBy: user.id
+      });
+
+      // Check if job_number is unique
+      const existingJob = await storage.getJobByNumber(jobData.jobNumber);
+      if (existingJob) {
+        return res.status(400).json({ message: "Job number already exists" });
+      }
+
+      const newJob = await storage.createJob(jobData);
+      res.status(201).json(newJob);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid job data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating job:", error);
+      res.status(500).json({ message: "Failed to create job" });
+    }
+  });
+
+  // 4. EDIT JOB (PUT /api/jobs/:id) - PM role only with ownership validation
+  apiRouter.put("/jobs/:id", requirePM, async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const user = req.user!;
+
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+
+      const existingJob = await storage.getJob(jobId);
+      if (!existingJob) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Check business access and ownership
+      if (!user.businessId || existingJob.businessId !== user.businessId) {
+        return res.status(403).json({ message: "Access denied - job belongs to different business" });
+      }
+
+      // Only the job's PM or business admin can edit
+      if (existingJob.projectManagerId !== user.id && user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied - only assigned PM can edit this job" });
+      }
+
+      // Prepare update data (exclude job_number and system fields)
+      const { jobNumber, createdAt, updatedAt, id, ...updateData } = req.body;
+      
+      if (jobNumber && jobNumber !== existingJob.jobNumber) {
+        return res.status(400).json({ message: "Job number cannot be changed after creation" });
+      }
+
+      const updatedJob = await storage.updateJob(jobId, {
+        ...updateData,
+        updatedAt: new Date()
+      });
+
+      if (!updatedJob) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      res.json(updatedJob);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid job data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating job:", error);
+      res.status(500).json({ message: "Failed to update job" });
+    }
+  });
+
+  // 5. COMPLETE JOB (DELETE /api/jobs/:id) - Soft delete by setting status to 'completed'
+  apiRouter.delete("/jobs/:id", requirePM, async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const user = req.user!;
+
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+
+      const existingJob = await storage.getJob(jobId);
+      if (!existingJob) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Check business access
+      if (!user.businessId || existingJob.businessId !== user.businessId) {
+        return res.status(403).json({ message: "Access denied - job belongs to different business" });
+      }
+
+      // Soft delete: set status to 'completed'
+      const updatedJob = await storage.updateJob(jobId, {
+        status: 'completed',
+        updatedAt: new Date()
+      });
+
+      if (!updatedJob) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      res.json({ 
+        message: "Job marked as completed successfully",
+        job: updatedJob 
+      });
+    } catch (error) {
+      console.error("Error completing job:", error);
+      res.status(500).json({ message: "Failed to complete job" });
     }
   });
 

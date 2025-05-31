@@ -88,6 +88,7 @@ export interface IStorage {
   
   // Jobs
   getJob(id: number): Promise<Job | undefined>;
+  getJobByNumber(jobNumber: string): Promise<Job | undefined>;
   getJobsByBusiness(businessId: number): Promise<Job[]>;
   getJobsByClient(clientId: number): Promise<Job[]>;
   getJobsByProjectManager(pmId: number): Promise<Job[]>;
@@ -1155,6 +1156,11 @@ export class DatabaseStorage implements IStorage {
   // Job Methods
   async getJob(id: number): Promise<Job | undefined> {
     const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
+    return job;
+  }
+  
+  async getJobByNumber(jobNumber: string): Promise<Job | undefined> {
+    const [job] = await db.select().from(jobs).where(eq(jobs.jobNumber, jobNumber));
     return job;
   }
   
