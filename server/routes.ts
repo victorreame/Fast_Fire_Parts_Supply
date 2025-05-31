@@ -1426,6 +1426,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if email already exists in users table
       const existingUser = await storage.getUserByEmail(email);
       
+      // Check if there's already an invitation for this email from this PM
+      const existingInvitation = await storage.getTradieInvitationByEmailAndPM(email, req.user!.id);
+      
+      if (existingInvitation) {
+        if (existingInvitation.status === 'pending') {
+          return res.status(400).json({ 
+            message: "An invitation has already been sent to this email address. Please wait for a response or cancel the existing invitation first." 
+          });
+        } else if (existingInvitation.status === 'accepted') {
+          return res.status(400).json({ 
+            message: "This person has already accepted an invitation and is part of your company." 
+          });
+        } else if (existingInvitation.status === 'rejected') {
+          // Allow re-invitation if previous was rejected, update the existing record
+          const invitationToken = crypto.randomUUID();
+          const tokenExpiry = new Date();
+          tokenExpiry.setDate(tokenExpiry.getDate() + 7);
+          
+          const updatedInvitation = await storage.resendTradieInvitation(existingInvitation.id, invitationToken, tokenExpiry);
+          
+          if (updatedInvitation) {
+            // Reset status to pending and update personal message
+            await storage.updateTradieInvitationStatus(existingInvitation.id, 'pending');
+            
+            // If user exists, send in-platform notification, otherwise send email
+            if (existingUser) {
+              const companyDetails = await storage.getBusiness(req.user!.businessId!);
+              await storage.createNotification({
+                userId: existingUser.id,
+                title: "New Company Invitation",
+                message: `${req.user!.firstName} ${req.user!.lastName} from ${companyDetails?.name} has sent you a new invitation to join their company.`,
+                type: "invitation_resent",
+                relatedId: updatedInvitation.id,
+                relatedType: "invitation"
+              });
+            } else {
+              // Send email invitation to new user
+              const emailSent = await emailService.sendInvitationEmail({
+                tradieEmail: email,
+                pmName: `${req.user!.firstName} ${req.user!.lastName}`,
+                companyName: req.user!.businessId ? (await storage.getBusiness(req.user!.businessId))?.name || "Your Company" : "Your Company",
+                registrationLink: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/register?token=${invitationToken}`,
+                expiryDate: tokenExpiry.toLocaleDateString(),
+                personalMessage: personalMessage || undefined
+              });
+            }
+            
+            return res.json({
+              message: "New invitation sent successfully",
+              invitation: {
+                id: updatedInvitation.id,
+                email: updatedInvitation.email,
+                status: 'pending',
+                expiryDate: tokenExpiry
+              }
+            });
+          }
+        }
+      }
+      
       // Generate unique invitation token
       const invitationToken = crypto.randomUUID();
       

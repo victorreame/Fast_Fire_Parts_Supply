@@ -163,6 +163,7 @@ export interface IStorage {
   getTradieInvitationsByPM(pmId: number): Promise<TradieInvitation[]>;
   getTradieInvitationsByTradie(tradieId: number): Promise<TradieInvitation[]>;
   getTradieInvitationByEmail(email: string): Promise<TradieInvitation | undefined>;
+  getTradieInvitationByEmailAndPM(email: string, pmId: number): Promise<TradieInvitation | undefined>;
   getPendingInvitationsByPM(pmId: number): Promise<TradieInvitation[]>;
   createTradieInvitation(invitation: InsertTradieInvitation): Promise<TradieInvitation>;
   updateTradieInvitationStatus(id: number, status: string, responseDate?: Date): Promise<TradieInvitation | undefined>;
@@ -1983,6 +1984,17 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(tradieInvitations)
       .where(eq(tradieInvitations.email, email));
+    return invitation;
+  }
+
+  async getTradieInvitationByEmailAndPM(email: string, pmId: number): Promise<TradieInvitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(tradieInvitations)
+      .where(and(
+        eq(tradieInvitations.email, email),
+        eq(tradieInvitations.projectManagerId, pmId)
+      ));
     return invitation;
   }
 
