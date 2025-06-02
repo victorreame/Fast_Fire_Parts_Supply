@@ -1,0 +1,76 @@
+Building on Part 1 jobs CRUD, now implement job parts management and user assignments.
+
+EXISTING TABLES (DO NOT MODIFY):
+- jobs (from Part 1)
+- job_parts (jobId, partId, quantity, notes)
+- job_users (jobId, userId, role)
+- parts table
+- users table
+
+REQUIREMENTS:
+
+1. JOB PARTS MANAGEMENT:
+
+A. GET /api/jobs/:jobId/parts
+- Return all parts assigned to this job
+- Include part details (item_code, description, price for PMs only)
+- Include quantity and notes from job_parts
+- Access: Same business only
+
+B. POST /api/jobs/:jobId/parts
+- Add parts to job (PM role only)
+- Body: { partId, quantity, notes }
+- Validate part exists and job belongs to PM's business
+- Allow multiple parts in single request
+
+C. PUT /api/jobs/:jobId/parts/:partId
+- Update quantity/notes for job part
+- PM role only, same business validation
+
+D. DELETE /api/jobs/:jobId/parts/:partId
+- Remove part from job
+- PM role only, same business validation
+
+2. JOB USER ASSIGNMENTS:
+
+A. GET /api/jobs/:jobId/users
+- Return all users assigned to job
+- Include user details (name, role, email)
+- Access: Same business only
+
+B. POST /api/jobs/:jobId/assign
+- Assign tradie to job (PM role only)
+- Body: { userId, role: 'tradie' }
+- Validate user is approved tradie in same business
+- Create entry in job_users table
+
+C. DELETE /api/jobs/:jobId/users/:userId
+- Remove user from job assignment
+- PM role only, same business validation
+
+3. JOB SEARCH FOR TRADIES:
+
+A. GET /api/jobs/search
+- Search jobs by job_number for tradies
+- Only return jobs where tradie is assigned (job_users table)
+- Return basic job info: id, name, job_number, location
+
+B. GET /api/jobs/:jobId/available-parts
+- Return parts catalog filtered for this job
+- Tradie access: NO pricing, basic part info only
+- PM access: Full part details with pricing
+
+4. VALIDATION & ACCESS CONTROL:
+- All job operations check business_id match
+- Tradies can only see jobs they're assigned to
+- PMs can see all jobs in their business
+- Parts pricing hidden from tradies
+- Job assignment validates user roles
+
+5. ERROR HANDLING:
+- Job not found or access denied
+- Part already assigned to job
+- User not eligible for job assignment
+- Invalid quantity or missing data
+
+Implement job parts and user assignment management with proper access control.

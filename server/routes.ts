@@ -553,6 +553,499 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========= JOB PARTS MANAGEMENT =========
+
+  // A. GET /api/jobs/:jobId/parts - Get all parts assigned to a job
+  apiRouter.get("/jobs/:jobId/parts", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const user = req.user!;
+
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+
+      // Check if job exists and user has access
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Check business access
+      if (!user.businessId || job.businessId !== user.businessId) {
+        return res.status(403).json({ message: "Access denied - job belongs to different business" });
+      }
+
+      // Get job parts with part details
+      const jobPartsWithDetails = await storage.getJobPartsWithDetails(jobId);
+
+      // Filter data based on user role
+      const filteredJobParts = jobPartsWithDetails.map(jobPart => {
+        const { part, ...jobPartData } = jobPart;
+        
+        if (user.role === 'project_manager') {
+          // PMs get full part details including pricing
+          return {
+            ...jobPartData,
+            part: {
+              id: part.id,
+              item_code: part.item_code,
+              description: part.description,
+              type: part.type,
+              pipe_size: part.pipe_size,
+              price_t1: part.price_t1,
+              price_t2: part.price_t2,
+              price_t3: part.price_t3,
+              category: part.category,
+              manufacturer: part.manufacturer,
+              image: part.image
+            }
+          };
+        } else {
+          // Tradies get basic part info without pricing
+          return {
+            ...jobPartData,
+            part: {
+              id: part.id,
+              item_code: part.item_code,
+              description: part.description,
+              type: part.type,
+              pipe_size: part.pipe_size,
+              category: part.category,
+              image: part.image
+            }
+          };
+        }
+      });
+
+      res.json(filteredJobParts);
+    } catch (error) {
+      console.error("Error getting job parts:", error);
+      res.status(500).json({ message: "Failed to get job parts" });
+    }
+  });
+
+  // B. POST /api/jobs/:jobId/parts - Add parts to job (PM only)
+  apiRouter.post("/jobs/:jobId/parts", requirePM, async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const user = req.user!;
+
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+
+      // Check if job exists and user has access
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Check business access and ownership
+      if (!user.businessId || job.businessId !== user.businessId) {
+        return res.status(403).json({ message: "Access denied - job belongs to different business" });
+      }
+
+      const { partId, quantity, notes } = req.body;
+
+      // Validate part exists
+      const part = await storage.getPart(partId);
+      if (!part) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+
+      // Check if part is already assigned to this job
+      const existingJobParts = await storage.getJobParts(jobId);
+      const existingPart = existingJobParts.find(jp => jp.partId === partId);
+      if (existingPart) {
+        return res.status(400).json({ message: "Part is already assigned to this job" });
+      }
+
+      // Validate job part data
+      const jobPartData = insertJobPartSchema.parse({
+        jobId,
+        partId,
+        quantity: quantity || 1,
+        notes: notes || null,
+        addedBy: user.id
+      });
+
+      const newJobPart = await storage.addJobPart(jobPartData);
+      res.status(201).json(newJobPart);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid job part data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error adding job part:", error);
+      res.status(500).json({ message: "Failed to add part to job" });
+    }
+  });
+
+  // C. PUT /api/jobs/:jobId/parts/:partId - Update job part quantity/notes (PM only)
+  apiRouter.put("/jobs/:jobId/parts/:partId", requirePM, async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const partId = parseInt(req.params.partId);
+      const user = req.user!;
+
+      if (isNaN(jobId) || isNaN(partId)) {
+        return res.status(400).json({ message: "Invalid job ID or part ID" });
+      }
+
+      // Check if job exists and user has access
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Check business access
+      if (!user.businessId || job.businessId !== user.businessId) {
+        return res.status(403).json({ message: "Access denied - job belongs to different business" });
+      }
+
+      // Find the job part
+      const jobParts = await storage.getJobParts(jobId);
+      const jobPart = jobParts.find(jp => jp.partId === partId);
+      if (!jobPart) {
+        return res.status(404).json({ message: "Part not assigned to this job" });
+      }
+
+      const { quantity, notes } = req.body;
+      const updateData: Partial<InsertJobPart> = {};
+      
+      if (quantity !== undefined) updateData.quantity = quantity;
+      if (notes !== undefined) updateData.notes = notes;
+
+      const updatedJobPart = await storage.updateJobPart(jobPart.id, updateData);
+      if (!updatedJobPart) {
+        return res.status(404).json({ message: "Job part not found" });
+      }
+
+      res.json(updatedJobPart);
+    } catch (error) {
+      console.error("Error updating job part:", error);
+      res.status(500).json({ message: "Failed to update job part" });
+    }
+  });
+
+  // D. DELETE /api/jobs/:jobId/parts/:partId - Remove part from job (PM only)
+  apiRouter.delete("/jobs/:jobId/parts/:partId", requirePM, async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const partId = parseInt(req.params.partId);
+      const user = req.user!;
+
+      if (isNaN(jobId) || isNaN(partId)) {
+        return res.status(400).json({ message: "Invalid job ID or part ID" });
+      }
+
+      // Check if job exists and user has access
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Check business access
+      if (!user.businessId || job.businessId !== user.businessId) {
+        return res.status(403).json({ message: "Access denied - job belongs to different business" });
+      }
+
+      // Find the job part
+      const jobParts = await storage.getJobParts(jobId);
+      const jobPart = jobParts.find(jp => jp.partId === partId);
+      if (!jobPart) {
+        return res.status(404).json({ message: "Part not assigned to this job" });
+      }
+
+      const success = await storage.removeJobPart(jobPart.id);
+      if (!success) {
+        return res.status(404).json({ message: "Job part not found" });
+      }
+
+      res.json({ message: "Part removed from job successfully" });
+    } catch (error) {
+      console.error("Error removing job part:", error);
+      res.status(500).json({ message: "Failed to remove part from job" });
+    }
+  });
+
+  // ========= JOB USER ASSIGNMENTS =========
+
+  // A. GET /api/jobs/:jobId/users - Get all users assigned to job
+  apiRouter.get("/jobs/:jobId/users", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const user = req.user!;
+
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+
+      // Check if job exists and user has access
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Check business access
+      if (!user.businessId || job.businessId !== user.businessId) {
+        return res.status(403).json({ message: "Access denied - job belongs to different business" });
+      }
+
+      // Get job users with user details
+      const jobUsers = await storage.getJobUsersByJob(jobId);
+      const jobUsersWithDetails = await Promise.all(
+        jobUsers.map(async (jobUser) => {
+          const assignedUser = await storage.getUser(jobUser.userId);
+          return {
+            ...jobUser,
+            user: assignedUser ? {
+              id: assignedUser.id,
+              firstName: assignedUser.firstName,
+              lastName: assignedUser.lastName,
+              email: assignedUser.email,
+              role: assignedUser.role
+            } : null
+          };
+        })
+      );
+
+      res.json(jobUsersWithDetails);
+    } catch (error) {
+      console.error("Error getting job users:", error);
+      res.status(500).json({ message: "Failed to get job users" });
+    }
+  });
+
+  // B. POST /api/jobs/:jobId/assign - Assign tradie to job (PM only)
+  apiRouter.post("/jobs/:jobId/assign", requirePM, async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const user = req.user!;
+
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+
+      // Check if job exists and user has access
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Check business access
+      if (!user.businessId || job.businessId !== user.businessId) {
+        return res.status(403).json({ message: "Access denied - job belongs to different business" });
+      }
+
+      const { userId } = req.body;
+
+      // Validate the user to be assigned
+      const tradieToAssign = await storage.getUser(userId);
+      if (!tradieToAssign) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if user is an approved tradie in the same business
+      if (tradieToAssign.role !== 'tradie' || !tradieToAssign.isApproved || tradieToAssign.businessId !== user.businessId) {
+        return res.status(400).json({ message: "User is not an approved tradie in your business" });
+      }
+
+      // Check if user is already assigned to this job
+      const existingAssignments = await storage.getJobUsersByJob(jobId);
+      const existingAssignment = existingAssignments.find(ju => ju.userId === userId);
+      if (existingAssignment) {
+        return res.status(400).json({ message: "User is already assigned to this job" });
+      }
+
+      // Create job user assignment
+      const jobUserData = insertJobUserSchema.parse({
+        jobId,
+        userId,
+        assignedBy: user.id
+      });
+
+      const newJobUser = await storage.assignUserToJob(jobUserData);
+      res.status(201).json(newJobUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid assignment data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error assigning user to job:", error);
+      res.status(500).json({ message: "Failed to assign user to job" });
+    }
+  });
+
+  // C. DELETE /api/jobs/:jobId/users/:userId - Remove user from job assignment (PM only)
+  apiRouter.delete("/jobs/:jobId/users/:userId", requirePM, async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const userIdToRemove = parseInt(req.params.userId);
+      const user = req.user!;
+
+      if (isNaN(jobId) || isNaN(userIdToRemove)) {
+        return res.status(400).json({ message: "Invalid job ID or user ID" });
+      }
+
+      // Check if job exists and user has access
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Check business access
+      if (!user.businessId || job.businessId !== user.businessId) {
+        return res.status(403).json({ message: "Access denied - job belongs to different business" });
+      }
+
+      // Find the job user assignment
+      const jobUsers = await storage.getJobUsersByJob(jobId);
+      const jobUser = jobUsers.find(ju => ju.userId === userIdToRemove);
+      if (!jobUser) {
+        return res.status(404).json({ message: "User not assigned to this job" });
+      }
+
+      const success = await storage.removeUserFromJob(jobUser.id);
+      if (!success) {
+        return res.status(404).json({ message: "Job assignment not found" });
+      }
+
+      res.json({ message: "User removed from job successfully" });
+    } catch (error) {
+      console.error("Error removing user from job:", error);
+      res.status(500).json({ message: "Failed to remove user from job" });
+    }
+  });
+
+  // ========= JOB SEARCH FOR TRADIES =========
+
+  // A. GET /api/jobs/search - Search jobs by job_number for tradies
+  apiRouter.get("/jobs/search", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = req.user!;
+      const { job_number } = req.query;
+
+      if (!job_number || typeof job_number !== 'string') {
+        return res.status(400).json({ message: "Job number is required" });
+      }
+
+      // Get the job by job number
+      const job = await storage.getJobByNumber(job_number);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // For tradies, only return jobs they are assigned to
+      if (user.role === 'tradie') {
+        const jobUsers = await storage.getJobUsersByJob(job.id);
+        const isAssigned = jobUsers.some(ju => ju.userId === user.id);
+        
+        if (!isAssigned) {
+          return res.status(403).json({ message: "Access denied - you are not assigned to this job" });
+        }
+      } else if (user.role === 'project_manager') {
+        // PMs can access jobs in their business
+        if (!user.businessId || job.businessId !== user.businessId) {
+          return res.status(403).json({ message: "Access denied - job belongs to different business" });
+        }
+      }
+
+      // Return basic job info
+      const jobInfo = {
+        id: job.id,
+        name: job.name,
+        jobNumber: job.jobNumber,
+        location: job.location,
+        status: job.status
+      };
+
+      res.json(jobInfo);
+    } catch (error) {
+      console.error("Error searching jobs:", error);
+      res.status(500).json({ message: "Failed to search jobs" });
+    }
+  });
+
+  // B. GET /api/jobs/:jobId/available-parts - Get parts catalog filtered for job
+  apiRouter.get("/jobs/:jobId/available-parts", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const user = req.user!;
+
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID" });
+      }
+
+      // Check if job exists and user has access
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Check access based on role
+      if (user.role === 'tradie') {
+        // Tradies can only access jobs they are assigned to
+        const jobUsers = await storage.getJobUsersByJob(jobId);
+        const isAssigned = jobUsers.some(ju => ju.userId === user.id);
+        
+        if (!isAssigned) {
+          return res.status(403).json({ message: "Access denied - you are not assigned to this job" });
+        }
+      } else if (user.role === 'project_manager') {
+        // PMs can access jobs in their business
+        if (!user.businessId || job.businessId !== user.businessId) {
+          return res.status(403).json({ message: "Access denied - job belongs to different business" });
+        }
+      }
+
+      // Get all available parts
+      const allParts = await storage.getAllParts();
+
+      // Filter parts data based on user role
+      const filteredParts = allParts.map(part => {
+        if (user.role === 'project_manager') {
+          // PMs get full part details with pricing
+          return {
+            id: part.id,
+            item_code: part.item_code,
+            description: part.description,
+            type: part.type,
+            pipe_size: part.pipe_size,
+            price_t1: part.price_t1,
+            price_t2: part.price_t2,
+            price_t3: part.price_t3,
+            category: part.category,
+            manufacturer: part.manufacturer,
+            image: part.image,
+            in_stock: part.in_stock
+          };
+        } else {
+          // Tradies get basic part info without pricing
+          return {
+            id: part.id,
+            item_code: part.item_code,
+            description: part.description,
+            type: part.type,
+            pipe_size: part.pipe_size,
+            category: part.category,
+            image: part.image
+          };
+        }
+      });
+
+      res.json(filteredParts);
+    } catch (error) {
+      console.error("Error getting available parts:", error);
+      res.status(500).json({ message: "Failed to get available parts" });
+    }
+  });
+
   // Get public jobs only (no authentication required)
   apiRouter.get("/jobs/public", async (_req: Request, res: Response) => {
     try {
