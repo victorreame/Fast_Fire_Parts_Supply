@@ -5,6 +5,7 @@ import { db } from "./db";
 import { users } from "../shared/schema";
 import { and, or, eq } from "drizzle-orm";
 import { emailService } from "./email-service";
+import { jobNotificationService } from "./job-notifications";
 import { 
   AccessControl, 
   requireAuth, 
