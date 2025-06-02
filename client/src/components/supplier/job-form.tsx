@@ -41,7 +41,7 @@ const formSchema = insertJobSchema.extend({
 
 const JobForm = ({ job, onSuccess }: JobFormProps) => {
   const { toast } = useToast();
-  
+
   const { data: businesses } = useQuery({
     queryKey: ['/api/businesses'],
   });
@@ -67,13 +67,13 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
       const apiData = {
         name: data.name, // Already set to description value
         job_number: data.jobNumber,
-        location: "", // Empty location as we're removing this field
+        location: data.location, //location
         description: data.description,
         is_public: data.isPublic,
         business_id: data.businessId,
         status: data.status,
       };
-      
+
       return job
         ? apiRequest("PUT", `/api/jobs/${job.id}`, apiData)
         : apiRequest("POST", "/api/jobs", apiData);
@@ -147,28 +147,13 @@ const JobForm = ({ job, onSuccess }: JobFormProps) => {
 
         <FormField
           control={form.control}
-          name="businessId"
+          name="location"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Associated Business (optional)</FormLabel>
-              <Select
-                onValueChange={(value) => field.onChange(value && value !== "none" ? parseInt(value) : null)}
-                value={field.value?.toString() || "none"}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a business" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {businesses?.map((business) => (
-                    <SelectItem key={business.id} value={business.id.toString()}>
-                      {business.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>Location</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter job location" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

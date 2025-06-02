@@ -79,7 +79,6 @@ function getStatusColor(status: string): string {
 const jobUpdateSchema = z.object({
   name: z.string().min(3, "Job name must be at least 3 characters"),
   jobNumber: z.string().min(1, "Job number is required"),
-  clientId: z.string().optional(),
   location: z.string().optional(),
   description: z.string().optional(),
   status: z.string(),
@@ -253,7 +252,6 @@ export default function JobDetail() {
       updateForm.reset({
         name: job.name,
         jobNumber: job.jobNumber,
-        clientId: job.clientId ? job.clientId.toString() : undefined,
         location: job.location || "",
         description: job.description || "",
         status: job.status,

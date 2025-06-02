@@ -108,7 +108,6 @@ const jobFormSchema = z.object({
   jobNumber: z.string().min(1, "Job number is required"),
   location: z.string().min(1, "Location is required"),
   description: z.string().min(1, "Description is required"),
-  clientId: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   budget: z.string().optional(),
@@ -166,42 +165,15 @@ export default function PmJobs() {
   const jobs = jobsData?.jobs || [];
   const totalPages = jobsData?.totalPages || 1;
 
-  // Fetch clients for dropdown
-  const { data: clients } = useQuery<Client[]>({
-    queryKey: ['/api/businesses'],
-    queryFn: async () => {
-      const response = await fetch('/api/businesses');
-      if (!response.ok) {
-        throw new Error('Failed to fetch clients');
-      }
-      return response.json();
-    }
-  });
-
-  // Filtered jobs based on search and status
-  const filteredJobs = useMemo(() => {
-    return jobs.filter((job: Job) => {
-      const matchesSearch = searchTerm === "" || 
-        job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.jobNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.location?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === "all" || job.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    });
-  }, [jobs, searchTerm, statusFilter]);
-
   // Create job mutation
   const createJobMutation = useMutation({
     mutationFn: async (jobData: JobFormValues) => {
       // Convert string fields to appropriate types
       const formattedData = {
         ...jobData,
-        clientId: jobData.clientId ? parseInt(jobData.clientId) : undefined,
         budget: jobData.budget ? parseFloat(jobData.budget) : undefined,
       };
-      
+
       const res = await apiRequest('POST', '/api/jobs', formattedData);
       if (!res.ok) {
         const error = await res.json();
@@ -227,6 +199,20 @@ export default function PmJobs() {
     }
   });
 
+  // Filtered jobs based on search and status
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((job: Job) => {
+      const matchesSearch = searchTerm === "" || 
+        job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.jobNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.location?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus = statusFilter === "all" || job.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [jobs, searchTerm, statusFilter]);
+
   // Form setup
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobFormSchema),
@@ -235,7 +221,6 @@ export default function PmJobs() {
       jobNumber: "",
       location: "",
       description: "",
-      clientId: "",
       startDate: "",
       endDate: "",
       budget: "",
@@ -338,31 +323,6 @@ export default function PmJobs() {
 
                   {/* Optional Fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="clientId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Client</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a client" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {clients?.map((client) => (
-                                <SelectItem key={client.id} value={client.id.toString()}>
-                                  {client.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
                     <FormField
                       control={form.control}
                       name="budget"
