@@ -1,0 +1,82 @@
+Implement job-related notifications and integrate jobs into all user dashboards with proper role-based access.
+
+EXISTING SYSTEMS (DO NOT MODIFY):
+- Push notifications system
+- User dashboards (UI1, UI2, UI3)
+- Jobs functionality from Parts 1-5
+- Order approval system
+
+REQUIREMENTS:
+
+1. JOB-RELATED PUSH NOTIFICATIONS:
+
+A. For Project Managers (UI2):
+- New tradie assigned to job
+- Parts order request for specific job
+- Job order approved/delivered
+- New tradie requests access to job
+- Job status changes
+
+B. For Tradies (UI3):
+- Assigned to new job notification
+- Job order approved/rejected with job context
+- Parts delivered to job site
+- Job status changed (active/on-hold/completed)
+- PM messages about specific job
+
+C. For Suppliers (UI1):
+- New job created in system
+- Large job orders requiring attention
+- Job completion notifications
+- Job-specific inventory alerts
+
+2. DASHBOARD INTEGRATION:
+
+A. Supplier Dashboard (UI1) Additions:
+- "Recent Jobs" widget showing newest jobs across all businesses
+- "Active Jobs Count" metric card
+- "Jobs by Status" chart (active/completed/on-hold)
+- Quick access to job management for all businesses
+- Job-based order filtering
+
+B. Project Manager Dashboard (UI2) Additions:
+- "My Jobs" prominent section showing assigned jobs
+- "Pending Orders by Job" widget
+- "Job Status Overview" (active jobs, completion rates)
+- "Recently Created Jobs" list
+- Quick "Create New Job" action button
+- Job-specific notifications center
+
+C. Tradie Dashboard (UI3) Additions:
+- "My Assigned Jobs" section (primary focus)
+- "Current Job" quick selector
+- "Recent Orders by Job" history
+- Job-specific quick actions (search parts, view orders)
+- Active job site information display
+
+3. JOB WIDGETS & COMPONENTS:
+
+A. Job Status Cards:
+- Visual status indicators (green/orange/gray)
+- Job progress metrics (orders placed, parts received)
+- Quick action buttons per job
+- Responsive design for all screen sizes
+
+B. Job Quick Actions:
+- PM: View Details, Add Parts, Assign Tradie, Create Order
+- Tradie: Search Parts, View Orders, Contact PM
+- Supplier: View All Orders, Check Inventory, Generate Reports
+
+4. NOTIFICATION DETAILS:
+
+A. Notification Content:
+- Job Number and Name in notification title
+- Specific action context (order, assignment, status)
+- Direct links to relevant job pages
+- Time-sensitive notifications highlighted
+
+B. Notification Preferences:
+- Users can toggle job-specific notifications
+- Email + push notification options
+- Notification frequency settings (immediate/daily digest)
+- Job completion notification opt-in
