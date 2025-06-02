@@ -432,9 +432,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This allows job creation while the PM business setup is being completed
       const businessId = user.businessId || 1; // Use default business ID if none assigned
 
+      // Process dates properly
+      const processedBody = {
+        ...req.body,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      };
+
       // Validate request body
       const jobData = insertJobSchema.parse({
-        ...req.body,
+        ...processedBody,
         businessId: businessId,
         projectManagerId: user.id,
         createdBy: user.id,

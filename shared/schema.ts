@@ -167,13 +167,25 @@ export const insertJobSchema = createInsertSchema(jobs, {
   jobNumber: z.string().min(1, "Job number is required"),
   location: z.string().optional(),
   description: z.string().optional(),
-  startDate: z.string().optional().nullable(),
-  endDate: z.string().optional().nullable(),
+  startDate: z.union([z.date(), z.string()]).optional().nullable().transform(val => {
+    if (!val) return null;
+    if (typeof val === 'string') return new Date(val);
+    return val;
+  }),
+  endDate: z.union([z.date(), z.string()]).optional().nullable().transform(val => {
+    if (!val) return null;
+    if (typeof val === 'string') return new Date(val);
+    return val;
+  }),
   budget: z.number().optional().nullable(),
   notes: z.string().optional().nullable(),
   clientId: z.number().optional().nullable(),
   status: z.enum(["active", "pending", "completed", "on_hold"]).default("active"),
   isPublic: z.boolean().default(false),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Job Users table (new - for assigning tradies to jobs)
