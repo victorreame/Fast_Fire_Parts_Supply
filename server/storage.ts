@@ -1545,8 +1545,31 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobs.clientId, clientId));
   }
 
-  // Get jobs by project manager
-  
+  // Get jobs assigned to a user (tradie/contractor)
+  async getUserJobs(userId: number): Promise<Job[]> {
+    // Get job assignments for this user
+    const jobAssignments = await this.getJobUsersByUser(userId);
+    const userJobs: Job[] = [];
+
+    // Get job details for each assignment
+    for (const assignment of jobAssignments) {
+      const job = await this.getJob(assignment.jobId);
+      if (job) {
+        userJobs.push(job);
+      }
+    }
+
+    return userJobs;
+  }
+
+  // Get orders by user (requestor)
+  async getOrdersByUser(userId: number): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.requestedBy, userId))
+      .orderBy(desc(orders.createdAt));
+  }
 
   // Job User Methods
   async getJobUser(id: number): Promise<JobUser | undefined> {

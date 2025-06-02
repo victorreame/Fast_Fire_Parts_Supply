@@ -426,9 +426,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Job not found" });
       }
 
-      // Check if user can access this job (same business)
-      if (!user.businessId || job.businessId !== user.businessId) {
-        return res.status(403).json({ message: "Access denied - job belongs to different business" });
+      // Check access based on user role
+      if (user.role === 'project_manager') {
+        // PMs can access jobs they created or are assigned to manage
+        if (job.projectManagerId !== user.id && job.createdBy !== user.id) {
+          // If PM has business ID, also check business access
+          if (user.businessId && job.businessId !== user.businessId) {
+            return res.status(403).json({ message: "Access denied - job belongs to different business" });
+          }
+        }
+      } else if (user.role === 'tradie' || user.role === 'contractor') {
+        // Tradies can only access jobs they are assigned to
+        const jobUsers = await storage.getJobUsersByJob(jobId);
+        const isAssigned = jobUsers.some(ju => ju.userId === user.id);
+        if (!isAssigned) {
+          return res.status(403).json({ message: "Access denied - you are not assigned to this job" });
+        }
+      } else {
+        // For other roles, check business access
+        if (!user.businessId || job.businessId !== user.businessId) {
+          return res.status(403).json({ message: "Access denied - job belongs to different business" });
+        }
       }
 
       res.json(job);
