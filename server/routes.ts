@@ -428,12 +428,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check access based on user role
       if (user.role === 'project_manager') {
-        // PMs can access jobs they created or are assigned to manage
-        if (job.projectManagerId !== user.id && job.createdBy !== user.id) {
-          // If PM has business ID, also check business access
-          if (user.businessId && job.businessId !== user.businessId) {
-            return res.status(403).json({ message: "Access denied - job belongs to different business" });
-          }
+        // PMs can access jobs they created, are assigned to manage, or in their business
+        const hasAccess = job.projectManagerId === user.id || 
+                         job.createdBy === user.id ||
+                         (user.businessId && job.businessId === user.businessId);
+        
+        if (!hasAccess) {
+          return res.status(403).json({ message: "Access denied - you don't have permission to view this job" });
         }
       } else if (user.role === 'tradie' || user.role === 'contractor') {
         // Tradies can only access jobs they are assigned to

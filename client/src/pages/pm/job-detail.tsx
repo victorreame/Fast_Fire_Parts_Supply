@@ -19,7 +19,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Card,
@@ -101,12 +100,12 @@ export default function JobDetail() {
   const [, navigate] = useLocation();
   const { id } = useParams();
   const jobId = parseInt(id);
-  
+
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  
+
   // Fetch job details
-  const { data: job, isLoading } = useQuery({
+  const { data: job, isLoading, error } = useQuery({
     queryKey: ['/api/pm/jobs', jobId],
     queryFn: async () => {
       const response = await fetch(`/api/pm/jobs/${jobId}`);
@@ -116,9 +115,10 @@ export default function JobDetail() {
       }
       return response.json();
     },
-    enabled: !isNaN(jobId)
+    enabled: !isNaN(jobId),
+    retry: 1
   });
-  
+
   // Fetch tradies for assignment
   const { data: tradies } = useQuery({
     queryKey: ['/api/pm/tradies'],
@@ -130,7 +130,7 @@ export default function JobDetail() {
       return response.json();
     }
   });
-  
+
   // Fetch clients for job update
   const { data: clients } = useQuery({
     queryKey: ['/api/pm/clients'],
@@ -142,7 +142,7 @@ export default function JobDetail() {
       return response.json();
     }
   });
-  
+
   // Update job mutation
   const updateJobMutation = useMutation({
     mutationFn: async (jobData: JobUpdateValues) => {
@@ -150,7 +150,7 @@ export default function JobDetail() {
       if (jobData.clientId) {
         jobData.clientId = parseInt(jobData.clientId) as any;
       }
-      
+
       const res = await apiRequest('PUT', `/api/pm/jobs/${jobId}`, jobData);
       if (!res.ok) {
         const error = await res.json();
@@ -174,7 +174,7 @@ export default function JobDetail() {
       });
     }
   });
-  
+
   // Assign tradie mutation
   const assignTradieMutation = useMutation({
     mutationFn: async (data: AssignTradieValues) => {
@@ -203,7 +203,7 @@ export default function JobDetail() {
       });
     }
   });
-  
+
   // Remove tradie mutation
   const removeTradieMutation = useMutation({
     mutationFn: async (assignmentId: number) => {
@@ -229,7 +229,7 @@ export default function JobDetail() {
       });
     }
   });
-  
+
   // Forms setup
   const updateForm = useForm<JobUpdateValues>({
     resolver: zodResolver(jobUpdateSchema),
@@ -245,7 +245,7 @@ export default function JobDetail() {
       notes: job?.notes || "",
     },
   });
-  
+
   // Reset form values when job data changes
   useEffect(() => {
     if (job) {
@@ -261,22 +261,47 @@ export default function JobDetail() {
       });
     }
   }, [job, updateForm]);
-  
+
   const assignForm = useForm<AssignTradieValues>({
     resolver: zodResolver(assignTradieSchema),
     defaultValues: {
       userId: "",
     }
   });
-  
+
   const onSubmitUpdate = (values: JobUpdateValues) => {
     updateJobMutation.mutate(values);
   };
-  
+
   const onSubmitAssign = (values: AssignTradieValues) => {
     assignTradieMutation.mutate(values);
   };
-  
+
+  if (error || (!isLoading && !job)) {
+    return (
+      <PmLayout>
+        <div className="container mx-auto py-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <h3 className="text-lg font-medium text-gray-900">Job not found</h3>
+                <p className="text-gray-500">
+                  {error ? 'Unable to load job details. You may not have permission to view this job.' : 'The job you\'re looking for doesn\'t exist.'}
+                </p>
+                <Button 
+                  className="mt-4" 
+                  onClick={() => navigate('/pm/jobs')}
+                >
+                  Back to Jobs
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </PmLayout>
+    );
+  }
+
   if (isLoading || !job) {
     return (
       <PmLayout>
@@ -286,10 +311,10 @@ export default function JobDetail() {
       </PmLayout>
     );
   }
-  
+
   const assignedTradies = job.assignedUsers || [];
   const jobOrders = job.orders || [];
-  
+
   return (
     <PmLayout>
       <div className="container mx-auto py-6">
@@ -303,7 +328,7 @@ export default function JobDetail() {
             {job.status}
           </Badge>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
             <Card>
@@ -339,24 +364,24 @@ export default function JobDetail() {
                     </span>
                   </div>
                 </div>
-                
+
                 <div>
                   <span className="text-sm text-muted-foreground block">Location</span>
                   <span className="text-lg font-medium">{job.location || 'No location set'}</span>
                 </div>
-                
+
                 <div>
                   <span className="text-sm text-muted-foreground block">Description</span>
                   <p className="text-lg">{job.description || 'No description provided'}</p>
                 </div>
-                
+
                 <div>
                   <span className="text-sm text-muted-foreground block">Notes</span>
                   <p className="text-lg">{job.notes || 'No notes provided'}</p>
                 </div>
               </CardContent>
             </Card>
-            
+
             <div className="mt-6">
               <Tabs defaultValue="orders">
                 <TabsList>
@@ -420,7 +445,7 @@ export default function JobDetail() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-                
+
                 <TabsContent value="tradies">
                   <Card>
                     <CardHeader>
@@ -476,7 +501,7 @@ export default function JobDetail() {
               </Tabs>
             </div>
           </div>
-          
+
           <div>
             <Card>
               <CardHeader>
@@ -490,17 +515,17 @@ export default function JobDetail() {
                       {job.status}
                     </Badge>
                   </div>
-                  
+
                   <div>
                     <span className="text-sm text-muted-foreground block">Assigned Tradies</span>
                     <span className="text-lg font-medium">{assignedTradies.length}</span>
                   </div>
-                  
+
                   <div>
                     <span className="text-sm text-muted-foreground block">Orders</span>
                     <span className="text-lg font-medium">{jobOrders.length}</span>
                   </div>
-                  
+
                   <div className="pt-2">
                     <span className="text-sm text-muted-foreground block mb-2">Update Status</span>
                     <div className="grid grid-cols-1 gap-2">
@@ -529,7 +554,7 @@ export default function JobDetail() {
           </div>
         </div>
       </div>
-      
+
       {/* Edit Job Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
@@ -721,7 +746,7 @@ export default function JobDetail() {
           </Form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Assign Tradie Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent className="sm:max-w-[400px]">
