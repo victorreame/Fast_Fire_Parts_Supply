@@ -1275,13 +1275,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cart is empty" });
       }
 
-      // Create new order
+      // Create new order with job context and delivery information
       const order = await storage.createOrder({
         businessId: businessId,
         jobId: req.body.jobId || null,
         customerName: req.body.customerName || "Guest User",
         orderNumber: req.body.orderNumber || null,
-        status: "new"
+        deliveryAddress: req.body.deliveryAddress || null,
+        deliveryInstructions: req.body.deliveryInstructions || null,
+        requestedBy: userId,
+        status: req.body.jobId ? "pending_approval" : "new" // Job orders require PM approval
       });
 
       // Get business price tier
@@ -1429,6 +1432,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting user permissions:", error);
       res.status(500).json({ message: "Failed to get user permissions" });
+    }
+  });
+
+  // Get jobs assigned to current user
+  apiRouter.get("/user/jobs", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = req.user!;
+      let userJobs = [];
+
+      if (user.role === 'tradie' || user.role === 'contractor') {
+        // Get jobs assigned to this user
+        const assignedJobs = await storage.getUserJobs(user.id);
+        userJobs = assignedJobs;
+      } else if (user.role === 'project_manager') {
+        // Get jobs managed by this PM
+        const managedJobs = await storage.getJobsByProjectManager(user.id);
+        userJobs = managedJobs;
+      }
+
+      // Filter active jobs only for ordering
+      const activeJobs = userJobs.filter(job => 
+        job.status === 'active' || job.status === 'pending'
+      );
+
+      res.json(activeJobs);
+    } catch (error) {
+      console.error("Error getting user jobs:", error);
+      res.status(500).json({ message: "Failed to get user jobs" });
     }
   });
 
