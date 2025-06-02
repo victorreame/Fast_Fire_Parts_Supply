@@ -34,7 +34,7 @@ import SupplierJobs from "@/pages/supplier/jobs";
 import PMDashboard from "@/pages/pm/dashboard";
 import PMApprovals from "@/pages/pm/approvals";
 import PMJobs from "@/pages/pm/jobs";
-import JobDetail from "@/pages/pm/job-detail";
+import PMJobDetails from "@/pages/pm/job-details";
 import PMParts from "@/pages/pm/parts";
 import PMTradies from "@/pages/pm/tradies";
 import PMNotifications from "@/pages/pm/notifications";
@@ -335,7 +335,7 @@ function App() {
         </Route>
         <Route path="/pm/jobs/:id">
           <AuthGuard requiredRole="project_manager">
-            <JobDetail />
+            <PMJobDetails />
           </AuthGuard>
         </Route>
         <Route path="/pm/parts">

@@ -334,7 +334,7 @@ export default function JobDetails() {
   });
 
   // Remove tradie mutation
-  const removeTradieutation = useMutation({
+  const removeTradieMutation = useMutation({
     mutationFn: async (userId: number) => {
       const res = await apiRequest('DELETE', `/api/jobs/${jobId}/users/${userId}`);
       if (!res.ok) {
@@ -866,7 +866,7 @@ export default function JobDetails() {
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => removeTradieutation.mutate(jobUser.userId)}
+                                onClick={() => removeTradieMutation.mutate(jobUser.userId)}
                               >
                                 Remove
                               </AlertDialogAction>
