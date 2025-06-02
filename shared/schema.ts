@@ -162,10 +162,18 @@ export const jobs = pgTable("jobs", {
   notes: text("notes"), // Additional notes
 });
 
-export const insertJobSchema = createInsertSchema(jobs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertJobSchema = createInsertSchema(jobs, {
+  name: z.string().min(1, "Job name is required"),
+  jobNumber: z.string().min(1, "Job number is required"),
+  location: z.string().optional(),
+  description: z.string().optional(),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+  budget: z.number().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  clientId: z.number().optional().nullable(),
+  status: z.enum(["active", "pending", "completed", "on_hold"]).default("active"),
+  isPublic: z.boolean().default(false),
 });
 
 // Job Users table (new - for assigning tradies to jobs)

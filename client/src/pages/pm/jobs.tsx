@@ -112,6 +112,7 @@ const jobFormSchema = z.object({
   endDate: z.string().optional(),
   budget: z.string().optional(),
   notes: z.string().optional(),
+  clientId: z.number().optional(),
 });
 
 type JobFormValues = z.infer<typeof jobFormSchema>;
@@ -168,10 +169,18 @@ export default function PmJobs() {
   // Create job mutation
   const createJobMutation = useMutation({
     mutationFn: async (jobData: JobFormValues) => {
-      // Convert string fields to appropriate types
+      // Convert string fields to appropriate types and format for API
       const formattedData = {
-        ...jobData,
-        budget: jobData.budget ? parseFloat(jobData.budget) : undefined,
+        name: jobData.name,
+        jobNumber: jobData.jobNumber,
+        location: jobData.location,
+        description: jobData.description,
+        startDate: jobData.startDate || null,
+        endDate: jobData.endDate || null,
+        budget: jobData.budget ? parseFloat(jobData.budget) : null,
+        notes: jobData.notes || null,
+        clientId: jobData.clientId || null,
+        status: 'active',
       };
 
       const res = await apiRequest('POST', '/api/jobs', formattedData);
@@ -225,6 +234,7 @@ export default function PmJobs() {
       endDate: "",
       budget: "",
       notes: "",
+      clientId: undefined,
     },
   });
 

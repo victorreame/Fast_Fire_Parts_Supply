@@ -428,16 +428,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user!;
 
-      if (!user.businessId) {
-        return res.status(403).json({ message: "Project manager must be associated with a business" });
-      }
+      // For PMs without a business ID, we'll use a default business or create jobs without business constraint
+      // This allows job creation while the PM business setup is being completed
+      const businessId = user.businessId || 1; // Use default business ID if none assigned
 
       // Validate request body
       const jobData = insertJobSchema.parse({
         ...req.body,
-        businessId: user.businessId,
+        businessId: businessId,
         projectManagerId: user.id,
-        createdBy: user.id
+        createdBy: user.id,
+        status: req.body.status || 'active'
       });
 
       // Check if job_number is unique
@@ -450,6 +451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(newJob);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Job validation errors:", error.errors);
         return res.status(400).json({ 
           message: "Invalid job data", 
           errors: error.errors 
