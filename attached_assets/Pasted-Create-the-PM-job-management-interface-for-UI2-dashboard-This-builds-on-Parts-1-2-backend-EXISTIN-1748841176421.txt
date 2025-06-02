@@ -1,0 +1,91 @@
+Create the PM job management interface for UI2 dashboard. This builds on Parts 1-2 backend.
+
+EXISTING BACKEND (DO NOT MODIFY):
+- Jobs CRUD endpoints from Part 1
+- Job parts & assignment endpoints from Part 2
+- PM dashboard structure already exists
+
+REQUIREMENTS:
+
+1. JOBS DASHBOARD PAGE (PM UI2):
+
+A. Jobs List View:
+- Display all jobs for PM's business in table/card format
+- Columns: Job Number, Job Name, Location, Status, Assigned Tradies Count, Created Date
+- Add "New Job" button (prominent, top-right)
+- Search/filter by job number, name, or status
+- Pagination (20 jobs per page)
+- Click job row to view details
+
+B. Job Status Indicators:
+- 'active' - Green badge
+- 'completed' - Gray badge  
+- 'on_hold' - Orange badge
+- Show tradie count assigned to each job
+
+2. CREATE JOB MODAL/FORM:
+
+A. Required Fields:
+- Job Name (text input)
+- Job Number (text input, unique validation)
+- Location/Address (textarea)
+- Description (textarea)
+
+B. Optional Fields:
+- Client selection (dropdown from clients)
+- Start Date & End Date (date pickers)
+- Budget (number input)
+- Notes (textarea)
+
+C. Form Validation:
+- All required fields
+- Job Number uniqueness check
+- Success/error messages
+- Auto-close modal on success
+
+3. JOB DETAILS PAGE:
+
+A. Job Information Section:
+- Display all job details (editable by PM)
+- Edit button leads to edit form/modal
+- Status change dropdown (active/completed/on_hold)
+
+B. Assigned Tradies Section:
+- List all assigned tradies with names/contact
+- "Assign Tradie" button opens tradie selection modal
+- Remove tradie button (confirm dialog)
+- Show tradie assignment date
+
+C. Job Parts Section:
+- List all parts assigned to job with quantities
+- "Add Parts" button opens parts selection modal
+- Edit quantity/notes inline or in modal
+- Remove parts with confirmation
+- Show total parts count
+
+4. ASSIGN TRADIE MODAL:
+- Dropdown/search of approved tradies in business
+- Only show tradies with isApproved = true
+- Prevent duplicate assignments
+- Success feedback on assignment
+
+5. ADD PARTS MODAL:
+- Parts search/selection interface
+- Quantity input for each part
+- Notes field for special instructions
+- Bulk add multiple parts at once
+- Parts catalog with search by item code/description
+
+6. RESPONSIVE DESIGN:
+- Mobile-friendly job cards
+- Collapsible sections on mobile
+- Touch-friendly buttons and inputs
+- Proper spacing and typography
+
+7. NAVIGATION & UX:
+- Breadcrumb navigation (Dashboard > Jobs > Job Details)
+- Back buttons and proper routing
+- Loading states for API calls
+- Error handling with user-friendly messages
+
+Implement complete PM job management interface with create, view, edit, and assignment capabilities.
