@@ -361,12 +361,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = 20;
       const offset = (page - 1) * limit;
 
-      if (!user.businessId) {
+      console.log(`Jobs request - User: ${user.id}, Role: ${user.role}, BusinessId: ${user.businessId}`);
+
+      // For PMs without business ID, get jobs they created or manage
+      let allJobs = [];
+      
+      if (user.role === 'project_manager') {
+        if (user.businessId) {
+          // Get jobs for user's business
+          allJobs = await storage.getJobsByBusiness(user.businessId);
+        } else {
+          // Get jobs created by or assigned to this PM
+          allJobs = await storage.getJobsByProjectManager(user.id);
+        }
+      } else if (user.businessId) {
+        // For other roles with business ID
+        allJobs = await storage.getJobsByBusiness(user.businessId);
+      } else {
         return res.status(403).json({ message: "User must be associated with a business" });
       }
-
-      // Get jobs for user's business only, paginated
-      const allJobs = await storage.getJobsByBusiness(user.businessId);
+      
+      console.log(`Found ${allJobs.length} jobs for user ${user.id}`);
       
       // Sort by created_at desc and apply pagination
       const sortedJobs = allJobs

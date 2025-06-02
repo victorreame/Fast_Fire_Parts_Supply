@@ -36,7 +36,7 @@ async function hashPassword(password: string) {
 export interface IStorage {
   // Session store
   sessionStore: session.Store;
-  
+
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -48,27 +48,27 @@ export interface IStorage {
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   updateUserStatus(userId: number, status: string): Promise<User | undefined>;
   updateUserApproval(userId: number, isApproved: boolean, approvedBy?: number): Promise<User | undefined>;
-  
+
   // Businesses
   getBusiness(id: number): Promise<Business | undefined>;
   getAllBusinesses(): Promise<Business[]>;
   createBusiness(business: InsertBusiness): Promise<Business>;
   updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business | undefined>;
-  
+
   // Clients
   getClient(id: number): Promise<Client | undefined>;
   getClientsByBusiness(businessId: number): Promise<Client[]>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined>;
   deleteClient(id: number): Promise<boolean>;
-  
+
   // Contacts
   getContact(id: number): Promise<Contact | undefined>;
   getContactsByClient(clientId: number): Promise<Contact[]>;
   createContact(contact: InsertContact): Promise<Contact>;
   updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact | undefined>;
   deleteContact(id: number): Promise<boolean>;
-  
+
   // Parts
   getPart(id: number): Promise<Part | undefined>;
   getPartByItemCode(itemCode: string): Promise<Part | undefined>;
@@ -78,14 +78,14 @@ export interface IStorage {
   createPart(part: InsertPart): Promise<Part>;
   updatePart(id: number, part: Partial<InsertPart>): Promise<Part | undefined>;
   deletePart(id: number): Promise<boolean>;
-  
+
   // Contract Pricing
   getContractPrice(clientId: number, partId: number): Promise<ContractPricing | undefined>;
   getContractPricesByClient(clientId: number): Promise<ContractPricing[]>;
   createContractPrice(pricing: InsertContractPricing): Promise<ContractPricing>;
   updateContractPrice(id: number, pricing: Partial<InsertContractPricing>): Promise<ContractPricing | undefined>;
   deleteContractPrice(id: number): Promise<boolean>;
-  
+
   // Jobs
   getJob(id: number): Promise<Job | undefined>;
   getJobByNumber(jobNumber: string): Promise<Job | undefined>;
@@ -98,14 +98,14 @@ export interface IStorage {
   createJob(job: InsertJob): Promise<Job>;
   updateJob(id: number, job: Partial<InsertJob>): Promise<Job | undefined>;
   deleteJob(id: number): Promise<boolean>;
-  
+
   // Job Users (assignments)
   getJobUser(id: number): Promise<JobUser | undefined>;
   getJobUsersByJob(jobId: number): Promise<JobUser[]>;
   getJobUsersByUser(userId: number): Promise<JobUser[]>;
   assignUserToJob(jobUser: InsertJobUser): Promise<JobUser>;
   removeUserFromJob(id: number): Promise<boolean>;
-  
+
   // Orders
   getOrder(id: number): Promise<Order | undefined>;
   getOrdersByBusiness(businessId: number): Promise<Order[]>;
@@ -123,13 +123,13 @@ export interface IStorage {
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: string, approverId?: number): Promise<Order | undefined>;
   updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined>;
-  
+
   // Order Items
   getOrderItems(orderId: number): Promise<OrderItem[]>;
   createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
   updateOrderItem(id: number, orderItem: Partial<InsertOrderItem>): Promise<OrderItem | undefined>;
   deleteOrderItem(id: number): Promise<boolean>;
-  
+
   // Cart Items
   getCartItems(userId: number): Promise<CartItem[]>;
   getCartItemsByJob(userId: number, jobId: number): Promise<CartItem[]>;
@@ -138,7 +138,7 @@ export interface IStorage {
   updateCartItem(id: number, cartItem: Partial<InsertCartItem>): Promise<CartItem | undefined>;
   removeCartItem(id: number): Promise<boolean>;
   clearCart(userId: number): Promise<boolean>;
-  
+
   // Job Parts
   getJobParts(jobId: number): Promise<JobPart[]>;
   getJobPartsWithDetails(jobId: number): Promise<(JobPart & { part: Part })[]>;
@@ -146,7 +146,7 @@ export interface IStorage {
   updateJobPartQuantity(id: number, quantity: number): Promise<JobPart | undefined>;
   updateJobPart(id: number, jobPart: Partial<InsertJobPart>): Promise<JobPart | undefined>;
   removeJobPart(id: number): Promise<boolean>;
-  
+
   // Notifications
   getNotification(id: number): Promise<Notification | undefined>;
   getNotificationsByUser(userId: number): Promise<Notification[]>;
@@ -157,7 +157,7 @@ export interface IStorage {
   markNotificationAsRead(id: number): Promise<Notification | undefined>;
   markAllNotificationsAsRead(userId: number): Promise<boolean>;
   deleteNotification(id: number): Promise<boolean>;
-  
+
   // Tradie Invitations
   getTradieInvitation(id: number): Promise<TradieInvitation | undefined>;
   getTradieInvitationByToken(token: string): Promise<TradieInvitation | undefined>;
@@ -173,7 +173,7 @@ export interface IStorage {
   acceptTradieInvitation(invitationId: number): Promise<TradieInvitation | undefined>;
   rejectTradieInvitation(invitationId: number): Promise<TradieInvitation | undefined>;
   deleteTradieInvitation(id: number): Promise<boolean>;
-  
+
   // Favorites
   getFavoritesByUser(userId: number): Promise<{ id: number, userId: number, partId: number }[]>;
   addFavorite(favorite: InsertFavorite): Promise<{ id: number, userId: number, partId: number, addedAt: Date }>;
@@ -189,10 +189,10 @@ export class MemStorage implements IStorage {
   private orderItems: Map<number, OrderItem>;
   private cartItems: Map<number, CartItem>;
   private jobParts: Map<number, JobPart>;
-  
+
   // Session store for authentication
   public sessionStore: session.Store;
-  
+
   private userIdCounter: number = 1;
   private businessIdCounter: number = 1;
   private partIdCounter: number = 1;
@@ -211,13 +211,13 @@ export class MemStorage implements IStorage {
     this.orderItems = new Map();
     this.cartItems = new Map();
     this.jobParts = new Map();
-    
+
     // Initialize memory store for sessions
     const MemoryStore = createMemoryStore(session);
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
     });
-    
+
     // Add initial data
     this.seedData();
   }
@@ -231,7 +231,7 @@ export class MemStorage implements IStorage {
       email: "info@aquafire.com",
       priceTier: "T2"
     });
-    
+
     const business2 = this.createBusiness({
       name: "SafeGuard Fire Protection",
       address: "456 Oak Ave, Somewhere, USA",
@@ -239,7 +239,7 @@ export class MemStorage implements IStorage {
       email: "contact@safeguardfire.com",
       priceTier: "T1"
     });
-    
+
     const business3 = this.createBusiness({
       name: "Metro Building Services",
       address: "789 Pine Blvd, Elsewhere, USA",
@@ -247,7 +247,7 @@ export class MemStorage implements IStorage {
       email: "service@metrobuilding.com",
       priceTier: "T3"
     });
-    
+
     // Seed users
     this.createUser({
       username: "john.doe",
@@ -259,7 +259,7 @@ export class MemStorage implements IStorage {
       role: "contractor",
       businessId: business1.id
     });
-    
+
     this.createUser({
       username: "jane.smith",
       password: "password123",
@@ -270,7 +270,7 @@ export class MemStorage implements IStorage {
       role: "contractor",
       businessId: business2.id
     });
-    
+
     this.createUser({
       username: "admin",
       password: "admin123",
@@ -281,7 +281,7 @@ export class MemStorage implements IStorage {
       role: "supplier",
       businessId: null
     });
-    
+
     // Seed parts
     this.createPart({
       itemCode: "VLV-243",
@@ -294,7 +294,7 @@ export class MemStorage implements IStorage {
       inStock: 36,
       isPopular: true
     });
-    
+
     this.createPart({
       itemCode: "SPK-108",
       pipeSize: "1/2\"",
@@ -306,7 +306,7 @@ export class MemStorage implements IStorage {
       inStock: 122,
       isPopular: true
     });
-    
+
     this.createPart({
       itemCode: "FIT-432",
       pipeSize: "1\"",
@@ -318,7 +318,7 @@ export class MemStorage implements IStorage {
       inStock: 245,
       isPopular: true
     });
-    
+
     // Add more parts
     this.createPart({
       itemCode: "PIP-101",
@@ -331,7 +331,7 @@ export class MemStorage implements IStorage {
       inStock: 85,
       isPopular: true
     });
-    
+
     this.createPart({
       itemCode: "FIT-211",
       pipeSize: "3/4\"",
@@ -343,7 +343,7 @@ export class MemStorage implements IStorage {
       inStock: 180,
       isPopular: true
     });
-    
+
     // Seed jobs
     this.createJob({
       name: "Office Building Retrofit",
@@ -353,7 +353,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date("2023-09-15T00:00:00.000Z"),
       updatedAt: new Date("2023-09-15T00:00:00.000Z")
     });
-    
+
     this.createJob({
       name: "Hotel Construction Project",
       jobNumber: "JB-2023-118",
@@ -362,7 +362,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date("2023-09-10T00:00:00.000Z"),
       updatedAt: new Date("2023-09-10T00:00:00.000Z")
     });
-    
+
     // Seed orders
     const order1 = this.createOrder({
       businessId: business1.id,
@@ -370,26 +370,26 @@ export class MemStorage implements IStorage {
       createdAt: new Date("2023-09-15T00:00:00.000Z"),
       updatedAt: new Date("2023-09-15T00:00:00.000Z")
     });
-    
+
     const order2 = this.createOrder({
       businessId: business2.id,
       status: "processing",
       createdAt: new Date("2023-09-14T00:00:00.000Z"),
       updatedAt: new Date("2023-09-14T00:00:00.000Z")
     });
-    
+
     const order3 = this.createOrder({
       businessId: business3.id,
       status: "new",
       createdAt: new Date("2023-09-14T00:00:00.000Z"),
       updatedAt: new Date("2023-09-14T00:00:00.000Z")
     });
-    
+
     // Seed order items
     const part1 = this.getPartByItemCode("VLV-243");
     const part2 = this.getPartByItemCode("SPK-108");
     const part3 = this.getPartByItemCode("FIT-432");
-    
+
     if (part1 && order1) {
       this.createOrderItem({
         orderId: order1.id,
@@ -398,7 +398,7 @@ export class MemStorage implements IStorage {
         priceAtOrder: part1.priceT2
       });
     }
-    
+
     if (part2 && order1) {
       this.createOrderItem({
         orderId: order1.id,
@@ -407,7 +407,7 @@ export class MemStorage implements IStorage {
         priceAtOrder: part2.priceT2
       });
     }
-    
+
     if (part3 && order2) {
       this.createOrderItem({
         orderId: order2.id,
@@ -433,27 +433,27 @@ export class MemStorage implements IStorage {
     this.users.set(id, newUser);
     return newUser;
   }
-  
+
   async updateUserStatus(userId: number, status: string): Promise<User | undefined> {
     const user = this.users.get(userId);
     if (!user) return undefined;
-    
+
     const updatedUser = { ...user, status };
     this.users.set(userId, updatedUser);
     return updatedUser;
   }
-  
+
   async updateUserApproval(userId: number, isApproved: boolean, approvedBy?: number): Promise<User | undefined> {
     const user = this.users.get(userId);
     if (!user) return undefined;
-    
+
     const updatedUser = { 
       ...user, 
       isApproved,
       approvedBy: isApproved ? approvedBy : user.approvedBy,
       approvalDate: isApproved ? new Date() : user.approvalDate
     };
-    
+
     this.users.set(userId, updatedUser);
     return updatedUser;
   }
@@ -477,7 +477,7 @@ export class MemStorage implements IStorage {
   async updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business | undefined> {
     const existingBusiness = this.businesses.get(id);
     if (!existingBusiness) return undefined;
-    
+
     const updatedBusiness = { ...existingBusiness, ...business };
     this.businesses.set(id, updatedBusiness);
     return updatedBusiness;
@@ -516,7 +516,7 @@ export class MemStorage implements IStorage {
   async updatePart(id: number, part: Partial<InsertPart>): Promise<Part | undefined> {
     const existingPart = this.parts.get(id);
     if (!existingPart) return undefined;
-    
+
     const updatedPart = { ...existingPart, ...part };
     this.parts.set(id, updatedPart);
     return updatedPart;
@@ -534,15 +534,15 @@ export class MemStorage implements IStorage {
   async getJobsByBusiness(businessId: number): Promise<Job[]> {
     return Array.from(this.jobs.values()).filter(job => job.businessId === businessId);
   }
-  
+
   async getPublicJobs(): Promise<Job[]> {
     return Array.from(this.jobs.values()).filter(job => job.isPublic === true);
   }
-  
+
   async getJobsByCreator(userId: number): Promise<Job[]> {
     return Array.from(this.jobs.values()).filter(job => job.createdBy === userId);
   }
-  
+
   async getAllJobs(): Promise<Job[]> {
     return Array.from(this.jobs.values());
   }
@@ -557,12 +557,12 @@ export class MemStorage implements IStorage {
   async updateJob(id: number, job: Partial<InsertJob>): Promise<Job | undefined> {
     const existingJob = this.jobs.get(id);
     if (!existingJob) return undefined;
-    
+
     const updatedJob = { ...existingJob, ...job, updatedAt: new Date() };
     this.jobs.set(id, updatedJob);
     return updatedJob;
   }
-  
+
   async deleteJob(id: number): Promise<boolean> {
     return this.jobs.delete(id);
   }
@@ -594,7 +594,7 @@ export class MemStorage implements IStorage {
   async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
     const existingOrder = this.orders.get(id);
     if (!existingOrder) return undefined;
-    
+
     const updatedOrder = { ...existingOrder, status, updatedAt: new Date() };
     this.orders.set(id, updatedOrder);
     return updatedOrder;
@@ -624,12 +624,12 @@ export class MemStorage implements IStorage {
              item.partId === cartItem.partId &&
              item.jobId === cartItem.jobId
     );
-    
+
     if (existingItem) {
       // Update quantity instead of adding new item
       return this.updateCartItemQuantity(existingItem.id, existingItem.quantity + cartItem.quantity);
     }
-    
+
     const id = this.cartItemIdCounter++;
     const newCartItem: CartItem = { ...cartItem, id };
     this.cartItems.set(id, newCartItem);
@@ -639,7 +639,7 @@ export class MemStorage implements IStorage {
   async updateCartItemQuantity(id: number, quantity: number): Promise<CartItem | undefined> {
     const existingItem = this.cartItems.get(id);
     if (!existingItem) return undefined;
-    
+
     const updatedItem = { ...existingItem, quantity };
     this.cartItems.set(id, updatedItem);
     return updatedItem;
@@ -651,44 +651,44 @@ export class MemStorage implements IStorage {
 
   async clearCart(userId: number): Promise<boolean> {
     const userCartItems = Array.from(this.cartItems.values()).filter(item => item.userId === userId);
-    
+
     for (const item of userCartItems) {
       this.cartItems.delete(item.id);
     }
-    
+
     return true;
   }
-  
+
   // Job Part Methods
   async getJobParts(jobId: number): Promise<JobPart[]> {
     return Array.from(this.jobParts.values()).filter(item => item.jobId === jobId);
   }
-  
+
   async getJobPartsWithDetails(jobId: number): Promise<(JobPart & { part: Part })[]> {
     const jobParts = await this.getJobParts(jobId);
     const result: (JobPart & { part: Part })[] = [];
-    
+
     for (const jobPart of jobParts) {
       const part = await this.getPart(jobPart.partId);
       if (part) {
         result.push({ ...jobPart, part });
       }
     }
-    
+
     return result;
   }
-  
+
   async addJobPart(jobPart: InsertJobPart): Promise<JobPart> {
     // Check if part already exists in job
     const existingItem = Array.from(this.jobParts.values()).find(
       item => item.jobId === jobPart.jobId && item.partId === jobPart.partId
     );
-    
+
     if (existingItem) {
       // Update quantity instead of adding new item
       return this.updateJobPartQuantity(existingItem.id, existingItem.quantity + (jobPart.quantity || 1));
     }
-    
+
     const id = this.jobPartIdCounter++;
     const newJobPart: JobPart = { 
       ...jobPart, 
@@ -698,16 +698,16 @@ export class MemStorage implements IStorage {
     this.jobParts.set(id, newJobPart);
     return newJobPart;
   }
-  
+
   async updateJobPartQuantity(id: number, quantity: number): Promise<JobPart | undefined> {
     const existingItem = this.jobParts.get(id);
     if (!existingItem) return undefined;
-    
+
     const updatedItem = { ...existingItem, quantity };
     this.jobParts.set(id, updatedItem);
     return updatedItem;
   }
-  
+
   async removeJobPart(id: number): Promise<boolean> {
     return this.jobParts.delete(id);
   }
@@ -716,7 +716,7 @@ export class MemStorage implements IStorage {
 export class DatabaseStorage implements IStorage {
   // Session store for authentication
   public sessionStore: session.Store;
-  
+
   constructor() {
     // Initialize PostgreSQL session store
     const PostgresSessionStore = connectPg(session);
@@ -725,18 +725,18 @@ export class DatabaseStorage implements IStorage {
       createTableIfMissing: true
     });
   }
-  
+
   // Initialize and seed the database with initial data if needed
   async seedDataIfNeeded() {
     // Check if any users exist
     const existingUsers = await db.select().from(users).limit(1);
-    
+
     if (existingUsers.length === 0) {
       console.log("Seeding database with initial data");
       await this.seedData();
     }
   }
-  
+
   private async seedData() {
     try {
       // Create sample supplier user
@@ -751,7 +751,7 @@ export class DatabaseStorage implements IStorage {
         role: "supplier",
         businessId: null
       });
-      
+
       // Create sample Project Manager user
       const pmPassword = await hashPassword("manager123");
       const pmUser = await this.createUser({
@@ -765,7 +765,7 @@ export class DatabaseStorage implements IStorage {
         isApproved: true,
         businessId: null
       });
-      
+
       // Create sample businesses
       const business1 = await this.createBusiness({
         name: "AquaFire Systems",
@@ -774,7 +774,7 @@ export class DatabaseStorage implements IStorage {
         email: "info@aquafire.com",
         priceTier: "T2"
       });
-      
+
       const business2 = await this.createBusiness({
         name: "SafeGuard Fire Protection",
         address: "456 Oak Ave, Somewhere, USA",
@@ -782,7 +782,7 @@ export class DatabaseStorage implements IStorage {
         email: "contact@safeguardfire.com",
         priceTier: "T1"
       });
-      
+
       const business3 = await this.createBusiness({
         name: "Metro Building Services",
         address: "789 Pine Blvd, Elsewhere, USA",
@@ -790,10 +790,10 @@ export class DatabaseStorage implements IStorage {
         email: "service@metrobuilding.com",
         priceTier: "T3"
       });
-      
+
       // Create contractor users for each business
       const password = await hashPassword("password123");
-      
+
       await this.createUser({
         username: "john.doe",
         password: password,
@@ -804,7 +804,7 @@ export class DatabaseStorage implements IStorage {
         role: "contractor",
         businessId: business1.id
       });
-      
+
       await this.createUser({
         username: "jane.smith",
         password: password,
@@ -815,7 +815,7 @@ export class DatabaseStorage implements IStorage {
         role: "contractor",
         businessId: business2.id
       });
-      
+
       // Create sample parts with SVG images
       await this.createPart({
         itemCode: "VLV-243",
@@ -829,7 +829,7 @@ export class DatabaseStorage implements IStorage {
         isPopular: true,
         image: "/assets/parts/VLV-243.svg"
       });
-      
+
       await this.createPart({
         itemCode: "SPK-567",
         pipeSize: "1/2\"",
@@ -842,7 +842,7 @@ export class DatabaseStorage implements IStorage {
         isPopular: true,
         image: "/assets/parts/SPK-567.svg"
       });
-      
+
       await this.createPart({
         itemCode: "FIT-789",
         pipeSize: "1\"",
@@ -855,7 +855,7 @@ export class DatabaseStorage implements IStorage {
         isPopular: true,
         image: "/assets/parts/FIT-789.svg"
       });
-      
+
       await this.createPart({
         itemCode: "FSW-321",
         pipeSize: "2\"",
@@ -868,7 +868,7 @@ export class DatabaseStorage implements IStorage {
         isPopular: false,
         image: "/assets/parts/FSW-321.svg"
       });
-      
+
       await this.createPart({
         itemCode: "PGE-654",
         pipeSize: "1/4\"",
@@ -881,7 +881,7 @@ export class DatabaseStorage implements IStorage {
         isPopular: true,
         image: "/assets/parts/PGE-654.svg"
       });
-      
+
       await this.createPart({
         itemCode: "ALP-987",
         pipeSize: "N/A",
@@ -894,7 +894,7 @@ export class DatabaseStorage implements IStorage {
         isPopular: false,
         image: "/assets/parts/ALP-987.svg"
       });
-      
+
       await this.createPart({
         itemCode: "CPL-135",
         pipeSize: "1\"",
@@ -907,7 +907,7 @@ export class DatabaseStorage implements IStorage {
         isPopular: true,
         image: "/assets/parts/CPL-135.svg"
       });
-      
+
       await this.createPart({
         itemCode: "CHV-246",
         pipeSize: "1-1/2\"",
@@ -920,7 +920,7 @@ export class DatabaseStorage implements IStorage {
         isPopular: false,
         image: "/assets/parts/CHV-246.svg"
       });
-      
+
       await this.createPart({
         itemCode: "FDC-159",
         pipeSize: "2-1/2\"",
@@ -933,7 +933,7 @@ export class DatabaseStorage implements IStorage {
         isPopular: false,
         image: "/assets/parts/FDC-159.svg"
       });
-      
+
       await this.createPart({
         itemCode: "HSE-753",
         pipeSize: "1-1/2\"",
@@ -946,7 +946,7 @@ export class DatabaseStorage implements IStorage {
         isPopular: false,
         image: "/assets/parts/HSE-753.svg"
       });
-      
+
       // Create Jobs
       const job1 = await this.createJob({
         name: "Office Building Retrofit",
@@ -958,7 +958,7 @@ export class DatabaseStorage implements IStorage {
         createdBy: 2, // john.doe
         description: "Complete sprinkler system retrofit for office building"
       });
-      
+
       const job2 = await this.createJob({
         name: "Hotel Construction Project",
         jobNumber: "JB-2023-118",
@@ -969,7 +969,7 @@ export class DatabaseStorage implements IStorage {
         createdBy: 3, // jane.smith
         description: "New installation for hotel construction"
       });
-      
+
       // Create Orders
       const order1 = await this.createOrder({
         businessId: business1.id,
@@ -978,7 +978,7 @@ export class DatabaseStorage implements IStorage {
         customerName: "John Doe",
         orderNumber: "ORD-2023-001"
       });
-      
+
       const order2 = await this.createOrder({
         businessId: business2.id,
         status: "processing",
@@ -986,7 +986,7 @@ export class DatabaseStorage implements IStorage {
         customerName: "Jane Smith",
         orderNumber: "ORD-2023-002"
       });
-      
+
       const order3 = await this.createOrder({
         businessId: business3.id,
         status: "new",
@@ -994,12 +994,12 @@ export class DatabaseStorage implements IStorage {
         customerName: "Alex Johnson",
         orderNumber: "ORD-2023-003"
       });
-      
+
       // Get parts for order items
       const part1 = await this.getPartByItemCode("VLV-243");
       const part2 = await this.getPartByItemCode("SPK-567");
       const part3 = await this.getPartByItemCode("FIT-789");
-      
+
       // Create order items
       if (part1 && order1) {
         await this.createOrderItem({
@@ -1009,7 +1009,7 @@ export class DatabaseStorage implements IStorage {
           priceAtOrder: part1.priceT2
         });
       }
-      
+
       if (part2 && order1) {
         await this.createOrderItem({
           orderId: order1.id,
@@ -1018,7 +1018,7 @@ export class DatabaseStorage implements IStorage {
           priceAtOrder: part2.priceT2
         });
       }
-      
+
       if (part3 && order2) {
         await this.createOrderItem({
           orderId: order2.id,
@@ -1027,28 +1027,28 @@ export class DatabaseStorage implements IStorage {
           priceAtOrder: part3.priceT1
         });
       }
-      
+
       console.log("Database successfully seeded with initial data");
     } catch (error) {
       console.error("Error seeding database:", error);
     }
   }
-  
+
   // User Methods
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
-  
+
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
-  
+
   async getUsersByRole(role: string): Promise<User[]> {
     return await db.select().from(users).where(eq(users.role, role));
   }
-  
+
   async getUsersByRoleAndApprovalStatus(role: string, isApproved: boolean): Promise<User[]> {
     return await db.select().from(users)
       .where(and(
@@ -1056,12 +1056,12 @@ export class DatabaseStorage implements IStorage {
         eq(users.isApproved, isApproved)
       ));
   }
-  
+
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
-  
+
   async getPendingUsers(): Promise<User[]> {
     return await db.select().from(users)
       .where(and(
@@ -1069,12 +1069,12 @@ export class DatabaseStorage implements IStorage {
         not(eq(users.role, 'supplier')) // Suppliers don't need approval
       ));
   }
-  
+
   async createUser(user: InsertUser): Promise<User> {
     const [newUser] = await db.insert(users).values(user).returning();
     return newUser;
   }
-  
+
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
     const [updatedUser] = await db.update(users)
       .set(userData)
@@ -1082,22 +1082,22 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedUser;
   }
-  
+
   // Business Methods
   async getBusiness(id: number): Promise<Business | undefined> {
     const [business] = await db.select().from(businesses).where(eq(businesses.id, id));
     return business;
   }
-  
+
   async getAllBusinesses(): Promise<Business[]> {
     return await db.select().from(businesses);
   }
-  
+
   async createBusiness(business: InsertBusiness): Promise<Business> {
     const [newBusiness] = await db.insert(businesses).values(business).returning();
     return newBusiness;
   }
-  
+
   async updateBusiness(id: number, business: Partial<InsertBusiness>): Promise<Business | undefined> {
     const [updatedBusiness] = await db
       .update(businesses)
@@ -1106,26 +1106,26 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedBusiness;
   }
-  
+
   // Part Methods
   async getPart(id: number): Promise<Part | undefined> {
     const [part] = await db.select().from(parts).where(eq(parts.id, id));
     return part;
   }
-  
+
   async getPartByItemCode(itemCode: string): Promise<Part | undefined> {
     const [part] = await db.select().from(parts).where(eq(parts.item_code, itemCode));
     return part;
   }
-  
+
   async getAllParts(): Promise<Part[]> {
     return await db.select().from(parts);
   }
-  
+
   async getPartsByType(type: string): Promise<Part[]> {
     return await db.select().from(parts).where(eq(parts.type, type));
   }
-  
+
   async getPopularParts(limit: number): Promise<Part[]> {
     return await db
       .select()
@@ -1133,12 +1133,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(parts.isPopular, true))
       .limit(limit);
   }
-  
+
   async createPart(part: InsertPart): Promise<Part> {
     const [newPart] = await db.insert(parts).values(part).returning();
     return newPart;
   }
-  
+
   async updatePart(id: number, part: Partial<InsertPart>): Promise<Part | undefined> {
     const [updatedPart] = await db
       .update(parts)
@@ -1147,56 +1147,56 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedPart;
   }
-  
+
   async deletePart(id: number): Promise<boolean> {
     await db.delete(parts).where(eq(parts.id, id));
     return true;
   }
-  
+
   // Job Methods
   async getJob(id: number): Promise<Job | undefined> {
     const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
     return job;
   }
-  
+
   async getJobByNumber(jobNumber: string): Promise<Job | undefined> {
     const [job] = await db.select().from(jobs).where(eq(jobs.jobNumber, jobNumber));
     return job;
   }
-  
+
   async getJobsByBusiness(businessId: number): Promise<Job[]> {
     return await db
       .select()
       .from(jobs)
       .where(eq(jobs.businessId, businessId));
   }
-  
+
+  async getJobsByProjectManager(projectManagerId: number): Promise<Job[]> {
+    return await db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.projectManagerId, projectManagerId));
+  }
+
   async getPublicJobs(): Promise<Job[]> {
     return await db
       .select()
       .from(jobs)
       .where(eq(jobs.isPublic, true));
   }
-  
+
   async getJobsByCreator(userId: number): Promise<Job[]> {
     return await db
       .select()
       .from(jobs)
       .where(eq(jobs.createdBy, userId));
   }
-  
-  async getJobsByProjectManager(pmId: number): Promise<Job[]> {
-    return await db
-      .select()
-      .from(jobs)
-      .where(eq(jobs.projectManagerId, pmId));
-  }
-  
+
   async getJobWithDetails(jobId: number): Promise<any> {
     // Get the job
     const job = await this.getJob(jobId);
     if (!job) return null;
-    
+
     // Get assigned tradies
     const assignedUsers = await this.getJobUsersByJob(jobId);
     const assignedUserDetails = await Promise.all(
@@ -1205,22 +1205,22 @@ export class DatabaseStorage implements IStorage {
         return { ...assignment, user };
       })
     );
-    
+
     // Get associated orders
     const orders = await this.getOrdersByJob(jobId);
-    
+
     // Get client details if available
     let client = null;
     if (job.clientId) {
       client = await this.getClient(job.clientId);
     }
-    
+
     // Get business details if available
     let business = null;
     if (job.businessId) {
       business = await this.getBusiness(job.businessId);
     }
-    
+
     return {
       ...job,
       assignedUsers: assignedUserDetails,
@@ -1229,23 +1229,23 @@ export class DatabaseStorage implements IStorage {
       business
     };
   }
-  
+
   async getJobsWithStatus(status: string): Promise<Job[]> {
     return await db
       .select()
       .from(jobs)
       .where(eq(jobs.status, status));
   }
-  
+
   async getAllJobs(): Promise<Job[]> {
     return await db.select().from(jobs);
   }
-  
+
   async createJob(job: InsertJob): Promise<Job> {
     const [newJob] = await db.insert(jobs).values(job).returning();
     return newJob;
   }
-  
+
   async updateJob(id: number, job: Partial<InsertJob>): Promise<Job | undefined> {
     const [updatedJob] = await db
       .update(jobs)
@@ -1254,18 +1254,18 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedJob;
   }
-  
+
   async deleteJob(id: number): Promise<boolean> {
     await db.delete(jobs).where(eq(jobs.id, id));
     return true;
   }
-  
+
   // Order Methods
   async getOrder(id: number): Promise<Order | undefined> {
     const [order] = await db.select().from(orders).where(eq(orders.id, id));
     return order;
   }
-  
+
   async getOrdersByBusiness(businessId: number): Promise<Order[]> {
     return await db
       .select()
@@ -1273,7 +1273,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.businessId, businessId))
       .orderBy(desc(orders.createdAt));
   }
-  
+
   async getRecentOrders(limit: number): Promise<Order[]> {
     return await db
       .select()
@@ -1281,12 +1281,12 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(orders.createdAt))
       .limit(limit);
   }
-  
+
   async createOrder(order: InsertOrder): Promise<Order> {
     const [newOrder] = await db.insert(orders).values(order).returning();
     return newOrder;
   }
-  
+
   async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
     const [updatedOrder] = await db
       .update(orders)
@@ -1298,7 +1298,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedOrder;
   }
-  
+
   // Order Item Methods
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
     return await db
@@ -1306,7 +1306,7 @@ export class DatabaseStorage implements IStorage {
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));
   }
-  
+
   async createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
     const [newOrderItem] = await db
       .insert(orderItems)
@@ -1314,7 +1314,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newOrderItem;
   }
-  
+
   // Cart Item Methods
   async getCartItems(userId: number): Promise<CartItem[]> {
     return await db
@@ -1322,7 +1322,7 @@ export class DatabaseStorage implements IStorage {
       .from(cartItems)
       .where(eq(cartItems.userId, userId));
   }
-  
+
   // Job Part Methods
   async getJobParts(jobId: number): Promise<JobPart[]> {
     return await db
@@ -1330,21 +1330,21 @@ export class DatabaseStorage implements IStorage {
       .from(jobParts)
       .where(eq(jobParts.jobId, jobId));
   }
-  
+
   async getJobPartsWithDetails(jobId: number): Promise<(JobPart & { part: Part })[]> {
     const jobPartsList = await this.getJobParts(jobId);
     const result: (JobPart & { part: Part })[] = [];
-    
+
     for (const jobPart of jobPartsList) {
       const part = await this.getPart(jobPart.partId);
       if (part) {
         result.push({ ...jobPart, part });
       }
     }
-    
+
     return result;
   }
-  
+
   async addJobPart(jobPart: InsertJobPart): Promise<JobPart> {
     // Check if part already exists in job
     const [existingJobPart] = await db
@@ -1356,7 +1356,7 @@ export class DatabaseStorage implements IStorage {
           eq(jobParts.partId, jobPart.partId)
         )
       );
-    
+
     if (existingJobPart) {
       // Update quantity instead of adding new item
       return this.updateJobPartQuantity(
@@ -1364,7 +1364,7 @@ export class DatabaseStorage implements IStorage {
         existingJobPart.quantity + (jobPart.quantity || 1)
       );
     }
-    
+
     const [newJobPart] = await db
       .insert(jobParts)
       .values({
@@ -1372,25 +1372,25 @@ export class DatabaseStorage implements IStorage {
         quantity: jobPart.quantity || 1
       })
       .returning();
-    
+
     return newJobPart;
   }
-  
+
   async updateJobPartQuantity(id: number, quantity: number): Promise<JobPart | undefined> {
     const [updatedJobPart] = await db
       .update(jobParts)
       .set({ quantity })
       .where(eq(jobParts.id, id))
       .returning();
-    
+
     return updatedJobPart;
   }
-  
+
   async removeJobPart(id: number): Promise<boolean> {
     await db.delete(jobParts).where(eq(jobParts.id, id));
     return true;
   }
-  
+
   async addCartItem(cartItem: InsertCartItem): Promise<CartItem> {
     // Check if the user already has this part in their cart
     const [existingCartItem] = await db
@@ -1403,13 +1403,13 @@ export class DatabaseStorage implements IStorage {
           cartItem.jobId ? eq(cartItems.jobId, cartItem.jobId) : isNull(cartItems.jobId)
         )
       );
-    
+
     if (existingCartItem) {
       // Update quantity instead of adding a new item
       const newQuantity = existingCartItem.quantity + (cartItem.quantity || 1);
       return await this.updateCartItemQuantity(existingCartItem.id, newQuantity);
     }
-    
+
     const [newCartItem] = await db
       .insert(cartItems)
       .values({
@@ -1419,7 +1419,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newCartItem;
   }
-  
+
   async updateCartItemQuantity(id: number, quantity: number): Promise<CartItem | undefined> {
     const [updatedCartItem] = await db
       .update(cartItems)
@@ -1428,32 +1428,32 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedCartItem;
   }
-  
+
   async removeCartItem(id: number): Promise<boolean> {
     await db.delete(cartItems).where(eq(cartItems.id, id));
     return true;
   }
-  
+
   async clearCart(userId: number): Promise<boolean> {
     await db.delete(cartItems).where(eq(cartItems.userId, userId));
     return true;
   }
-  
+
   // Client Methods
   async getClient(id: number): Promise<Client | undefined> {
     const [client] = await db.select().from(clients).where(eq(clients.id, id));
     return client;
   }
-  
+
   async getClientsByBusiness(businessId: number): Promise<Client[]> {
     return await db.select().from(clients).where(eq(clients.businessId, businessId));
   }
-  
+
   async createClient(client: InsertClient): Promise<Client> {
     const [newClient] = await db.insert(clients).values(client).returning();
     return newClient;
   }
-  
+
   async updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined> {
     const [updatedClient] = await db
       .update(clients)
@@ -1462,27 +1462,27 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedClient;
   }
-  
+
   async deleteClient(id: number): Promise<boolean> {
     await db.delete(clients).where(eq(clients.id, id));
     return true;
   }
-  
+
   // Contact Methods
   async getContact(id: number): Promise<Contact | undefined> {
     const [contact] = await db.select().from(contacts).where(eq(contacts.id, id));
     return contact;
   }
-  
+
   async getContactsByClient(clientId: number): Promise<Contact[]> {
     return await db.select().from(contacts).where(eq(contacts.clientId, clientId));
   }
-  
+
   async createContact(contact: InsertContact): Promise<Contact> {
     const [newContact] = await db.insert(contacts).values(contact).returning();
     return newContact;
   }
-  
+
   async updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact | undefined> {
     const [updatedContact] = await db
       .update(contacts)
@@ -1491,12 +1491,12 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedContact;
   }
-  
+
   async deleteContact(id: number): Promise<boolean> {
     await db.delete(contacts).where(eq(contacts.id, id));
     return true;
   }
-  
+
   // Contract Pricing Methods
   async getContractPrice(clientId: number, partId: number): Promise<ContractPricing | undefined> {
     const [price] = await db
@@ -1510,19 +1510,19 @@ export class DatabaseStorage implements IStorage {
       );
     return price;
   }
-  
+
   async getContractPricesByClient(clientId: number): Promise<ContractPricing[]> {
     return await db
       .select()
       .from(contractPricing)
       .where(eq(contractPricing.clientId, clientId));
   }
-  
+
   async createContractPrice(pricing: InsertContractPricing): Promise<ContractPricing> {
     const [newPrice] = await db.insert(contractPricing).values(pricing).returning();
     return newPrice;
   }
-  
+
   async updateContractPrice(id: number, pricing: Partial<InsertContractPricing>): Promise<ContractPricing | undefined> {
     const [updatedPrice] = await db
       .update(contractPricing)
@@ -1531,12 +1531,12 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedPrice;
   }
-  
+
   async deleteContractPrice(id: number): Promise<boolean> {
     await db.delete(contractPricing).where(eq(contractPricing.id, id));
     return true;
   }
-  
+
   // Get jobs by client
   async getJobsByClient(clientId: number): Promise<Job[]> {
     return await db
@@ -1544,39 +1544,34 @@ export class DatabaseStorage implements IStorage {
       .from(jobs)
       .where(eq(jobs.clientId, clientId));
   }
-  
+
   // Get jobs by project manager
-  async getJobsByProjectManager(pmId: number): Promise<Job[]> {
-    return await db
-      .select()
-      .from(jobs)
-      .where(eq(jobs.projectManagerId, pmId));
-  }
   
+
   // Job User Methods
   async getJobUser(id: number): Promise<JobUser | undefined> {
     const [jobUser] = await db.select().from(jobUsers).where(eq(jobUsers.id, id));
     return jobUser;
   }
-  
+
   async getJobUsersByJob(jobId: number): Promise<JobUser[]> {
     return await db.select().from(jobUsers).where(eq(jobUsers.jobId, jobId));
   }
-  
+
   async getJobUsersByUser(userId: number): Promise<JobUser[]> {
     return await db.select().from(jobUsers).where(eq(jobUsers.userId, userId));
   }
-  
+
   async assignUserToJob(jobUser: InsertJobUser): Promise<JobUser> {
     const [newJobUser] = await db.insert(jobUsers).values(jobUser).returning();
     return newJobUser;
   }
-  
+
   async removeUserFromJob(id: number): Promise<boolean> {
     await db.delete(jobUsers).where(eq(jobUsers.id, id));
     return true;
   }
-  
+
   // Additional Order Methods
   async getOrdersByClient(clientId: number): Promise<Order[]> {
     return await db
@@ -1585,7 +1580,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.clientId, clientId))
       .orderBy(desc(orders.createdAt));
   }
-  
+
   async getOrdersByJob(jobId: number): Promise<Order[]> {
     return await db
       .select()
@@ -1593,7 +1588,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.jobId, jobId))
       .orderBy(desc(orders.createdAt));
   }
-  
+
   async getOrdersByStatus(status: string): Promise<Order[]> {
     return await db
       .select()
@@ -1601,7 +1596,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.status, status))
       .orderBy(desc(orders.createdAt));
   }
-  
+
   async getOrdersByRequestor(userId: number): Promise<Order[]> {
     return await db
       .select()
@@ -1609,7 +1604,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.requestedBy, userId))
       .orderBy(desc(orders.createdAt));
   }
-  
+
   async getOrdersForApproval(projectManagerId: number): Promise<Order[]> {
     return await db
       .select()
@@ -1638,7 +1633,7 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(orders.createdAt));
   }
-  
+
   async getApprovedOrdersByPM(pmId: number, limit: number = 30): Promise<Order[]> {
     return await db
       .select()
@@ -1657,7 +1652,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(orders.approvalDate))
       .limit(limit);
   }
-  
+
   async approveOrder(orderId: number, pmId: number, notes: string): Promise<Order> {
     // Start a transaction
     return await db.transaction(async (tx) => {
@@ -1673,11 +1668,11 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(orders.id, orderId))
         .returning();
-      
+
       if (!updatedOrder) {
         throw new Error('Order not found');
       }
-      
+
       // 2. Create history record
       await tx
         .insert(orderHistory)
@@ -1688,7 +1683,7 @@ export class DatabaseStorage implements IStorage {
           changedBy: pmId,
           changedAt: new Date()
         });
-      
+
       // 3. Create notification for the requestor
       if (updatedOrder.requestedBy) {
         await tx
@@ -1702,11 +1697,11 @@ export class DatabaseStorage implements IStorage {
             referenceType: 'order'
           });
       }
-      
+
       return updatedOrder;
     });
   }
-  
+
   async rejectOrder(orderId: number, pmId: number, reason: string): Promise<Order> {
     // Start a transaction
     return await db.transaction(async (tx) => {
@@ -1721,11 +1716,11 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(orders.id, orderId))
         .returning();
-      
+
       if (!updatedOrder) {
         throw new Error('Order not found');
       }
-      
+
       // 2. Create history record
       await tx
         .insert(orderHistory)
@@ -1736,7 +1731,7 @@ export class DatabaseStorage implements IStorage {
           changedBy: pmId,
           changedAt: new Date()
         });
-      
+
       // 3. Create notification for the requestor
       if (updatedOrder.requestedBy) {
         await tx
@@ -1750,11 +1745,11 @@ export class DatabaseStorage implements IStorage {
             referenceType: 'order'
           });
       }
-      
+
       return updatedOrder;
     });
   }
-  
+
   async modifyOrder(orderId: number, pmId: number, updatedItems: { partId: number; quantity: number }[], notes: string): Promise<Order> {
     // Start a transaction
     return await db.transaction(async (tx) => {
@@ -1768,11 +1763,11 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(orders.id, orderId))
         .returning();
-      
+
       if (!updatedOrder) {
         throw new Error('Order not found');
       }
-      
+
       // 2. Update quantities for each item
       for (const item of updatedItems) {
         await tx
@@ -1785,7 +1780,7 @@ export class DatabaseStorage implements IStorage {
             )
           );
       }
-      
+
       // 3. Create history record
       await tx
         .insert(orderHistory)
@@ -1794,9 +1789,10 @@ export class DatabaseStorage implements IStorage {
           status: 'modified',
           notes: notes || null,
           changedBy: pmId,
+```text
           changedAt: new Date()
         });
-      
+
       // 4. Create notification for the requestor
       if (updatedOrder.requestedBy) {
         await tx
@@ -1810,11 +1806,11 @@ export class DatabaseStorage implements IStorage {
             referenceType: 'order'
           });
       }
-      
+
       return updatedOrder;
     });
   }
-  
+
   async getOrderHistory(orderId: number): Promise<OrderHistory[]> {
     return await db
       .select()
@@ -1822,7 +1818,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orderHistory.orderId, orderId))
       .orderBy(desc(orderHistory.changedAt));
   }
-  
+
   async updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined> {
     const [updatedOrder] = await db
       .update(orders)
@@ -1834,20 +1830,20 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedOrder;
   }
-  
+
   // Update order status with optional approver
   async updateOrderStatus(id: number, status: string, approverId?: number): Promise<Order | undefined> {
     const updates: any = { 
       status,
       updatedAt: new Date()
     };
-    
+
     // If approving an order, record who approved it and when
     if (status === 'approved' && approverId) {
       updates.approvedBy = approverId;
       updates.approvalDate = new Date();
     }
-    
+
     const [updatedOrder] = await db
       .update(orders)
       .set(updates)
@@ -1855,7 +1851,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedOrder;
   }
-  
+
   // Order Item Methods extensions
   async updateOrderItem(id: number, orderItem: Partial<InsertOrderItem>): Promise<OrderItem | undefined> {
     const [updatedOrderItem] = await db
@@ -1865,12 +1861,12 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedOrderItem;
   }
-  
+
   async deleteOrderItem(id: number): Promise<boolean> {
     await db.delete(orderItems).where(eq(orderItems.id, id));
     return true;
   }
-  
+
   // Cart additional methods
   async getCartItemsByJob(userId: number, jobId: number): Promise<CartItem[]> {
     return await db
@@ -1883,7 +1879,7 @@ export class DatabaseStorage implements IStorage {
         )
       );
   }
-  
+
   async updateCartItem(id: number, cartItem: Partial<InsertCartItem>): Promise<CartItem | undefined> {
     const [updatedCartItem] = await db
       .update(cartItems)
@@ -1892,7 +1888,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedCartItem;
   }
-  
+
   // Job Part additional methods
   async updateJobPart(id: number, jobPart: Partial<InsertJobPart>): Promise<JobPart | undefined> {
     const [updatedJobPart] = await db
@@ -1902,13 +1898,13 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedJobPart;
   }
-  
+
   // Notification Methods
   async getNotification(id: number): Promise<Notification | undefined> {
     const [notification] = await db.select().from(notifications).where(eq(notifications.id, id));
     return notification;
   }
-  
+
   async getNotificationsByUser(userId: number): Promise<Notification[]> {
     return await db
       .select()
@@ -1916,7 +1912,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(notifications.userId, userId))
       .orderBy(desc(notifications.createdAt));
   }
-  
+
   async getUnreadNotificationsByUser(userId: number): Promise<Notification[]> {
     return await db
       .select()
@@ -1929,12 +1925,12 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(notifications.createdAt));
   }
-  
+
   async createNotification(notification: InsertNotification): Promise<Notification> {
     const [newNotification] = await db.insert(notifications).values(notification).returning();
     return newNotification;
   }
-  
+
   async markNotificationAsRead(id: number): Promise<Notification | undefined> {
     const [updatedNotification] = await db
       .update(notifications)
@@ -1943,7 +1939,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedNotification;
   }
-  
+
   async markAllNotificationsAsRead(userId: number): Promise<boolean> {
     await db
       .update(notifications)
@@ -1956,12 +1952,12 @@ export class DatabaseStorage implements IStorage {
       );
     return true;
   }
-  
+
   async deleteNotification(id: number): Promise<boolean> {
     await db.delete(notifications).where(eq(notifications.id, id));
     return true;
   }
-  
+
   // Tradie Invitation Methods
   async getTradieInvitation(id: number): Promise<TradieInvitation | undefined> {
     const [invitation] = await db
@@ -2017,7 +2013,7 @@ export class DatabaseStorage implements IStorage {
     if (responseDate) {
       updateData.responseDate = responseDate;
     }
-    
+
     const [updatedInvitation] = await db
       .update(tradieInvitations)
       .set(updateData)
@@ -2057,7 +2053,7 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(tradieInvitations.createdAt));
-    
+
     console.log(`Found ${results.length} pending invitations for PM ${pmId}:`, results);
     return results;
   }
@@ -2090,7 +2086,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tradieInvitations.id, id));
     return true;
   }
-  
+
   // User status update
   async updateUserStatus(userId: number, status: string): Promise<User | undefined> {
     const [user] = await db
@@ -2100,24 +2096,24 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return user;
   }
-  
+
   async updateUserApproval(userId: number, isApproved: boolean, approvedBy?: number): Promise<User | undefined> {
     const updateData: any = { 
       isApproved,
     };
-    
+
     // If approving, also set the approval date and approver
     if (isApproved && approvedBy) {
       updateData.approvedBy = approvedBy;
       updateData.approvalDate = new Date();
     }
-    
+
     const [user] = await db
       .update(users)
       .set(updateData)
       .where(eq(users.id, userId))
       .returning();
-    
+
     return user;
   }
 

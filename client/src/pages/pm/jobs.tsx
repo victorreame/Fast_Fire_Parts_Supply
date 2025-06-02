@@ -159,7 +159,9 @@ export default function PmJobs() {
       if (!response.ok) {
         throw new Error('Failed to fetch jobs');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('Jobs API response:', data);
+      return data;
     }
   });
 
